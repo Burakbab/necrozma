@@ -174,6 +174,23 @@ every `evolve` call.
    exercise (compute only, must not touch `live_state.json`) to get real
    comparative data before ever switching the live cadence.
 
+   **First shadow evolution run 2026-08-16** (see `runs/2026-08-16-0000-shadow-4h-evolution.md`
+   for full numbers): the raw seed genome at 4h bars is not just worse, it's
+   broken — bar-count genes (`trend_slow`, `regime_ma`, `max_bars_held`, ...)
+   mean 6x less wall-clock time at 4h, so the system overtrades and every
+   evolved candidate across 2 generations failed a hard drawdown/trade-count
+   gate outright (fitness −4.46, halts 9–10/run). Hand-scaling those genes ×6
+   before evolving fixed it: fitness went −2.42 → 0.81 in one accepted
+   promotion (sealed holdout passed), max_dd −43%→−19%, halts to 0. Still just
+   2 generations on a scaled-not-retuned starting point, not checked against
+   live champion v2 head-to-head — **not a promotion case**, but it does answer
+   the open question from the plan sketch: a 1d-tuned genome cannot be ported
+   to 4h as-is, and "reset to seed + let evolution retune" needs the periods
+   pre-scaled to even be searchable, not just picked as the honest option.
+   Next: more generations from the scaled starting point, or a longer blind
+   search from a genuinely fresh (unscaled) seed to see if it converges to
+   similar period values on its own.
+
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
    parametric search plateaued at fitness 0.889 for 13+ generations:
