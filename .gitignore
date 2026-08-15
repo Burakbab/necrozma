@@ -13,8 +13,6 @@ __pycache__/
 .venv/
 venv/
 
-# Sensitive local docs — do not commit to git
-docs/journal/
-docs/*-meeting*.md
-docs/*-discussion*.md
-docs/*-evaluation*.md
+# Private working docs — local only, never committed.
+# Agent-facing context lives in AGENTS.md; run notes go in runs/.
+docs/

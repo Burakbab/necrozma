@@ -14,7 +14,7 @@ that are deliberately **not** symmetric:
 | | Mutable | Who can change it |
 |---|---|---|
 | **Strategy layer** (agents, params, routing, universe) | yes | Superior Judge only, on evidence |
-| **Constitution** (broker, evaluator, fitness function, safety gates) | **no** | Burak only, by hand |
+| **Constitution** (broker, evaluator, fitness function, safety gates) | **no** | the owner only, by hand |
 
 The Researcher may propose anything about the strategy layer. It is structurally
 incapable of touching the thing that grades it. That asymmetry is what makes the
@@ -22,6 +22,9 @@ system safe to leave running.
 
 `constitution.py` is checksummed at every startup against `evotrader.manifest`.
 If the fitness function or the gate logic moved, the run refuses to start.
+
+Every change to the constitution is recorded in `AMENDMENTS.md`, with the
+argument for it, so that "we loosened a gate" can never happen quietly.
 
 ## Org chart
 
@@ -88,8 +91,7 @@ and current market data.
 Cross-asset correlation awareness (for the Risk Judge) and 4h-bar infrastructure
 have both shipped but are **dormant/opt-in** — built, tested, and verified
 end-to-end, but deliberately left switched off rather than turned on by default.
-See `docs/status.md` for why, and `docs/decisions-log.md` for the reasoning
-trail behind that and other calls.
+See `AGENTS.md` for why, and for the current roadmap.
 
 Real money is gated behind six months of positive walk-forward, a live paper run
 that matches its own backtest within tolerance, and explicit sign-off. The system
