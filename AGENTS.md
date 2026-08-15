@@ -25,8 +25,16 @@ Every scheduled run, in order:
    **Never** add a `Co-Authored-By` trailer or any AI-identity signature to a
    commit. Also a standing rule, not optional.
 
-2. **`git pull --rebase`** before touching anything. Several routines share this
-   repo and collide otherwise.
+2. **Get onto the branch, then pull.** The cloud clone starts in **detached
+   HEAD**, so a bare `git pull` fails with "You are not currently on a branch":
+   ```
+   git checkout main
+   git pull --rebase origin main
+   ```
+   Several routines share this repo and collide otherwise. If local `main` has
+   diverged from `origin/main` (history here has been rewritten before, and may
+   be again), **`origin/main` is authoritative** — `git reset --hard
+   origin/main` and carry on. Never force-push.
 
 3. **`pip3 install -r requirements.txt -q`** — the cloud sandbox starts bare with
    no numpy/pandas.
