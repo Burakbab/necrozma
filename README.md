@@ -2,6 +2,11 @@
 
 A self-evolving trading system. Paper money only, for now.
 
+**[→ Live dashboard](https://burakbab.github.io/necrozma/)** — what it owns right
+now, how it decided, and every attempt it has made to rewrite its own rules.
+Written to be readable without a finance background. Rebuilt automatically after
+every run.
+
 The prime directive: grow capital on a risk-adjusted basis without a human in the
 loop, and get measurably better over time by rewriting its own agent roster.
 
