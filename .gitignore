@@ -1,0 +1,14 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+
+# durable runtime state
+state/cache/
+*.pkl
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/

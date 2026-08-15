@@ -80,9 +80,16 @@ python evotrader_bundle.py evolve 5    # 5 generations of self-improvement
 
 ## Status
 
-v0.1 — deterministic genome-driven agents, real historical data, paper broker,
-full decision log. See `docs/design.md` for the acceptance rules, the amendment
-log, and the roadmap.
+**Genome v2 is live and trading** — promoted from the hand-written v0.1 seed on
+2026-08-15, the first self-promotion. The live paper account opened 2026-08-15
+with $10,000 imaginary and trades on a daily schedule against real historical
+and current market data.
+
+Cross-asset correlation awareness (for the Risk Judge) and 4h-bar infrastructure
+have both shipped but are **dormant/opt-in** — built, tested, and verified
+end-to-end, but deliberately left switched off rather than turned on by default.
+See `docs/status.md` for why, and `docs/decisions-log.md` for the reasoning
+trail behind that and other calls.
 
 Real money is gated behind six months of positive walk-forward, a live paper run
 that matches its own backtest within tolerance, and explicit sign-off. The system

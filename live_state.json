@@ -1,0 +1,5054 @@
+{
+  "started": "2026-08-15T00:47:09+00:00",
+  "ticks": 1,
+  "updated": "2026-08-15T16:08:08+00:00",
+  "genome": {
+    "version": 2,
+    "parent": 1,
+    "created": "2026-08-15T01:56:20+00:00",
+    "note": "blind search: rsi_lo 45.0->35.1764, conviction_scale 1.2->0.7356",
+    "universe": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "BNBUSDT",
+      "SOLUSDT",
+      "XRPUSDT",
+      "ADAUSDT",
+      "DOGEUSDT",
+      "LINKUSDT",
+      "AVAXUSDT",
+      "LTCUSDT",
+      "DOTUSDT",
+      "TRXUSDT",
+      "ZECUSDT",
+      "UNIUSDT",
+      "NEARUSDT",
+      "INJUSDT",
+      "FETUSDT",
+      "AAVEUSDT",
+      "XLMUSDT",
+      "SHIBUSDT",
+      "BCHUSDT",
+      "CRVUSDT",
+      "FILUSDT",
+      "ATOMUSDT",
+      "ICPUSDT",
+      "HBARUSDT",
+      "PAXGUSDT"
+    ],
+    "agents": {
+      "analyst": {
+        "enabled": true,
+        "genes": {
+          "trend_fast": 10,
+          "trend_slow": 50,
+          "rsi_len": 14,
+          "vol_short": 10,
+          "vol_long": 40,
+          "breakout_len": 20,
+          "z_len": 30,
+          "regime_ma": 50,
+          "regime_anchor": "BTCUSDT",
+          "volume_len": 20
+        }
+      },
+      "consult_risky": {
+        "enabled": true,
+        "weight": 1,
+        "genes": {
+          "min_breakout": -0.02,
+          "min_rank_mom": 0.7,
+          "min_slope": 0,
+          "rsi_max": 82,
+          "min_vol_ratio": 0,
+          "conviction_scale": 0.7356,
+          "exit_rsi": 88,
+          "exit_trend_below": -0.03
+        }
+      },
+      "consult_moderate": {
+        "enabled": true,
+        "weight": 1,
+        "genes": {
+          "min_trend": 0.005,
+          "min_slope": 0,
+          "rsi_lo": 35.1764,
+          "rsi_hi": 72,
+          "min_rank_mom": 0.5,
+          "max_vol": 1.6,
+          "conviction_scale": 1,
+          "exit_trend_below": 0,
+          "exit_rsi": 80
+        }
+      },
+      "consult_conservative": {
+        "enabled": true,
+        "weight": 1,
+        "genes": {
+          "rsi_buy_below": 38,
+          "z_buy_below": -0.8,
+          "require_uptrend": true,
+          "min_trend": -0.01,
+          "max_vol": 1.1,
+          "max_dd_from_high": -0.35,
+          "conviction_scale": 0.8,
+          "take_profit": 0.12,
+          "exit_rsi": 68
+        }
+      },
+      "risk_judge": {
+        "enabled": true,
+        "genes": {
+          "base_size_pct": 0.12,
+          "unanimous_bonus": 1.6,
+          "two_agree_bonus": 1.2,
+          "lone_voice_scale": 0.6,
+          "min_conviction": 0.3,
+          "max_positions": 6,
+          "max_position_pct": 0.25,
+          "cash_floor_pct": 0.05,
+          "regime_scale": {
+            "bull": 1,
+            "chop": 0.6,
+            "bear": 0.25,
+            "crisis": 0
+          },
+          "sell_conviction_threshold": 0.35,
+          "scale_in_allowed": true
+        }
+      },
+      "superior_judge": {
+        "enabled": true,
+        "genes": {
+          "hard_max_position_pct": 0.35,
+          "hard_cash_floor_pct": 0.02,
+          "hard_max_positions": 8,
+          "block_buys_in_crisis": true,
+          "max_new_positions_per_bar": 3
+        }
+      }
+    },
+    "risk": {
+      "stop_loss": -0.12,
+      "trailing_stop": -0.15,
+      "take_profit": 0.35,
+      "max_bars_held": 60,
+      "min_bars_held": 1
+    },
+    "routing": {
+      "consults": [
+        "consult_risky",
+        "consult_moderate",
+        "consult_conservative"
+      ],
+      "minor_judges": [
+        "risk_judge"
+      ],
+      "final": "superior_judge"
+    },
+    "broker": {
+      "fee_bps": 10,
+      "slippage_bps": 5,
+      "start_cash": 10000
+    }
+  },
+  "broker": {
+    "start_cash": 10000,
+    "cash": 8047.027692307693,
+    "fee_bps": 10,
+    "slippage_bps": 5,
+    "min_order": 25,
+    "positions": {
+      "LINKUSDT": {
+        "symbol": "LINKUSDT",
+        "qty": 85.5209226918645,
+        "avg_cost": 9.079537499999999,
+        "opened_ts": "2026-08-14 00:00:00+00:00",
+        "peak_price": 9.075,
+        "bars_held": 0,
+        "entry_agents": [
+          "consult_moderate",
+          "consult_risky"
+        ]
+      },
+      "BNBUSDT": {
+        "symbol": "BNBUSDT",
+        "qty": 1.256982271237074,
+        "avg_cost": 608.2339649999999,
+        "opened_ts": "2026-08-14 00:00:00+00:00",
+        "peak_price": 607.93,
+        "bars_held": 0,
+        "entry_agents": [
+          "consult_moderate",
+          "consult_risky"
+        ]
+      },
+      "CRVUSDT": {
+        "symbol": "CRVUSDT",
+        "qty": 1716.0163636774575,
+        "avg_cost": 0.2389194,
+        "opened_ts": "2026-08-14 00:00:00+00:00",
+        "peak_price": 0.2388,
+        "bars_held": 0,
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      }
+    },
+    "fills": [
+      {
+        "ts": "2026-08-14 00:00:00+00:00",
+        "symbol": "LINKUSDT",
+        "side": "buy",
+        "qty": 85.5209226918645,
+        "price": 9.079537499999999,
+        "ref_price": 9.075,
+        "fee": 0.7772676923076922,
+        "reason": "consult_moderate: confirmed trend: ma-spread +3.7%, slope +2.18%, rsi 71 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-08-14 00:00:00+00:00",
+        "symbol": "BNBUSDT",
+        "side": "buy",
+        "qty": 1.256982271237074,
+        "price": 608.2339649999999,
+        "ref_price": 607.93,
+        "fee": 0.7653046153846154,
+        "reason": "consult_moderate: confirmed trend: ma-spread +4.2%, slope +0.97%, rsi 65 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-08-14 00:00:00+00:00",
+        "symbol": "CRVUSDT",
+        "side": "buy",
+        "qty": 1716.0163636774575,
+        "price": 0.2389194,
+        "ref_price": 0.2388,
+        "fee": 0.41039999999999993,
+        "reason": "consult_moderate: confirmed trend: ma-spread +11.9%, slope +6.51%, rsi 63 in band | superior_judge: approved (cap-checked)"
+      }
+    ],
+    "closed": [],
+    "nav_history": [
+      [
+        "2026-08-14 00:00:00+00:00",
+        10000
+      ]
+    ],
+    "peak_nav": 10000,
+    "halted": false,
+    "halt_bars_left": 0,
+    "halt_count": 0,
+    "halt_reason": ""
+  },
+  "journal": [
+    {
+      "ts": "2026-08-15T00:47:11+00:00",
+      "bar": "2026-08-14 00:00:00+00:00",
+      "tick": 1,
+      "nav_before": 10000,
+      "nav_after": 9997.07,
+      "cash": 8047.03,
+      "cash_before": 10000,
+      "positions": {
+        "LINKUSDT": 776.1,
+        "BNBUSDT": 764.16,
+        "CRVUSDT": 409.78
+      },
+      "genome_version": 1,
+      "halted": false,
+      "decision": {
+        "ts": "2026-08-14 00:00:00+00:00",
+        "nav": 10000,
+        "regime": "chop",
+        "breadth": 0.48148148148148145,
+        "cash_pct": 1,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "BNBUSDT",
+              "side": "buy",
+              "conviction": 0.879,
+              "why": "at/near range high (breakout -1.4%), momentum rank 0.81, slope +0.97%"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.895,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.85, slope +2.18%"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.863,
+              "why": "at/near range high (breakout -1.8%), momentum rank 0.77, slope +1.39%"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "buy",
+              "conviction": 0.912,
+              "why": "at/near range high (breakout -0.7%), momentum rank 0.88, slope +2.24%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ETHUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +3.8%, slope +0.17%, rsi 55 in band"
+            },
+            {
+              "symbol": "BNBUSDT",
+              "side": "buy",
+              "conviction": 0.892,
+              "why": "confirmed trend: ma-spread +4.2%, slope +0.97%, rsi 65 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.904,
+              "why": "confirmed trend: ma-spread +3.7%, slope +2.18%, rsi 71 in band"
+            },
+            {
+              "symbol": "TRXUSDT",
+              "side": "buy",
+              "conviction": 0.679,
+              "why": "confirmed trend: ma-spread +1.2%, slope +0.63%, rsi 67 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +11.9%, slope +6.51%, rsi 63 in band"
+            }
+          ],
+          "consult_conservative": [
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.64,
+              "why": "oversold inside an uptrend: rsi 17, z -2.39, trend +5.8%"
+            }
+          ]
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "amount": 777.27,
+            "fraction": 0,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: at/near range high (breakout +0.0%), momentum rank 0.85, slope +2.18%",
+              "consult_moderate: confirmed trend: ma-spread +3.7%, slope +2.18%, rsi 71 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          },
+          {
+            "symbol": "BNBUSDT",
+            "side": "buy",
+            "amount": 765.3,
+            "fraction": 0,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: at/near range high (breakout -1.4%), momentum rank 0.81, slope +0.97%",
+              "consult_moderate: confirmed trend: ma-spread +4.2%, slope +0.97%, rsi 65 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "amount": 410.4,
+            "fraction": 0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +11.9%, slope +6.51%, rsi 63 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "TRXUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "buy",
+            "by": "superior_judge",
+            "reason": "new-position rate limit"
+          },
+          {
+            "symbol": "ICPUSDT",
+            "side": "buy",
+            "by": "superior_judge",
+            "reason": "new-position rate limit"
+          },
+          {
+            "symbol": "ETHUSDT",
+            "side": "buy",
+            "by": "superior_judge",
+            "reason": "new-position rate limit"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 85.5209226918645,
+            "price": 9.079537499999999,
+            "reason": "consult_moderate: confirmed trend: ma-spread +3.7%, slope +2.18%, rsi 71 in band | superior_judge: approved (cap-checked)"
+          },
+          {
+            "symbol": "BNBUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 1.256982271237074,
+            "price": 608.2339649999999,
+            "reason": "consult_moderate: confirmed trend: ma-spread +4.2%, slope +0.97%, rsi 65 in band | superior_judge: approved (cap-checked)"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 1716.0163636774575,
+            "price": 0.2389194,
+            "reason": "consult_moderate: confirmed trend: ma-spread +11.9%, slope +6.51%, rsi 63 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime chop (scale 0.60), breadth 48%"
+      }
+    }
+  ],
+  "lineage": [
+    {
+      "champion_version": 1,
+      "champion_fitness": 0.5764947973803733,
+      "champion_stats": {
+        "trades": 1433,
+        "bars": 1184,
+        "sortino": 1.0920886328369204,
+        "sharpe": 0.7884293896436523,
+        "max_dd": -0.28004913044924096,
+        "turnover_annual": 37.72885604978424,
+        "win_rate": 0.6095610882173382,
+        "total_return": 0.3386273168793455,
+        "halt_count": 2
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1144.7924377923118,
+          "consult_conservative": 21584.570070381025,
+          "guardian": -17484.445229367077,
+          "consult_risky": -168.97163698586226,
+          "circuit_breaker": -644.1978140324727
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 580,
+          "guardian": 211,
+          "consult_risky": 125,
+          "circuit_breaker": 14
+        },
+        "pnl_by_entry": {
+          "consult_risky": 4795.893228910203,
+          "consult_conservative": -5758.167251410034,
+          "consult_moderate": 1857.9731423268981
+        },
+        "n_by_entry": {
+          "consult_risky": 1002,
+          "consult_conservative": 351,
+          "consult_moderate": 960
+        },
+        "stop_share": 0.10465116279069768,
+        "stop_pnl": -24463.407760898626,
+        "tp_share": 0.02180232558139535,
+        "time_share": 0.023255813953488372,
+        "avg_bars_held": 17.094476744186046,
+        "trades": 1376,
+        "win_rate": 0.6053779069767442,
+        "turnover": 37.09947466297865,
+        "halt_count": 3,
+        "superior_overrides": 159
+      },
+      "n_candidates": 27,
+      "top": [
+        {
+          "fitness": 0.8892,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.conviction_scale",
+          "hypothesis": "blind search: rsi_lo 45.0->35.1764, conviction_scale 1.2->0.7356",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 35.1764,
+            "agents.consult_risky.genes.conviction_scale": 0.7356
+          }
+        },
+        {
+          "fitness": 0.6361,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.unanimous_bonus+risk.take_profit",
+          "hypothesis": "blind search: unanimous_bonus 1.6->1.0, take_profit 0.35->0.2837",
+          "patch": {
+            "agents.risk_judge.genes.unanimous_bonus": 1,
+            "risk.take_profit": 0.2837
+          }
+        },
+        {
+          "fitness": 0.6352,
+          "kind": "tune",
+          "target": "regime_scale.chop",
+          "hypothesis": "size down in 'chop' regime: 0.6 -> 0.3",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.chop": 0.3
+          }
+        },
+        {
+          "fitness": 0.6007,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: rsi_buy_below 38.0->19.1227, unanimous_bonus 1.6->2.3229",
+          "patch": {
+            "agents.consult_conservative.genes.rsi_buy_below": 19.1227,
+            "agents.risk_judge.genes.unanimous_bonus": 2.3229
+          }
+        },
+        {
+          "fitness": 0.5953,
+          "kind": "tune",
+          "target": "regime_scale.bear",
+          "hypothesis": "size up in 'bear' regime: 0.25 -> 0.375",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.bear": 0.375
+          }
+        },
+        {
+          "fitness": 0.5743,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.min_rank_mom+risk.take_profit",
+          "hypothesis": "blind search: min_rank_mom 0.5->0.4927, take_profit 0.35->0.4895",
+          "patch": {
+            "agents.consult_moderate.genes.min_rank_mom": 0.4927,
+            "risk.take_profit": 0.4895
+          }
+        },
+        {
+          "fitness": 0.5189,
+          "kind": "tune",
+          "target": "regime_scale.chop",
+          "hypothesis": "size up in 'chop' regime: 0.6 -> 0.9",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.chop": 0.9
+          }
+        },
+        {
+          "fitness": 0.5128,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.max_position_pct",
+          "hypothesis": "circuit breaker tripped 3x — concentration too high",
+          "patch": {
+            "agents.risk_judge.genes.max_position_pct": 0.175
+          }
+        }
+      ],
+      "seconds": 131.2,
+      "holdout": {
+        "champion": -2.414407265946055,
+        "challenger": -2.233624142110731,
+        "passed": true
+      },
+      "accepted": {
+        "new_version": 2,
+        "kind": "tune",
+        "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.conviction_scale",
+        "hypothesis": "blind search: rsi_lo 45.0->35.1764, conviction_scale 1.2->0.7356",
+        "patch": {
+          "agents.consult_moderate.genes.rsi_lo": 35.1764,
+          "agents.consult_risky.genes.conviction_scale": 0.7356
+        },
+        "fitness": 0.8892,
+        "was": 0.5765,
+        "why": "selection fitness 0.889 > 0.576 + 0.205, merged 0.968 >= 0.932, drawdown 30.0% within tolerance"
+      }
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 25,
+      "n_tested_cumulative": 25,
+      "stagnation": 0,
+      "top": [
+        {
+          "fitness": 0.9589,
+          "kind": "tune",
+          "target": "regime_scale.bear",
+          "hypothesis": "size up in 'bear' regime: 0.25 -> 0.375",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.bear": 0.375
+          }
+        },
+        {
+          "fitness": 0.8234,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_trend_below",
+          "hypothesis": "blind search: rsi_lo 35.1764->29.2319, exit_trend_below -0.03->-0.0421",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 29.2319,
+            "agents.consult_risky.genes.exit_trend_below": -0.0421
+          }
+        },
+        {
+          "fitness": 0.7866,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.rsi_hi",
+          "hypothesis": "blind search: conviction_scale 1.0->1.4061, rsi_hi 72.0->90.8048",
+          "patch": {
+            "agents.consult_moderate.genes.conviction_scale": 1.4061,
+            "agents.consult_moderate.genes.rsi_hi": 90.8048
+          }
+        },
+        {
+          "fitness": 0.7387,
+          "kind": "tune",
+          "target": "regime_scale.chop",
+          "hypothesis": "size down in 'chop' regime: 0.6 -> 0.3",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.chop": 0.3
+          }
+        },
+        {
+          "fitness": 0.7271,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.conviction_scale+agents.risk_judge.genes.min_conviction",
+          "hypothesis": "blind search: conviction_scale 0.8->1.0424, min_conviction 0.3->0.3064",
+          "patch": {
+            "agents.consult_conservative.genes.conviction_scale": 1.0424,
+            "agents.risk_judge.genes.min_conviction": 0.3064
+          }
+        },
+        {
+          "fitness": 0.6795,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_trend_below",
+          "hypothesis": "blind search: rsi_lo 35.1764->54.2876, exit_trend_below -0.03->-0.0429",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 54.2876,
+            "agents.consult_risky.genes.exit_trend_below": -0.0429
+          }
+        },
+        {
+          "fitness": 0.6647,
+          "kind": "tune",
+          "target": "regime_scale.chop",
+          "hypothesis": "size up in 'chop' regime: 0.6 -> 0.9",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.chop": 0.9
+          }
+        },
+        {
+          "fitness": 0.6637,
+          "kind": "tune",
+          "target": "regime_scale.bull",
+          "hypothesis": "size down in 'bull' regime: 1.0 -> 0.5",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.bull": 0.5
+          }
+        }
+      ],
+      "seconds": 143.8,
+      "rejections": [
+        {
+          "target": "regime_scale.bear",
+          "why": "selection fitness 0.959 did not clear champion 0.889 + required margin 0.203",
+          "fold_fitness": 0.9589
+        },
+        {
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_trend_below",
+          "why": "selection fitness 0.823 did not clear champion 0.889 + required margin 0.203",
+          "fold_fitness": 0.8234
+        },
+        {
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.rsi_hi",
+          "why": "selection fitness 0.787 did not clear champion 0.889 + required margin 0.203",
+          "fold_fitness": 0.7866
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 39,
+      "stagnation": 1,
+      "top": [
+        {
+          "fitness": 0.933,
+          "kind": "tune",
+          "target": "agents.superior_judge.genes.max_new_positions_per_bar+risk.take_profit",
+          "hypothesis": "blind search: take_profit 0.35->0.3847, max_new_positions_per_bar 3->4",
+          "patch": {
+            "risk.take_profit": 0.3847,
+            "agents.superior_judge.genes.max_new_positions_per_bar": 4
+          }
+        },
+        {
+          "fitness": 0.7556,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_vol+agents.risk_judge.genes.cash_floor_pct",
+          "hypothesis": "blind search: cash_floor_pct 0.05->0.1214, max_vol 1.1->1.052",
+          "patch": {
+            "agents.risk_judge.genes.cash_floor_pct": 0.1214,
+            "agents.consult_conservative.genes.max_vol": 1.052
+          }
+        },
+        {
+          "fitness": 0.6916,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.sell_conviction_threshold+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: unanimous_bonus 1.6->2.1262, sell_conviction_threshold 0.35->0.4407",
+          "patch": {
+            "agents.risk_judge.genes.unanimous_bonus": 2.1262,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.4407
+          }
+        },
+        {
+          "fitness": 0.6517,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_vol+risk.trailing_stop",
+          "hypothesis": "blind search: trailing_stop -0.15->-0.1256, max_vol 1.1->0.9571",
+          "patch": {
+            "risk.trailing_stop": -0.1256,
+            "agents.consult_conservative.genes.max_vol": 0.9571
+          }
+        },
+        {
+          "fitness": 0.5682,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_slow+agents.consult_moderate.genes.conviction_scale",
+          "hypothesis": "blind search: conviction_scale 1.0->0.938, trend_slow 50->57",
+          "patch": {
+            "agents.consult_moderate.genes.conviction_scale": 0.938,
+            "agents.analyst.genes.trend_slow": 57
+          }
+        },
+        {
+          "fitness": 0.3924,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.base_size_pct+agents.superior_judge.genes.max_new_positions_per_bar",
+          "hypothesis": "blind search: max_new_positions_per_bar 3->2, base_size_pct 0.12->0.219",
+          "patch": {
+            "agents.superior_judge.genes.max_new_positions_per_bar": 2,
+            "agents.risk_judge.genes.base_size_pct": 0.219
+          }
+        },
+        {
+          "fitness": 0.3628,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.risk_judge.genes.max_positions",
+          "hypothesis": "blind search: max_positions 6->4, conviction_scale 1.0->0.4088",
+          "patch": {
+            "agents.risk_judge.genes.max_positions": 4,
+            "agents.consult_moderate.genes.conviction_scale": 0.4088
+          }
+        },
+        {
+          "fitness": 0.2714,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.consult_moderate.genes.min_trend",
+          "hypothesis": "blind search: exit_rsi 68.0->50.0, min_trend 0.005->0.0626",
+          "patch": {
+            "agents.consult_conservative.genes.exit_rsi": 50,
+            "agents.consult_moderate.genes.min_trend": 0.0626
+          }
+        }
+      ],
+      "seconds": 86.1,
+      "rejections": [
+        {
+          "target": "agents.superior_judge.genes.max_new_positions_per_bar+risk.take_profit",
+          "why": "selection fitness 0.933 did not clear champion 0.889 + required margin 0.217",
+          "fold_fitness": 0.933
+        },
+        {
+          "target": "agents.consult_conservative.genes.max_vol+agents.risk_judge.genes.cash_floor_pct",
+          "why": "selection fitness 0.756 did not clear champion 0.889 + required margin 0.217",
+          "fold_fitness": 0.7556
+        },
+        {
+          "target": "agents.risk_judge.genes.sell_conviction_threshold+agents.risk_judge.genes.unanimous_bonus",
+          "why": "selection fitness 0.692 did not clear champion 0.889 + required margin 0.217",
+          "fold_fitness": 0.6916
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 53,
+      "stagnation": 2,
+      "top": [
+        {
+          "fitness": 0.8898,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.max_positions+agents.risk_judge.genes.min_conviction+risk.stop_loss",
+          "hypothesis": "blind search: min_conviction 0.3->0.2765, stop_loss -0.12->-0.1386, max_positions 6->2",
+          "patch": {
+            "agents.risk_judge.genes.min_conviction": 0.2765,
+            "risk.stop_loss": -0.1386,
+            "agents.risk_judge.genes.max_positions": 2
+          }
+        },
+        {
+          "fitness": 0.3632,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.min_conviction",
+          "hypothesis": "blind search: exit_rsi 68.0->50.0, min_conviction 0.3->0.3745, exit_trend_below 0.0->-0.111",
+          "patch": {
+            "agents.consult_conservative.genes.exit_rsi": 50,
+            "agents.risk_judge.genes.min_conviction": 0.3745,
+            "agents.consult_moderate.genes.exit_trend_below": -0.111
+          }
+        },
+        {
+          "fitness": 0.3424,
+          "kind": "tune",
+          "target": "agents.analyst.genes.breakout_len+agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.rsi_hi",
+          "hypothesis": "blind search: breakout_len 20->57, rsi_hi 72.0->69.003, conviction_scale 1.0->1.245",
+          "patch": {
+            "agents.analyst.genes.breakout_len": 57,
+            "agents.consult_moderate.genes.rsi_hi": 69.003,
+            "agents.consult_moderate.genes.conviction_scale": 1.245
+          }
+        },
+        {
+          "fitness": 0.2106,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_dd_from_high+agents.consult_moderate.genes.max_vol+agents.consult_moderate.genes.rsi_hi",
+          "hypothesis": "blind search: max_vol 1.6->3.4527, rsi_hi 72.0->92.0, max_dd_from_high -0.35->-0.2808",
+          "patch": {
+            "agents.consult_moderate.genes.max_vol": 3.4527,
+            "agents.consult_moderate.genes.rsi_hi": 92,
+            "agents.consult_conservative.genes.max_dd_from_high": -0.2808
+          }
+        },
+        {
+          "fitness": 0.1963,
+          "kind": "tune",
+          "target": "agents.consult_risky.genes.rsi_max+agents.risk_judge.genes.max_position_pct+risk.take_profit",
+          "hypothesis": "blind search: take_profit 0.35->0.0918, max_position_pct 0.25->0.1117, rsi_max 82.0->69.4866",
+          "patch": {
+            "risk.take_profit": 0.0918,
+            "agents.risk_judge.genes.max_position_pct": 0.1117,
+            "agents.consult_risky.genes.rsi_max": 69.4866
+          }
+        },
+        {
+          "fitness": 0.1025,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.lone_voice_scale+agents.risk_judge.genes.max_position_pct+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: lone_voice_scale 0.6->0.9647, unanimous_bonus 1.6->1.7054, max_position_pct 0.25->0.2883",
+          "patch": {
+            "agents.risk_judge.genes.lone_voice_scale": 0.9647,
+            "agents.risk_judge.genes.unanimous_bonus": 1.7054,
+            "agents.risk_judge.genes.max_position_pct": 0.2883
+          }
+        },
+        {
+          "fitness": 0.0966,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.max_vol+agents.consult_moderate.genes.min_rank_mom+agents.risk_judge.genes.cash_floor_pct",
+          "hypothesis": "blind search: max_vol 1.6->1.3204, min_rank_mom 0.5->0.3508, cash_floor_pct 0.05->0.2567",
+          "patch": {
+            "agents.consult_moderate.genes.max_vol": 1.3204,
+            "agents.consult_moderate.genes.min_rank_mom": 0.3508,
+            "agents.risk_judge.genes.cash_floor_pct": 0.2567
+          }
+        },
+        {
+          "fitness": 0.0253,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.max_vol+agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.max_positions",
+          "hypothesis": "blind search: max_vol 1.6->3.0057, max_positions 6->2, base_size_pct 0.12->0.0711",
+          "patch": {
+            "agents.consult_moderate.genes.max_vol": 3.0057,
+            "agents.risk_judge.genes.max_positions": 2,
+            "agents.risk_judge.genes.base_size_pct": 0.0711
+          }
+        }
+      ],
+      "seconds": 91.8,
+      "rejections": [
+        {
+          "target": "agents.risk_judge.genes.max_positions+agents.risk_judge.genes.min_conviction+risk.stop_loss",
+          "why": "selection fitness 0.890 did not clear champion 0.889 + required margin 0.225",
+          "fold_fitness": 0.8898
+        },
+        {
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.min_conviction",
+          "why": "selection fitness 0.363 did not clear champion 0.889 + required margin 0.225",
+          "fold_fitness": 0.3632
+        },
+        {
+          "target": "agents.analyst.genes.breakout_len+agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.rsi_hi",
+          "why": "selection fitness 0.342 did not clear champion 0.889 + required margin 0.225",
+          "fold_fitness": 0.3424
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 67,
+      "stagnation": 3,
+      "top": [
+        {
+          "fitness": 0.6665,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.cash_floor_pct",
+          "hypothesis": "blind search: exit_trend_below 0.0->0.012, cash_floor_pct 0.05->0.1093, rsi_buy_below 38.0->45.1798",
+          "patch": {
+            "agents.consult_moderate.genes.exit_trend_below": 0.012,
+            "agents.risk_judge.genes.cash_floor_pct": 0.1093,
+            "agents.consult_conservative.genes.rsi_buy_below": 45.1798
+          }
+        },
+        {
+          "fitness": 0.6555,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_fast+agents.risk_judge.genes.sell_conviction_threshold+risk.trailing_stop",
+          "hypothesis": "blind search: trailing_stop -0.15->-0.0722, trend_fast 10->6, sell_conviction_threshold 0.35->0.4112",
+          "patch": {
+            "risk.trailing_stop": -0.0722,
+            "agents.analyst.genes.trend_fast": 6,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.4112
+          }
+        },
+        {
+          "fitness": 0.5855,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_risky.genes.min_rank_mom+risk.trailing_stop",
+          "hypothesis": "blind search: min_rank_mom 0.7->0.6821, conviction_scale 1.0->1.0429, trailing_stop -0.15->-0.2084",
+          "patch": {
+            "agents.consult_risky.genes.min_rank_mom": 0.6821,
+            "agents.consult_moderate.genes.conviction_scale": 1.0429,
+            "risk.trailing_stop": -0.2084
+          }
+        },
+        {
+          "fitness": 0.5053,
+          "kind": "tune",
+          "target": "agents.consult_risky.genes.exit_trend_below+agents.risk_judge.genes.min_conviction+risk.stop_loss",
+          "hypothesis": "blind search: min_conviction 0.3->0.3118, stop_loss -0.12->-0.3929, exit_trend_below -0.03->-0.2408",
+          "patch": {
+            "agents.risk_judge.genes.min_conviction": 0.3118,
+            "risk.stop_loss": -0.3929,
+            "agents.consult_risky.genes.exit_trend_below": -0.2408
+          }
+        },
+        {
+          "fitness": 0.3415,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.min_trend+agents.consult_risky.genes.exit_rsi+agents.consult_risky.genes.exit_trend_below",
+          "hypothesis": "blind search: exit_trend_below -0.03->-0.0805, min_trend 0.005->0.0411, exit_rsi 88.0->92.0548",
+          "patch": {
+            "agents.consult_risky.genes.exit_trend_below": -0.0805,
+            "agents.consult_moderate.genes.min_trend": 0.0411,
+            "agents.consult_risky.genes.exit_rsi": 92.0548
+          }
+        },
+        {
+          "fitness": 0.2154,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.superior_judge.genes.max_new_positions_per_bar+risk.stop_loss",
+          "hypothesis": "blind search: max_new_positions_per_bar 3->1, stop_loss -0.12->-0.1459, exit_rsi 80.0->79.2969",
+          "patch": {
+            "agents.superior_judge.genes.max_new_positions_per_bar": 1,
+            "risk.stop_loss": -0.1459,
+            "agents.consult_moderate.genes.exit_rsi": 79.2969
+          }
+        },
+        {
+          "fitness": -0.3043,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_slow+agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.exit_trend_below",
+          "hypothesis": "blind search: exit_trend_below 0.0->-0.2218, trend_slow 50->123, conviction_scale 1.0->0.702",
+          "patch": {
+            "agents.consult_moderate.genes.exit_trend_below": -0.2218,
+            "agents.analyst.genes.trend_slow": 123,
+            "agents.consult_moderate.genes.conviction_scale": 0.702
+          }
+        },
+        {
+          "fitness": -0.3253,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_slow+agents.consult_risky.genes.exit_rsi+agents.consult_risky.genes.exit_trend_below",
+          "hypothesis": "blind search: exit_rsi 88.0->99.0, trend_slow 50->87, exit_trend_below -0.03->-0.0206",
+          "patch": {
+            "agents.consult_risky.genes.exit_rsi": 99,
+            "agents.analyst.genes.trend_slow": 87,
+            "agents.consult_risky.genes.exit_trend_below": -0.0206
+          }
+        }
+      ],
+      "seconds": 86,
+      "rejections": [
+        {
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.cash_floor_pct",
+          "why": "selection fitness 0.667 did not clear champion 0.889 + required margin 0.232",
+          "fold_fitness": 0.6665
+        },
+        {
+          "target": "agents.analyst.genes.trend_fast+agents.risk_judge.genes.sell_conviction_threshold+risk.trailing_stop",
+          "why": "selection fitness 0.655 did not clear champion 0.889 + required margin 0.232",
+          "fold_fitness": 0.6555
+        },
+        {
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_risky.genes.min_rank_mom+risk.trailing_stop",
+          "why": "selection fitness 0.585 did not clear champion 0.889 + required margin 0.232",
+          "fold_fitness": 0.5855
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 81,
+      "stagnation": 4,
+      "top": [
+        {
+          "fitness": 0.9713,
+          "kind": "tune",
+          "target": "agents.analyst.genes.rsi_len+agents.consult_risky.genes.exit_trend_below+agents.consult_risky.genes.min_breakout+risk.take_profit",
+          "hypothesis": "blind search: rsi_len 14->38, exit_trend_below -0.03->-0.0893, min_breakout -0.02->-0.1002, take_profit 0.35->1.1679",
+          "patch": {
+            "agents.analyst.genes.rsi_len": 38,
+            "agents.consult_risky.genes.exit_trend_below": -0.0893,
+            "agents.consult_risky.genes.min_breakout": -0.1002,
+            "risk.take_profit": 1.1679
+          }
+        },
+        {
+          "fitness": 0.6367,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.min_rank_mom+risk.stop_loss+risk.take_profit+risk.trailing_stop",
+          "hypothesis": "blind search: take_profit 0.35->0.2517, min_rank_mom 0.5->0.3166, trailing_stop -0.15->-0.4424, stop_loss -0.12->-0.0926",
+          "patch": {
+            "risk.take_profit": 0.2517,
+            "agents.consult_moderate.genes.min_rank_mom": 0.3166,
+            "risk.trailing_stop": -0.4424,
+            "risk.stop_loss": -0.0926
+          }
+        },
+        {
+          "fitness": 0.5449,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.sell_conviction_threshold+risk.max_bars_held+risk.take_profit",
+          "hypothesis": "blind search: max_bars_held 60->203, sell_conviction_threshold 0.35->0.2859, take_profit 0.35->0.6007, exit_trend_below 0.0->-0.1615",
+          "patch": {
+            "risk.max_bars_held": 203,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.2859,
+            "risk.take_profit": 0.6007,
+            "agents.consult_moderate.genes.exit_trend_below": -0.1615
+          }
+        },
+        {
+          "fitness": 0.3784,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.consult_risky.genes.conviction_scale+agents.risk_judge.genes.cash_floor_pct+risk.trailing_stop",
+          "hypothesis": "blind search: rsi_buy_below 38.0->44.2379, trailing_stop -0.15->-0.1748, conviction_scale 0.7356->1.1876, cash_floor_pct 0.05->0.3653",
+          "patch": {
+            "agents.consult_conservative.genes.rsi_buy_below": 44.2379,
+            "risk.trailing_stop": -0.1748,
+            "agents.consult_risky.genes.conviction_scale": 1.1876,
+            "agents.risk_judge.genes.cash_floor_pct": 0.3653
+          }
+        },
+        {
+          "fitness": 0.3344,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.consult_moderate.genes.rsi_lo+risk.take_profit+risk.trailing_stop",
+          "hypothesis": "blind search: rsi_lo 35.1764->25.0, trailing_stop -0.15->-0.2679, take_profit 0.35->0.2288, regime_ma 50->97",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 25,
+            "risk.trailing_stop": -0.2679,
+            "risk.take_profit": 0.2288,
+            "agents.analyst.genes.regime_ma": 97
+          }
+        },
+        {
+          "fitness": 0.3033,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_vol+agents.consult_risky.genes.min_rank_mom+agents.risk_judge.genes.min_conviction+risk.take_profit",
+          "hypothesis": "blind search: take_profit 0.35->0.9123, min_rank_mom 0.7->0.4522, max_vol 1.1->0.9813, min_conviction 0.3->0.6424",
+          "patch": {
+            "risk.take_profit": 0.9123,
+            "agents.consult_risky.genes.min_rank_mom": 0.4522,
+            "agents.consult_conservative.genes.max_vol": 0.9813,
+            "agents.risk_judge.genes.min_conviction": 0.6424
+          }
+        },
+        {
+          "fitness": 0.2549,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_trend_below+agents.consult_moderate.genes.min_trend+agents.consult_risky.genes.exit_trend_below+risk.trailing_stop",
+          "hypothesis": "blind search: exit_trend_below -0.03->-0.0177, min_trend 0.005->-0.0002, trailing_stop -0.15->-0.2462, exit_trend_below 0.0->0.0111",
+          "patch": {
+            "agents.consult_risky.genes.exit_trend_below": -0.0177,
+            "agents.consult_moderate.genes.min_trend": -0.0002,
+            "risk.trailing_stop": -0.2462,
+            "agents.consult_moderate.genes.exit_trend_below": 0.0111
+          }
+        },
+        {
+          "fitness": 0.2421,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_dd_from_high+agents.risk_judge.genes.lone_voice_scale+agents.risk_judge.genes.two_agree_bonus+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: max_dd_from_high -0.35->-0.5088, unanimous_bonus 1.6->1.367, lone_voice_scale 0.6->0.0191, two_agree_bonus 1.2->2.2",
+          "patch": {
+            "agents.consult_conservative.genes.max_dd_from_high": -0.5088,
+            "agents.risk_judge.genes.unanimous_bonus": 1.367,
+            "agents.risk_judge.genes.lone_voice_scale": 0.0191,
+            "agents.risk_judge.genes.two_agree_bonus": 2.2
+          }
+        }
+      ],
+      "seconds": 86,
+      "rejections": [
+        {
+          "target": "agents.analyst.genes.rsi_len+agents.consult_risky.genes.exit_trend_below+agents.consult_risky.genes.min_breakout+risk.take_profit",
+          "why": "selection fitness 0.971 did not clear champion 0.889 + required margin 0.237",
+          "fold_fitness": 0.9713
+        },
+        {
+          "target": "agents.consult_moderate.genes.min_rank_mom+risk.stop_loss+risk.take_profit+risk.trailing_stop",
+          "why": "selection fitness 0.637 did not clear champion 0.889 + required margin 0.237",
+          "fold_fitness": 0.6367
+        },
+        {
+          "target": "agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.sell_conviction_threshold+risk.max_bars_held+risk.take_profit",
+          "why": "selection fitness 0.545 did not clear champion 0.889 + required margin 0.237",
+          "fold_fitness": 0.5449
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 25,
+      "n_tested_cumulative": 25,
+      "stagnation": 0,
+      "top": [
+        {
+          "fitness": 0.9589,
+          "kind": "tune",
+          "target": "regime_scale.bear",
+          "hypothesis": "size up in 'bear' regime: 0.25 -> 0.375",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.bear": 0.375
+          }
+        },
+        {
+          "fitness": 0.8375,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.risk_judge.genes.two_agree_bonus",
+          "hypothesis": "blind search: regime_ma 50->60, two_agree_bonus 1.2->1.8255",
+          "patch": {
+            "agents.analyst.genes.regime_ma": 60,
+            "agents.risk_judge.genes.two_agree_bonus": 1.8255
+          }
+        },
+        {
+          "fitness": 0.8028,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.min_conviction+agents.risk_judge.genes.two_agree_bonus",
+          "hypothesis": "blind search: two_agree_bonus 1.2->1.3865, min_conviction 0.3->0.0673",
+          "patch": {
+            "agents.risk_judge.genes.two_agree_bonus": 1.3865,
+            "agents.risk_judge.genes.min_conviction": 0.0673
+          }
+        },
+        {
+          "fitness": 0.7545,
+          "kind": "tune",
+          "target": "agents.consult_risky.genes.conviction_scale+agents.risk_judge.genes.sell_conviction_threshold",
+          "hypothesis": "blind search: conviction_scale 0.7356->1.0191, sell_conviction_threshold 0.35->0.2768",
+          "patch": {
+            "agents.consult_risky.genes.conviction_scale": 1.0191,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.2768
+          }
+        },
+        {
+          "fitness": 0.7387,
+          "kind": "tune",
+          "target": "regime_scale.chop",
+          "hypothesis": "size down in 'chop' regime: 0.6 -> 0.3",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.chop": 0.3
+          }
+        },
+        {
+          "fitness": 0.711,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.max_position_pct",
+          "hypothesis": "blind search: base_size_pct 0.12->0.1414, max_position_pct 0.25->0.2742",
+          "patch": {
+            "agents.risk_judge.genes.base_size_pct": 0.1414,
+            "agents.risk_judge.genes.max_position_pct": 0.2742
+          }
+        },
+        {
+          "fitness": 0.6647,
+          "kind": "tune",
+          "target": "regime_scale.chop",
+          "hypothesis": "size up in 'chop' regime: 0.6 -> 0.9",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.chop": 0.9
+          }
+        },
+        {
+          "fitness": 0.6637,
+          "kind": "tune",
+          "target": "regime_scale.bull",
+          "hypothesis": "size down in 'bull' regime: 1.0 -> 0.5",
+          "patch": {
+            "agents.risk_judge.genes.regime_scale.bull": 0.5
+          }
+        }
+      ],
+      "seconds": 145,
+      "rejections": [
+        {
+          "target": "regime_scale.bear",
+          "why": "selection fitness 0.959 did not clear champion 0.889 + required margin 0.203",
+          "fold_fitness": 0.9589
+        },
+        {
+          "target": "agents.analyst.genes.regime_ma+agents.risk_judge.genes.two_agree_bonus",
+          "why": "selection fitness 0.837 did not clear champion 0.889 + required margin 0.203",
+          "fold_fitness": 0.8375
+        },
+        {
+          "target": "agents.risk_judge.genes.min_conviction+agents.risk_judge.genes.two_agree_bonus",
+          "why": "selection fitness 0.803 did not clear champion 0.889 + required margin 0.203",
+          "fold_fitness": 0.8028
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 39,
+      "stagnation": 1,
+      "top": [
+        {
+          "fitness": 0.6462,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_rsi",
+          "hypothesis": "blind search: exit_rsi 88.0->90.2901, rsi_lo 35.1764->45.802",
+          "patch": {
+            "agents.consult_risky.genes.exit_rsi": 90.2901,
+            "agents.consult_moderate.genes.rsi_lo": 45.802
+          }
+        },
+        {
+          "fitness": 0.6449,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.consult_risky.genes.exit_trend_below",
+          "hypothesis": "blind search: exit_trend_below -0.03->-0.0679, rsi_buy_below 38.0->42.8019",
+          "patch": {
+            "agents.consult_risky.genes.exit_trend_below": -0.0679,
+            "agents.consult_conservative.genes.rsi_buy_below": 42.8019
+          }
+        },
+        {
+          "fitness": 0.6416,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_trend_below+agents.superior_judge.genes.max_new_positions_per_bar",
+          "hypothesis": "blind search: exit_trend_below 0.0->-0.2068, max_new_positions_per_bar 3->4",
+          "patch": {
+            "agents.consult_moderate.genes.exit_trend_below": -0.2068,
+            "agents.superior_judge.genes.max_new_positions_per_bar": 4
+          }
+        },
+        {
+          "fitness": 0.4578,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_slow+agents.consult_conservative.genes.conviction_scale",
+          "hypothesis": "blind search: trend_slow 50->51, conviction_scale 0.8->0.8991",
+          "patch": {
+            "agents.analyst.genes.trend_slow": 51,
+            "agents.consult_conservative.genes.conviction_scale": 0.8991
+          }
+        },
+        {
+          "fitness": 0.3787,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.consult_moderate.genes.min_rank_mom",
+          "hypothesis": "blind search: z_buy_below -0.8->-2.9452, min_rank_mom 0.5->0.5543",
+          "patch": {
+            "agents.consult_conservative.genes.z_buy_below": -2.9452,
+            "agents.consult_moderate.genes.min_rank_mom": 0.5543
+          }
+        },
+        {
+          "fitness": 0.3129,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.risk_judge.genes.max_positions",
+          "hypothesis": "blind search: max_positions 6->3, z_buy_below -0.8->-1.1693",
+          "patch": {
+            "agents.risk_judge.genes.max_positions": 3,
+            "agents.consult_conservative.genes.z_buy_below": -1.1693
+          }
+        },
+        {
+          "fitness": 0.2864,
+          "kind": "tune",
+          "target": "agents.consult_risky.genes.conviction_scale+agents.consult_risky.genes.min_rank_mom",
+          "hypothesis": "blind search: conviction_scale 0.7356->0.6686, min_rank_mom 0.7->0.3613",
+          "patch": {
+            "agents.consult_risky.genes.conviction_scale": 0.6686,
+            "agents.consult_risky.genes.min_rank_mom": 0.3613
+          }
+        },
+        {
+          "fitness": 0.2818,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_vol+agents.risk_judge.genes.lone_voice_scale",
+          "hypothesis": "blind search: max_vol 1.1->2.1169, lone_voice_scale 0.6->0.4638",
+          "patch": {
+            "agents.consult_conservative.genes.max_vol": 2.1169,
+            "agents.risk_judge.genes.lone_voice_scale": 0.4638
+          }
+        }
+      ],
+      "seconds": 84.7,
+      "rejections": [
+        {
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_rsi",
+          "why": "selection fitness 0.646 did not clear champion 0.889 + required margin 0.217",
+          "fold_fitness": 0.6462
+        },
+        {
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.consult_risky.genes.exit_trend_below",
+          "why": "selection fitness 0.645 did not clear champion 0.889 + required margin 0.217",
+          "fold_fitness": 0.6449
+        },
+        {
+          "target": "agents.consult_moderate.genes.exit_trend_below+agents.superior_judge.genes.max_new_positions_per_bar",
+          "why": "selection fitness 0.642 did not clear champion 0.889 + required margin 0.217",
+          "fold_fitness": 0.6416
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 53,
+      "stagnation": 2,
+      "top": [
+        {
+          "fitness": 0.895,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.cash_floor_pct",
+          "hypothesis": "blind search: exit_rsi 68.0->50.0, base_size_pct 0.12->0.1198, cash_floor_pct 0.05->0.1126",
+          "patch": {
+            "agents.consult_conservative.genes.exit_rsi": 50,
+            "agents.risk_judge.genes.base_size_pct": 0.1198,
+            "agents.risk_judge.genes.cash_floor_pct": 0.1126
+          }
+        },
+        {
+          "fitness": 0.8066,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_risky.genes.exit_trend_below+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: unanimous_bonus 1.6->3.0, conviction_scale 1.0->1.7994, exit_trend_below -0.03->-0.0695",
+          "patch": {
+            "agents.risk_judge.genes.unanimous_bonus": 3,
+            "agents.consult_moderate.genes.conviction_scale": 1.7994,
+            "agents.consult_risky.genes.exit_trend_below": -0.0695
+          }
+        },
+        {
+          "fitness": 0.7925,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.min_trend+agents.consult_moderate.genes.rsi_lo+agents.risk_judge.genes.cash_floor_pct",
+          "hypothesis": "blind search: rsi_lo 35.1764->56.7232, min_trend -0.01->-0.0238, cash_floor_pct 0.05->0.0",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 56.7232,
+            "agents.consult_conservative.genes.min_trend": -0.0238,
+            "agents.risk_judge.genes.cash_floor_pct": 0
+          }
+        },
+        {
+          "fitness": 0.7625,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.consult_conservative.genes.max_vol+risk.take_profit",
+          "hypothesis": "blind search: max_vol 1.1->0.9571, take_profit 0.35->0.3311, regime_ma 50->20",
+          "patch": {
+            "agents.consult_conservative.genes.max_vol": 0.9571,
+            "risk.take_profit": 0.3311,
+            "agents.analyst.genes.regime_ma": 20
+          }
+        },
+        {
+          "fitness": 0.6977,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_hi+agents.risk_judge.genes.cash_floor_pct+risk.trailing_stop",
+          "hypothesis": "blind search: cash_floor_pct 0.05->0.0896, rsi_hi 72.0->92.0, trailing_stop -0.15->-0.1432",
+          "patch": {
+            "agents.risk_judge.genes.cash_floor_pct": 0.0896,
+            "agents.consult_moderate.genes.rsi_hi": 92,
+            "risk.trailing_stop": -0.1432
+          }
+        },
+        {
+          "fitness": 0.5731,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_slow+agents.consult_moderate.genes.exit_trend_below+agents.consult_moderate.genes.rsi_lo",
+          "hypothesis": "blind search: exit_trend_below 0.0->-0.2356, trend_slow 50->85, rsi_lo 35.1764->46.437",
+          "patch": {
+            "agents.consult_moderate.genes.exit_trend_below": -0.2356,
+            "agents.analyst.genes.trend_slow": 85,
+            "agents.consult_moderate.genes.rsi_lo": 46.437
+          }
+        },
+        {
+          "fitness": 0.5082,
+          "kind": "tune",
+          "target": "agents.analyst.genes.breakout_len+agents.consult_conservative.genes.rsi_buy_below+risk.trailing_stop",
+          "hypothesis": "blind search: trailing_stop -0.15->-0.1128, rsi_buy_below 38.0->23.7945, breakout_len 20->5",
+          "patch": {
+            "risk.trailing_stop": -0.1128,
+            "agents.consult_conservative.genes.rsi_buy_below": 23.7945,
+            "agents.analyst.genes.breakout_len": 5
+          }
+        },
+        {
+          "fitness": 0.4148,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_slow+agents.consult_conservative.genes.min_trend+agents.consult_moderate.genes.min_rank_mom",
+          "hypothesis": "blind search: trend_slow 50->149, min_trend -0.01->-0.0091, min_rank_mom 0.5->0.3238",
+          "patch": {
+            "agents.analyst.genes.trend_slow": 149,
+            "agents.consult_conservative.genes.min_trend": -0.0091,
+            "agents.consult_moderate.genes.min_rank_mom": 0.3238
+          }
+        }
+      ],
+      "seconds": 85.5,
+      "rejections": [
+        {
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.cash_floor_pct",
+          "why": "selection fitness 0.895 did not clear champion 0.889 + required margin 0.225",
+          "fold_fitness": 0.895
+        },
+        {
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_risky.genes.exit_trend_below+agents.risk_judge.genes.unanimous_bonus",
+          "why": "selection fitness 0.807 did not clear champion 0.889 + required margin 0.225",
+          "fold_fitness": 0.8066
+        },
+        {
+          "target": "agents.consult_conservative.genes.min_trend+agents.consult_moderate.genes.rsi_lo+agents.risk_judge.genes.cash_floor_pct",
+          "why": "selection fitness 0.793 did not clear champion 0.889 + required margin 0.225",
+          "fold_fitness": 0.7925
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 67,
+      "stagnation": 3,
+      "top": [
+        {
+          "fitness": 0.9051,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.risk_judge.genes.min_conviction",
+          "hypothesis": "blind search: min_conviction 0.3->0.0972, rsi_buy_below 38.0->43.5173",
+          "patch": {
+            "agents.risk_judge.genes.min_conviction": 0.0972,
+            "agents.consult_conservative.genes.rsi_buy_below": 43.5173
+          }
+        },
+        {
+          "fitness": 0.8378,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.consult_moderate.genes.rsi_lo+risk.take_profit",
+          "hypothesis": "blind search: rsi_lo 35.1764->60.0, exit_rsi 80.0->74.6894, take_profit 0.35->0.8428",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 60,
+            "agents.consult_moderate.genes.exit_rsi": 74.6894,
+            "risk.take_profit": 0.8428
+          }
+        },
+        {
+          "fitness": 0.7902,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.max_position_pct+agents.risk_judge.genes.sell_conviction_threshold+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: max_position_pct 0.25->0.309, sell_conviction_threshold 0.35->0.2359, unanimous_bonus 1.6->1.1009",
+          "patch": {
+            "agents.risk_judge.genes.max_position_pct": 0.309,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.2359,
+            "agents.risk_judge.genes.unanimous_bonus": 1.1009
+          }
+        },
+        {
+          "fitness": 0.6232,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.min_trend+agents.risk_judge.genes.cash_floor_pct",
+          "hypothesis": "blind search: min_trend 0.005->-0.0151, cash_floor_pct 0.05->0.3122, conviction_scale 1.0->1.2576",
+          "patch": {
+            "agents.consult_moderate.genes.min_trend": -0.0151,
+            "agents.risk_judge.genes.cash_floor_pct": 0.3122,
+            "agents.consult_moderate.genes.conviction_scale": 1.2576
+          }
+        },
+        {
+          "fitness": 0.5663,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.max_position_pct",
+          "hypothesis": "blind search: max_position_pct 0.25->0.3031, z_buy_below -0.8->0.0794, base_size_pct 0.12->0.1463",
+          "patch": {
+            "agents.risk_judge.genes.max_position_pct": 0.3031,
+            "agents.consult_conservative.genes.z_buy_below": 0.0794,
+            "agents.risk_judge.genes.base_size_pct": 0.1463
+          }
+        },
+        {
+          "fitness": 0.5353,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.risk_judge.genes.max_position_pct+risk.stop_loss",
+          "hypothesis": "blind search: stop_loss -0.12->-0.2064, exit_rsi 80.0->72.303, max_position_pct 0.25->0.34",
+          "patch": {
+            "risk.stop_loss": -0.2064,
+            "agents.consult_moderate.genes.exit_rsi": 72.303,
+            "agents.risk_judge.genes.max_position_pct": 0.34
+          }
+        },
+        {
+          "fitness": 0.4859,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.consult_moderate.genes.conviction_scale+agents.consult_risky.genes.exit_trend_below",
+          "hypothesis": "blind search: z_buy_below -0.8->-1.5122, conviction_scale 1.0->1.0309, exit_trend_below -0.03->-0.0502",
+          "patch": {
+            "agents.consult_conservative.genes.z_buy_below": -1.5122,
+            "agents.consult_moderate.genes.conviction_scale": 1.0309,
+            "agents.consult_risky.genes.exit_trend_below": -0.0502
+          }
+        },
+        {
+          "fitness": 0.4441,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_fast+agents.consult_moderate.genes.rsi_lo+agents.risk_judge.genes.two_agree_bonus",
+          "hypothesis": "blind search: two_agree_bonus 1.2->0.8426, trend_fast 10->9, rsi_lo 35.1764->36.3786",
+          "patch": {
+            "agents.risk_judge.genes.two_agree_bonus": 0.8426,
+            "agents.analyst.genes.trend_fast": 9,
+            "agents.consult_moderate.genes.rsi_lo": 36.3786
+          }
+        }
+      ],
+      "seconds": 92.7,
+      "rejections": [
+        {
+          "target": "agents.consult_conservative.genes.rsi_buy_below+agents.risk_judge.genes.min_conviction",
+          "why": "selection fitness 0.905 did not clear champion 0.889 + required margin 0.232",
+          "fold_fitness": 0.9051
+        },
+        {
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.consult_moderate.genes.rsi_lo+risk.take_profit",
+          "why": "selection fitness 0.838 did not clear champion 0.889 + required margin 0.232",
+          "fold_fitness": 0.8378
+        },
+        {
+          "target": "agents.risk_judge.genes.max_position_pct+agents.risk_judge.genes.sell_conviction_threshold+agents.risk_judge.genes.unanimous_bonus",
+          "why": "selection fitness 0.790 did not clear champion 0.889 + required margin 0.232",
+          "fold_fitness": 0.7902
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 81,
+      "stagnation": 4,
+      "top": [
+        {
+          "fitness": 0.8316,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_hi+agents.consult_risky.genes.exit_trend_below+agents.risk_judge.genes.two_agree_bonus+risk.stop_loss",
+          "hypothesis": "blind search: exit_trend_below -0.03->-0.135, rsi_hi 72.0->92.0, two_agree_bonus 1.2->1.3957, stop_loss -0.12->-0.2134",
+          "patch": {
+            "agents.consult_risky.genes.exit_trend_below": -0.135,
+            "agents.consult_moderate.genes.rsi_hi": 92,
+            "agents.risk_judge.genes.two_agree_bonus": 1.3957,
+            "risk.stop_loss": -0.2134
+          }
+        },
+        {
+          "fitness": 0.7047,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.consult_moderate.genes.rsi_hi+agents.consult_risky.genes.min_breakout+risk.trailing_stop",
+          "hypothesis": "blind search: min_breakout -0.02->-0.0222, trailing_stop -0.15->-0.3918, rsi_hi 72.0->91.0619, z_buy_below -0.8->-1.7289",
+          "patch": {
+            "agents.consult_risky.genes.min_breakout": -0.0222,
+            "risk.trailing_stop": -0.3918,
+            "agents.consult_moderate.genes.rsi_hi": 91.0619,
+            "agents.consult_conservative.genes.z_buy_below": -1.7289
+          }
+        },
+        {
+          "fitness": 0.4029,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.consult_moderate.genes.rsi_hi+agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_rsi",
+          "hypothesis": "blind search: rsi_lo 35.1764->25.9953, exit_rsi 88.0->73.9261, exit_rsi 80.0->99.0, rsi_hi 72.0->74.3779",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 25.9953,
+            "agents.consult_risky.genes.exit_rsi": 73.9261,
+            "agents.consult_moderate.genes.exit_rsi": 99,
+            "agents.consult_moderate.genes.rsi_hi": 74.3779
+          }
+        },
+        {
+          "fitness": 0.3929,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.consult_moderate.genes.exit_trend_below+agents.consult_moderate.genes.rsi_lo",
+          "hypothesis": "blind search: rsi_lo 35.1764->49.6136, z_buy_below -0.8->-1.8428, exit_trend_below 0.0->-0.0358",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 49.6136,
+            "agents.consult_conservative.genes.z_buy_below": -1.8428,
+            "agents.consult_moderate.genes.exit_trend_below": -0.0358
+          }
+        },
+        {
+          "fitness": 0.2795,
+          "kind": "tune",
+          "target": "agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.cash_floor_pct+agents.risk_judge.genes.lone_voice_scale+risk.stop_loss",
+          "hypothesis": "blind search: lone_voice_scale 0.6->0.8255, cash_floor_pct 0.05->0.3797, base_size_pct 0.12->0.2258, stop_loss -0.12->-0.0961",
+          "patch": {
+            "agents.risk_judge.genes.lone_voice_scale": 0.8255,
+            "agents.risk_judge.genes.cash_floor_pct": 0.3797,
+            "agents.risk_judge.genes.base_size_pct": 0.2258,
+            "risk.stop_loss": -0.0961
+          }
+        },
+        {
+          "fitness": 0.1954,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.consult_conservative.genes.min_trend+agents.consult_moderate.genes.conviction_scale+agents.risk_judge.genes.sell_conviction_threshold",
+          "hypothesis": "blind search: sell_conviction_threshold 0.35->0.121, min_trend -0.01->-0.1146, regime_ma 50->87, conviction_scale 1.0->0.3887",
+          "patch": {
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.121,
+            "agents.consult_conservative.genes.min_trend": -0.1146,
+            "agents.analyst.genes.regime_ma": 87,
+            "agents.consult_moderate.genes.conviction_scale": 0.3887
+          }
+        },
+        {
+          "fitness": 0.1232,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.consult_conservative.genes.z_buy_below+agents.risk_judge.genes.lone_voice_scale+agents.risk_judge.genes.min_conviction",
+          "hypothesis": "blind search: min_conviction 0.3->0.6403, exit_rsi 68.0->50.0, lone_voice_scale 0.6->0.2079, z_buy_below -0.8->0.0135",
+          "patch": {
+            "agents.risk_judge.genes.min_conviction": 0.6403,
+            "agents.consult_conservative.genes.exit_rsi": 50,
+            "agents.risk_judge.genes.lone_voice_scale": 0.2079,
+            "agents.consult_conservative.genes.z_buy_below": 0.0135
+          }
+        },
+        {
+          "fitness": 0.123,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.consult_conservative.genes.max_dd_from_high+agents.consult_moderate.genes.rsi_lo+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: unanimous_bonus 1.6->1.2394, max_dd_from_high -0.35->-0.431, exit_rsi 68.0->53.3664, rsi_lo 35.1764->37.0174",
+          "patch": {
+            "agents.risk_judge.genes.unanimous_bonus": 1.2394,
+            "agents.consult_conservative.genes.max_dd_from_high": -0.431,
+            "agents.consult_conservative.genes.exit_rsi": 53.3664,
+            "agents.consult_moderate.genes.rsi_lo": 37.0174
+          }
+        }
+      ],
+      "seconds": 92.8,
+      "rejections": [
+        {
+          "target": "agents.consult_moderate.genes.rsi_hi+agents.consult_risky.genes.exit_trend_below+agents.risk_judge.genes.two_agree_bonus+risk.stop_loss",
+          "why": "selection fitness 0.832 did not clear champion 0.889 + required margin 0.237",
+          "fold_fitness": 0.8316
+        },
+        {
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.consult_moderate.genes.rsi_hi+agents.consult_risky.genes.min_breakout+risk.trailing_stop",
+          "why": "selection fitness 0.705 did not clear champion 0.889 + required margin 0.237",
+          "fold_fitness": 0.7047
+        },
+        {
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.consult_moderate.genes.rsi_hi+agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_rsi",
+          "why": "selection fitness 0.403 did not clear champion 0.889 + required margin 0.237",
+          "fold_fitness": 0.4029
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.8892085542760714,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1674947069473196,
+        "sharpe": 0.8770835680366581,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.86283159170439,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.759961603996636,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 95,
+      "stagnation": 5,
+      "top": [
+        {
+          "fitness": 0.7954,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_fast+agents.consult_moderate.genes.exit_trend_below+agents.consult_risky.genes.min_rank_mom+agents.risk_judge.genes.lone_voice_scale",
+          "hypothesis": "blind search: min_rank_mom 0.7->0.6185, trend_fast 10->7, exit_trend_below 0.0->-0.0492, lone_voice_scale 0.6->0.8876",
+          "patch": {
+            "agents.consult_risky.genes.min_rank_mom": 0.6185,
+            "agents.analyst.genes.trend_fast": 7,
+            "agents.consult_moderate.genes.exit_trend_below": -0.0492,
+            "agents.risk_judge.genes.lone_voice_scale": 0.8876
+          }
+        },
+        {
+          "fitness": 0.5562,
+          "kind": "tune",
+          "target": "agents.analyst.genes.rsi_len+agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.min_conviction+agents.risk_judge.genes.sell_conviction_threshold",
+          "hypothesis": "blind search: min_conviction 0.3->0.1666, sell_conviction_threshold 0.35->0.3474, exit_trend_below 0.0->-0.1539, rsi_len 14->29",
+          "patch": {
+            "agents.risk_judge.genes.min_conviction": 0.1666,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.3474,
+            "agents.consult_moderate.genes.exit_trend_below": -0.1539,
+            "agents.analyst.genes.rsi_len": 29
+          }
+        },
+        {
+          "fitness": 0.4728,
+          "kind": "tune",
+          "target": "agents.analyst.genes.breakout_len+agents.consult_conservative.genes.z_buy_below+agents.consult_moderate.genes.exit_rsi+risk.max_bars_held",
+          "hypothesis": "blind search: exit_rsi 80.0->97.4412, z_buy_below -0.8->-1.6819, max_bars_held 60->28, breakout_len 20->40",
+          "patch": {
+            "agents.consult_moderate.genes.exit_rsi": 97.4412,
+            "agents.consult_conservative.genes.z_buy_below": -1.6819,
+            "risk.max_bars_held": 28,
+            "agents.analyst.genes.breakout_len": 40
+          }
+        },
+        {
+          "fitness": 0.4567,
+          "kind": "tune",
+          "target": "agents.analyst.genes.rsi_len+agents.consult_conservative.genes.rsi_buy_below+agents.superior_judge.genes.max_new_positions_per_bar+risk.stop_loss",
+          "hypothesis": "blind search: stop_loss -0.12->-0.2754, max_new_positions_per_bar 3->4, rsi_buy_below 38.0->22.0305, rsi_len 14->24",
+          "patch": {
+            "risk.stop_loss": -0.2754,
+            "agents.superior_judge.genes.max_new_positions_per_bar": 4,
+            "agents.consult_conservative.genes.rsi_buy_below": 22.0305,
+            "agents.analyst.genes.rsi_len": 24
+          }
+        },
+        {
+          "fitness": 0.3846,
+          "kind": "tune",
+          "target": "agents.analyst.genes.breakout_len+agents.analyst.genes.trend_fast+agents.consult_conservative.genes.max_dd_from_high+agents.consult_conservative.genes.rsi_buy_below",
+          "hypothesis": "blind search: breakout_len 20->49, max_dd_from_high -0.35->-0.5956, trend_fast 10->4, rsi_buy_below 38.0->16.586",
+          "patch": {
+            "agents.analyst.genes.breakout_len": 49,
+            "agents.consult_conservative.genes.max_dd_from_high": -0.5956,
+            "agents.analyst.genes.trend_fast": 4,
+            "agents.consult_conservative.genes.rsi_buy_below": 16.586
+          }
+        },
+        {
+          "fitness": 0.2375,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.min_trend+agents.risk_judge.genes.max_positions+risk.stop_loss",
+          "hypothesis": "blind search: stop_loss -0.12->-0.2405, max_positions 6->2, min_trend 0.005->0.0738, conviction_scale 1.0->0.9466",
+          "patch": {
+            "risk.stop_loss": -0.2405,
+            "agents.risk_judge.genes.max_positions": 2,
+            "agents.consult_moderate.genes.min_trend": 0.0738,
+            "agents.consult_moderate.genes.conviction_scale": 0.9466
+          }
+        },
+        {
+          "fitness": 0.227,
+          "kind": "tune",
+          "target": "agents.analyst.genes.rsi_len+agents.consult_conservative.genes.conviction_scale+agents.consult_conservative.genes.min_trend+agents.consult_moderate.genes.conviction_scale",
+          "hypothesis": "blind search: conviction_scale 1.0->0.5706, rsi_len 14->37, conviction_scale 0.8->0.8248, min_trend -0.01->0.0392",
+          "patch": {
+            "agents.consult_moderate.genes.conviction_scale": 0.5706,
+            "agents.analyst.genes.rsi_len": 37,
+            "agents.consult_conservative.genes.conviction_scale": 0.8248,
+            "agents.consult_conservative.genes.min_trend": 0.0392
+          }
+        },
+        {
+          "fitness": 0.2226,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_rsi+agents.risk_judge.genes.two_agree_bonus+risk.max_bars_held",
+          "hypothesis": "blind search: rsi_lo 35.1764->60.0, two_agree_bonus 1.2->1.0132, exit_rsi 88.0->68.672, max_bars_held 60->70",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_lo": 60,
+            "agents.risk_judge.genes.two_agree_bonus": 1.0132,
+            "agents.consult_risky.genes.exit_rsi": 68.672,
+            "risk.max_bars_held": 70
+          }
+        }
+      ],
+      "seconds": 91.7,
+      "rejections": [
+        {
+          "target": "agents.analyst.genes.trend_fast+agents.consult_moderate.genes.exit_trend_below+agents.consult_risky.genes.min_rank_mom+agents.risk_judge.genes.lone_voice_scale",
+          "why": "selection fitness 0.795 did not clear champion 0.889 + required margin 0.241",
+          "fold_fitness": 0.7954
+        },
+        {
+          "target": "agents.analyst.genes.rsi_len+agents.consult_moderate.genes.exit_trend_below+agents.risk_judge.genes.min_conviction+agents.risk_judge.genes.sell_conviction_threshold",
+          "why": "selection fitness 0.556 did not clear champion 0.889 + required margin 0.241",
+          "fold_fitness": 0.5562
+        },
+        {
+          "target": "agents.analyst.genes.breakout_len+agents.consult_conservative.genes.z_buy_below+agents.consult_moderate.genes.exit_rsi+risk.max_bars_held",
+          "why": "selection fitness 0.473 did not clear champion 0.889 + required margin 0.241",
+          "fold_fitness": 0.4728
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.889526724615483,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1678944654616705,
+        "sharpe": 0.877383887705804,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.88808010649323,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.78650952290348,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 15,
+      "n_tested_cumulative": 110,
+      "stagnation": 6,
+      "top": [
+        {
+          "fitness": 0.8738,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.consult_moderate.genes.exit_trend_below+agents.consult_risky.genes.min_rank_mom+agents.risk_judge.genes.two_agree_bonus+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: min_rank_mom 0.7->0.7616, regime_ma 50->32, two_agree_bonus 1.2->1.7959, unanimous_bonus 1.6->3.0, exit_trend_below 0.0->-0.0863",
+          "patch": {
+            "agents.consult_risky.genes.min_rank_mom": 0.7616,
+            "agents.analyst.genes.regime_ma": 32,
+            "agents.risk_judge.genes.two_agree_bonus": 1.7959,
+            "agents.risk_judge.genes.unanimous_bonus": 3,
+            "agents.consult_moderate.genes.exit_trend_below": -0.0863
+          }
+        },
+        {
+          "fitness": 0.7421,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.conviction_scale+agents.risk_judge.genes.max_positions+agents.risk_judge.genes.min_conviction+agents.superior_judge.genes.max_new_positions_per_bar+risk.trailing_stop",
+          "hypothesis": "blind search: max_new_positions_per_bar 3->5, conviction_scale 0.8->0.3, trailing_stop -0.15->-0.219, min_conviction 0.3->0.7449, max_positions 6->2",
+          "patch": {
+            "agents.superior_judge.genes.max_new_positions_per_bar": 5,
+            "agents.consult_conservative.genes.conviction_scale": 0.3,
+            "risk.trailing_stop": -0.219,
+            "agents.risk_judge.genes.min_conviction": 0.7449,
+            "agents.risk_judge.genes.max_positions": 2
+          }
+        },
+        {
+          "fitness": 0.6828,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.rsi_max+risk.max_bars_held+risk.take_profit",
+          "hypothesis": "blind search: max_bars_held 60->237, take_profit 0.35->0.1513, rsi_lo 35.1764->60.0, rsi_max 82.0->95.0",
+          "patch": {
+            "risk.max_bars_held": 237,
+            "risk.take_profit": 0.1513,
+            "agents.consult_moderate.genes.rsi_lo": 60,
+            "agents.consult_risky.genes.rsi_max": 95
+          }
+        },
+        {
+          "fitness": 0.4233,
+          "kind": "tune",
+          "target": "correlation_penalty",
+          "hypothesis": "cross-asset correlation awareness: penalize new entries that are highly correlated with existing holdings (0.0 -> 0.5)",
+          "patch": {
+            "agents.risk_judge.genes.correlation_penalty": 0.5
+          }
+        },
+        {
+          "fitness": 0.3736,
+          "kind": "tune",
+          "target": "agents.analyst.genes.rsi_len+agents.consult_risky.genes.min_breakout+agents.consult_risky.genes.min_rank_mom+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: rsi_len 14->8, unanimous_bonus 1.6->1.0191, min_breakout -0.02->-0.0197, min_rank_mom 0.7->0.3",
+          "patch": {
+            "agents.analyst.genes.rsi_len": 8,
+            "agents.risk_judge.genes.unanimous_bonus": 1.0191,
+            "agents.consult_risky.genes.min_breakout": -0.0197,
+            "agents.consult_risky.genes.min_rank_mom": 0.3
+          }
+        },
+        {
+          "fitness": 0.2976,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_hi+agents.consult_risky.genes.conviction_scale+agents.consult_risky.genes.rsi_max+agents.risk_judge.genes.max_position_pct+risk.max_bars_held",
+          "hypothesis": "blind search: rsi_hi 72.0->73.5073, max_bars_held 60->10, rsi_max 82.0->93.0996, max_position_pct 0.25->0.0669, conviction_scale 0.7356->0.6897",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_hi": 73.5073,
+            "risk.max_bars_held": 10,
+            "agents.consult_risky.genes.rsi_max": 93.0996,
+            "agents.risk_judge.genes.max_position_pct": 0.0669,
+            "agents.consult_risky.genes.conviction_scale": 0.6897
+          }
+        },
+        {
+          "fitness": 0.2525,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.consult_moderate.genes.min_trend+agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.max_position_pct+risk.take_profit",
+          "hypothesis": "blind search: min_trend 0.005->0.0258, take_profit 0.35->0.6492, base_size_pct 0.12->0.0338, max_position_pct 0.25->0.078, exit_rsi 80.0->99.0",
+          "patch": {
+            "agents.consult_moderate.genes.min_trend": 0.0258,
+            "risk.take_profit": 0.6492,
+            "agents.risk_judge.genes.base_size_pct": 0.0338,
+            "agents.risk_judge.genes.max_position_pct": 0.078,
+            "agents.consult_moderate.genes.exit_rsi": 99
+          }
+        },
+        {
+          "fitness": 0.1406,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_trend_below+agents.consult_moderate.genes.max_vol+agents.risk_judge.genes.max_positions+agents.superior_judge.genes.max_new_positions_per_bar",
+          "hypothesis": "blind search: exit_trend_below 0.0->-0.1704, max_new_positions_per_bar 3->2, max_vol 1.6->1.3034, max_positions 6->10",
+          "patch": {
+            "agents.consult_moderate.genes.exit_trend_below": -0.1704,
+            "agents.superior_judge.genes.max_new_positions_per_bar": 2,
+            "agents.consult_moderate.genes.max_vol": 1.3034,
+            "agents.risk_judge.genes.max_positions": 10
+          }
+        }
+      ],
+      "seconds": 94.9,
+      "rejections": [
+        {
+          "target": "agents.analyst.genes.regime_ma+agents.consult_moderate.genes.exit_trend_below+agents.consult_risky.genes.min_rank_mom+agents.risk_judge.genes.two_agree_bonus+agents.risk_judge.genes.unanimous_bonus",
+          "why": "selection fitness 0.874 did not clear champion 0.890 + required margin 0.245",
+          "fold_fitness": 0.8738
+        },
+        {
+          "target": "agents.consult_conservative.genes.conviction_scale+agents.risk_judge.genes.max_positions+agents.risk_judge.genes.min_conviction+agents.superior_judge.genes.max_new_positions_per_bar+risk.trailing_stop",
+          "why": "selection fitness 0.742 did not clear champion 0.890 + required margin 0.245",
+          "fold_fitness": 0.7421
+        },
+        {
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.rsi_max+risk.max_bars_held+risk.take_profit",
+          "why": "selection fitness 0.683 did not clear champion 0.890 + required margin 0.245",
+          "fold_fitness": 0.6828
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.889526724615483,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1678944654616705,
+        "sharpe": 0.877383887705804,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.88808010649323,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.78650952290348,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 124,
+      "stagnation": 7,
+      "top": [
+        {
+          "fitness": 0.5009,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.conviction_scale+agents.consult_moderate.genes.exit_rsi+agents.risk_judge.genes.cash_floor_pct+risk.stop_loss+risk.take_profit",
+          "hypothesis": "blind search: take_profit 0.35->0.3086, conviction_scale 0.8->0.3, cash_floor_pct 0.05->0.1957, exit_rsi 80.0->99.0, stop_loss -0.12->-0.1022",
+          "patch": {
+            "risk.take_profit": 0.3086,
+            "agents.consult_conservative.genes.conviction_scale": 0.3,
+            "agents.risk_judge.genes.cash_floor_pct": 0.1957,
+            "agents.consult_moderate.genes.exit_rsi": 99,
+            "risk.stop_loss": -0.1022
+          }
+        },
+        {
+          "fitness": 0.429,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_vol+agents.consult_risky.genes.exit_trend_below+agents.consult_risky.genes.rsi_max+agents.risk_judge.genes.lone_voice_scale+risk.trailing_stop",
+          "hypothesis": "blind search: exit_trend_below -0.03->-0.2041, trailing_stop -0.15->-0.05, lone_voice_scale 0.6->0.0037, max_vol 1.1->0.7551, rsi_max 82.0->60.6336",
+          "patch": {
+            "agents.consult_risky.genes.exit_trend_below": -0.2041,
+            "risk.trailing_stop": -0.05,
+            "agents.risk_judge.genes.lone_voice_scale": 0.0037,
+            "agents.consult_conservative.genes.max_vol": 0.7551,
+            "agents.consult_risky.genes.rsi_max": 60.6336
+          }
+        },
+        {
+          "fitness": 0.3964,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.consult_moderate.genes.rsi_hi+agents.risk_judge.genes.lone_voice_scale+agents.risk_judge.genes.max_positions",
+          "hypothesis": "blind search: rsi_hi 72.0->92.0, max_positions 6->7, regime_ma 50->28, lone_voice_scale 0.6->0.5844",
+          "patch": {
+            "agents.consult_moderate.genes.rsi_hi": 92,
+            "agents.risk_judge.genes.max_positions": 7,
+            "agents.analyst.genes.regime_ma": 28,
+            "agents.risk_judge.genes.lone_voice_scale": 0.5844
+          }
+        },
+        {
+          "fitness": 0.279,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.z_buy_below+agents.consult_risky.genes.conviction_scale+agents.consult_risky.genes.rsi_max+agents.risk_judge.genes.max_positions+agents.risk_judge.genes.sell_conviction_threshold",
+          "hypothesis": "blind search: z_buy_below -0.8->-1.9275, conviction_scale 0.7356->1.6602, rsi_max 82.0->85.4818, max_positions 6->10, sell_conviction_threshold 0.35->0.1982",
+          "patch": {
+            "agents.consult_conservative.genes.z_buy_below": -1.9275,
+            "agents.consult_risky.genes.conviction_scale": 1.6602,
+            "agents.consult_risky.genes.rsi_max": 85.4818,
+            "agents.risk_judge.genes.max_positions": 10,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.1982
+          }
+        },
+        {
+          "fitness": 0.2768,
+          "kind": "tune",
+          "target": "agents.analyst.genes.breakout_len+agents.analyst.genes.regime_ma+agents.consult_conservative.genes.rsi_buy_below+agents.consult_risky.genes.conviction_scale+agents.risk_judge.genes.base_size_pct",
+          "hypothesis": "blind search: rsi_buy_below 38.0->42.0803, conviction_scale 0.7356->1.8995, base_size_pct 0.12->0.1579, breakout_len 20->88, regime_ma 50->110",
+          "patch": {
+            "agents.consult_conservative.genes.rsi_buy_below": 42.0803,
+            "agents.consult_risky.genes.conviction_scale": 1.8995,
+            "agents.risk_judge.genes.base_size_pct": 0.1579,
+            "agents.analyst.genes.breakout_len": 88,
+            "agents.analyst.genes.regime_ma": 110
+          }
+        },
+        {
+          "fitness": 0.2559,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.consult_moderate.genes.max_vol+agents.consult_moderate.genes.rsi_hi+agents.risk_judge.genes.sell_conviction_threshold+agents.risk_judge.genes.two_agree_bonus",
+          "hypothesis": "blind search: max_vol 1.6->2.8612, regime_ma 50->71, two_agree_bonus 1.2->1.8423, rsi_hi 72.0->91.8289, sell_conviction_threshold 0.35->0.2127",
+          "patch": {
+            "agents.consult_moderate.genes.max_vol": 2.8612,
+            "agents.analyst.genes.regime_ma": 71,
+            "agents.risk_judge.genes.two_agree_bonus": 1.8423,
+            "agents.consult_moderate.genes.rsi_hi": 91.8289,
+            "agents.risk_judge.genes.sell_conviction_threshold": 0.2127
+          }
+        },
+        {
+          "fitness": 0.2318,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.max_dd_from_high+agents.consult_conservative.genes.min_trend+agents.consult_conservative.genes.rsi_buy_below+agents.risk_judge.genes.cash_floor_pct+risk.take_profit",
+          "hypothesis": "blind search: take_profit 0.35->0.5975, max_dd_from_high -0.35->-0.5383, min_trend -0.01->-0.1041, rsi_buy_below 38.0->38.3585, cash_floor_pct 0.05->0.1742",
+          "patch": {
+            "risk.take_profit": 0.5975,
+            "agents.consult_conservative.genes.max_dd_from_high": -0.5383,
+            "agents.consult_conservative.genes.min_trend": -0.1041,
+            "agents.consult_conservative.genes.rsi_buy_below": 38.3585,
+            "agents.risk_judge.genes.cash_floor_pct": 0.1742
+          }
+        },
+        {
+          "fitness": 0.1153,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.exit_trend_below+agents.consult_risky.genes.min_rank_mom+agents.consult_risky.genes.rsi_max+agents.risk_judge.genes.max_positions",
+          "hypothesis": "blind search: exit_trend_below -0.03->0.02, rsi_lo 35.1764->60.0, max_positions 6->10, min_rank_mom 0.7->0.95, rsi_max 82.0->56.9783",
+          "patch": {
+            "agents.consult_risky.genes.exit_trend_below": 0.02,
+            "agents.consult_moderate.genes.rsi_lo": 60,
+            "agents.risk_judge.genes.max_positions": 10,
+            "agents.consult_risky.genes.min_rank_mom": 0.95,
+            "agents.consult_risky.genes.rsi_max": 56.9783
+          }
+        }
+      ],
+      "seconds": 87.9,
+      "rejections": [
+        {
+          "target": "agents.consult_conservative.genes.conviction_scale+agents.consult_moderate.genes.exit_rsi+agents.risk_judge.genes.cash_floor_pct+risk.stop_loss+risk.take_profit",
+          "why": "selection fitness 0.501 did not clear champion 0.890 + required margin 0.248",
+          "fold_fitness": 0.5009
+        },
+        {
+          "target": "agents.consult_conservative.genes.max_vol+agents.consult_risky.genes.exit_trend_below+agents.consult_risky.genes.rsi_max+agents.risk_judge.genes.lone_voice_scale+risk.trailing_stop",
+          "why": "selection fitness 0.429 did not clear champion 0.890 + required margin 0.248",
+          "fold_fitness": 0.429
+        },
+        {
+          "target": "agents.analyst.genes.regime_ma+agents.consult_moderate.genes.rsi_hi+agents.risk_judge.genes.lone_voice_scale+agents.risk_judge.genes.max_positions",
+          "why": "selection fitness 0.396 did not clear champion 0.890 + required margin 0.248",
+          "fold_fitness": 0.3964
+        }
+      ]
+    },
+    {
+      "champion_version": 2,
+      "champion_fitness": 0.889526724615483,
+      "champion_stats": {
+        "trades": 1418,
+        "bars": 1184,
+        "sortino": 1.1678944654616705,
+        "sharpe": 0.877383887705804,
+        "max_dd": -0.2997912316482435,
+        "turnover_annual": 36.88808010649323,
+        "win_rate": 0.6135822206284935,
+        "total_return": 0.3286684457533902,
+        "halt_count": 1
+      },
+      "diagnosis": {
+        "pnl_by_exit": {
+          "consult_moderate": -1284.762664357878,
+          "consult_conservative": 22065.688820721713,
+          "guardian": -13131.472254963468,
+          "consult_risky": -60.55919743515237,
+          "circuit_breaker": -1299.957571064599
+        },
+        "n_by_exit": {
+          "consult_moderate": 446,
+          "consult_conservative": 570,
+          "guardian": 211,
+          "consult_risky": 136,
+          "circuit_breaker": 9
+        },
+        "pnl_by_entry": {
+          "consult_risky": 6241.16123472224,
+          "consult_conservative": -7449.050806066147,
+          "consult_moderate": 5726.500894608029
+        },
+        "n_by_entry": {
+          "consult_risky": 951,
+          "consult_conservative": 389,
+          "consult_moderate": 1013
+        },
+        "stop_share": 0.09912536443148688,
+        "stop_pnl": -22405.940642113135,
+        "tp_share": 0.023323615160349854,
+        "time_share": 0.025510204081632654,
+        "avg_bars_held": 17.771137026239067,
+        "trades": 1372,
+        "win_rate": 0.6042274052478134,
+        "turnover": 38.78650952290348,
+        "halt_count": 2,
+        "superior_overrides": 164
+      },
+      "n_candidates": 14,
+      "n_tested_cumulative": 138,
+      "stagnation": 8,
+      "top": [
+        {
+          "fitness": 0.7349,
+          "kind": "tune",
+          "target": "agents.analyst.genes.trend_slow+agents.consult_conservative.genes.rsi_buy_below+agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.max_vol+agents.consult_risky.genes.min_breakout",
+          "hypothesis": "blind search: min_breakout -0.02->-0.0492, rsi_buy_below 38.0->50.0, conviction_scale 1.0->1.9467, trend_slow 50->123, max_vol 1.6->3.5",
+          "patch": {
+            "agents.consult_risky.genes.min_breakout": -0.0492,
+            "agents.consult_conservative.genes.rsi_buy_below": 50,
+            "agents.consult_moderate.genes.conviction_scale": 1.9467,
+            "agents.analyst.genes.trend_slow": 123,
+            "agents.consult_moderate.genes.max_vol": 3.5
+          }
+        },
+        {
+          "fitness": 0.3592,
+          "kind": "tune",
+          "target": "agents.analyst.genes.rsi_len+agents.consult_moderate.genes.min_rank_mom+agents.consult_moderate.genes.min_trend+agents.consult_risky.genes.conviction_scale+agents.risk_judge.genes.unanimous_bonus+agents.superior_judge.genes.max_new_positions_per_bar",
+          "hypothesis": "blind search: unanimous_bonus 1.6->2.7143, min_trend 0.005->0.0799, max_new_positions_per_bar 3->4, rsi_len 14->22, min_rank_mom 0.5->0.2337, conviction_scale 0.7356->1.7979",
+          "patch": {
+            "agents.risk_judge.genes.unanimous_bonus": 2.7143,
+            "agents.consult_moderate.genes.min_trend": 0.0799,
+            "agents.superior_judge.genes.max_new_positions_per_bar": 4,
+            "agents.analyst.genes.rsi_len": 22,
+            "agents.consult_moderate.genes.min_rank_mom": 0.2337,
+            "agents.consult_risky.genes.conviction_scale": 1.7979
+          }
+        },
+        {
+          "fitness": 0.1843,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.analyst.genes.trend_slow+agents.consult_conservative.genes.conviction_scale+agents.consult_risky.genes.min_breakout+agents.consult_risky.genes.rsi_max+risk.stop_loss",
+          "hypothesis": "blind search: stop_loss -0.12->-0.0949, rsi_max 82.0->82.9996, trend_slow 50->79, regime_ma 50->112, min_breakout -0.02->-0.1277, conviction_scale 0.8->0.97",
+          "patch": {
+            "risk.stop_loss": -0.0949,
+            "agents.consult_risky.genes.rsi_max": 82.9996,
+            "agents.analyst.genes.trend_slow": 79,
+            "agents.analyst.genes.regime_ma": 112,
+            "agents.consult_risky.genes.min_breakout": -0.1277,
+            "agents.consult_conservative.genes.conviction_scale": 0.97
+          }
+        },
+        {
+          "fitness": 0.1833,
+          "kind": "tune",
+          "target": "agents.consult_conservative.genes.exit_rsi+agents.consult_moderate.genes.exit_trend_below+agents.consult_moderate.genes.max_vol+agents.consult_risky.genes.min_breakout+agents.consult_risky.genes.min_rank_mom+agents.risk_judge.genes.max_position_pct",
+          "hypothesis": "blind search: max_vol 1.6->2.0209, exit_trend_below 0.0->0.0082, min_rank_mom 0.7->0.3517, max_position_pct 0.25->0.3187, min_breakout -0.02->-0.0476, exit_rsi 68.0->50.0",
+          "patch": {
+            "agents.consult_moderate.genes.max_vol": 2.0209,
+            "agents.consult_moderate.genes.exit_trend_below": 0.0082,
+            "agents.consult_risky.genes.min_rank_mom": 0.3517,
+            "agents.risk_judge.genes.max_position_pct": 0.3187,
+            "agents.consult_risky.genes.min_breakout": -0.0476,
+            "agents.consult_conservative.genes.exit_rsi": 50
+          }
+        },
+        {
+          "fitness": 0.1622,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.min_rank_mom+agents.consult_moderate.genes.rsi_lo+agents.consult_risky.genes.conviction_scale+agents.consult_risky.genes.exit_rsi+agents.risk_judge.genes.unanimous_bonus",
+          "hypothesis": "blind search: exit_rsi 88.0->87.5162, conviction_scale 0.7356->1.6713, unanimous_bonus 1.6->2.3133, min_rank_mom 0.5->0.2205, rsi_lo 35.1764->50.6064",
+          "patch": {
+            "agents.consult_risky.genes.exit_rsi": 87.5162,
+            "agents.consult_risky.genes.conviction_scale": 1.6713,
+            "agents.risk_judge.genes.unanimous_bonus": 2.3133,
+            "agents.consult_moderate.genes.min_rank_mom": 0.2205,
+            "agents.consult_moderate.genes.rsi_lo": 50.6064
+          }
+        },
+        {
+          "fitness": 0.1499,
+          "kind": "tune",
+          "target": "agents.consult_moderate.genes.exit_rsi+agents.consult_moderate.genes.min_trend+agents.risk_judge.genes.cash_floor_pct+agents.risk_judge.genes.two_agree_bonus+agents.superior_judge.genes.max_new_positions_per_bar+risk.stop_loss",
+          "hypothesis": "blind search: stop_loss -0.12->-0.4138, min_trend 0.005->-0.0206, exit_rsi 80.0->70.3826, two_agree_bonus 1.2->1.918, cash_floor_pct 0.05->0.4165, max_new_positions_per_bar 3->2",
+          "patch": {
+            "risk.stop_loss": -0.4138,
+            "agents.consult_moderate.genes.min_trend": -0.0206,
+            "agents.consult_moderate.genes.exit_rsi": 70.3826,
+            "agents.risk_judge.genes.two_agree_bonus": 1.918,
+            "agents.risk_judge.genes.cash_floor_pct": 0.4165,
+            "agents.superior_judge.genes.max_new_positions_per_bar": 2
+          }
+        },
+        {
+          "fitness": 0.0566,
+          "kind": "tune",
+          "target": "agents.analyst.genes.breakout_len+agents.analyst.genes.rsi_len+agents.consult_risky.genes.conviction_scale+agents.consult_risky.genes.rsi_max+agents.risk_judge.genes.base_size_pct+agents.risk_judge.genes.lone_voice_scale",
+          "hypothesis": "blind search: lone_voice_scale 0.6->0.0212, rsi_len 14->8, conviction_scale 0.7356->0.4629, rsi_max 82.0->69.1604, base_size_pct 0.12->0.2401, breakout_len 20->85",
+          "patch": {
+            "agents.risk_judge.genes.lone_voice_scale": 0.0212,
+            "agents.analyst.genes.rsi_len": 8,
+            "agents.consult_risky.genes.conviction_scale": 0.4629,
+            "agents.consult_risky.genes.rsi_max": 69.1604,
+            "agents.risk_judge.genes.base_size_pct": 0.2401,
+            "agents.analyst.genes.breakout_len": 85
+          }
+        },
+        {
+          "fitness": 0.0154,
+          "kind": "tune",
+          "target": "agents.analyst.genes.regime_ma+agents.analyst.genes.rsi_len+agents.consult_conservative.genes.min_trend+agents.consult_risky.genes.exit_trend_below+agents.consult_risky.genes.min_breakout+agents.superior_judge.genes.max_new_positions_per_bar",
+          "hypothesis": "blind search: exit_trend_below -0.03->-0.1069, min_trend -0.01->0.0097, max_new_positions_per_bar 3->1, regime_ma 50->59, rsi_len 14->19, min_breakout -0.02->-0.1333",
+          "patch": {
+            "agents.consult_risky.genes.exit_trend_below": -0.1069,
+            "agents.consult_conservative.genes.min_trend": 0.0097,
+            "agents.superior_judge.genes.max_new_positions_per_bar": 1,
+            "agents.analyst.genes.regime_ma": 59,
+            "agents.analyst.genes.rsi_len": 19,
+            "agents.consult_risky.genes.min_breakout": -0.1333
+          }
+        }
+      ],
+      "seconds": 88,
+      "rejections": [
+        {
+          "target": "agents.analyst.genes.trend_slow+agents.consult_conservative.genes.rsi_buy_below+agents.consult_moderate.genes.conviction_scale+agents.consult_moderate.genes.max_vol+agents.consult_risky.genes.min_breakout",
+          "why": "selection fitness 0.735 did not clear champion 0.890 + required margin 0.251",
+          "fold_fitness": 0.7349
+        },
+        {
+          "target": "agents.analyst.genes.rsi_len+agents.consult_moderate.genes.min_rank_mom+agents.consult_moderate.genes.min_trend+agents.consult_risky.genes.conviction_scale+agents.risk_judge.genes.unanimous_bonus+agents.superior_judge.genes.max_new_positions_per_bar",
+          "why": "selection fitness 0.359 did not clear champion 0.890 + required margin 0.251",
+          "fold_fitness": 0.3592
+        },
+        {
+          "target": "agents.analyst.genes.regime_ma+agents.analyst.genes.trend_slow+agents.consult_conservative.genes.conviction_scale+agents.consult_risky.genes.min_breakout+agents.consult_risky.genes.rsi_max+risk.stop_loss",
+          "why": "selection fitness 0.184 did not clear champion 0.890 + required margin 0.251",
+          "fold_fitness": 0.1843
+        }
+      ]
+    }
+  ],
+  "researcher_memory": {
+    "champion_version": 2,
+    "tested": [
+      [
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "99.0"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "74.3779"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "25.9953"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "73.9261"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0466"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "64.9886"
+        ],
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "0.5"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "59.7965"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "26.2702"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.3312"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "5"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.regime_scale.chop",
+          "0.3"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.5376"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-2.6371"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.4766"
+        ],
+        [
+          "risk.max_bars_held",
+          "5"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.regime_scale.bear",
+          "0.375"
+        ]
+      ],
+      [
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "1.0191"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.2768"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0238"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "56.7232"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.0"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "46"
+        ],
+        [
+          "agents.analyst.genes.trend_fast",
+          "26"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "48.0704"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.0842"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "39"
+        ],
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.314"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "69.724"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "60.0"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "0.02"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.95"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "56.9783"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "10"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "20"
+        ],
+        [
+          "agents.consult_conservative.genes.max_vol",
+          "0.9571"
+        ],
+        [
+          "risk.take_profit",
+          "0.3311"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "45.802"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "90.2901"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-2.0925"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.518"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "57.2121"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "1.1746"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "60.0"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "68.672"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.0132"
+        ],
+        [
+          "risk.max_bars_held",
+          "70"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.1414"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.2742"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "16"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.1488"
+        ],
+        [
+          "risk.max_bars_held",
+          "73"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "1.178"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "0.0021"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "82.81"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_vol",
+          "1.4833"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.7847"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "77.9942"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "0.7106"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.1694"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "3"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0006"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-0.9175"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "60.9908"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.0653"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "121"
+        ],
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "25.9778"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "60.0"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "64.1252"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "2.9147"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.3035"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.1434"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.2258"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.3797"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.8255"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.0961"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "50.0"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.1198"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.1126"
+        ]
+      ],
+      [
+        [
+          "risk.stop_loss",
+          "-0.1399"
+        ],
+        [
+          "risk.take_profit",
+          "1.0521"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "68"
+        ],
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.3002"
+        ],
+        [
+          "agents.consult_conservative.genes.max_vol",
+          "2.1028"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "0.0261"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "63.6267"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "99.0"
+        ],
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "0.0258"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.0338"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.078"
+        ],
+        [
+          "risk.take_profit",
+          "0.6492"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.2205"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "50.6064"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "1.6713"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "87.5162"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "2.3133"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-1.9275"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "1.6602"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "85.4818"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "10"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.1982"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.3007"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.0941"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "40"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-1.6819"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "97.4412"
+        ],
+        [
+          "risk.max_bars_held",
+          "28"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "24"
+        ],
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "22.0305"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "4"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.2754"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "1.2576"
+        ],
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "-0.0151"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.3122"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_vol",
+          "0.7551"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.2041"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "60.6336"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.0037"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.05"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "0.3"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "2"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.7449"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "5"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.219"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "71"
+        ],
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "2.8612"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "91.8289"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.2127"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.8423"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "91.9698"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "91.8382"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "95.0"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "90.2095"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.1245"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.7991"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.2654"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "1.6975"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.correlation_penalty",
+          "0.5"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "13"
+        ],
+        [
+          "agents.analyst.genes.trend_fast",
+          "22"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-0.8947"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.0811"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.9948"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_vol",
+          "2.1169"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.4638"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "16"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-0.6505"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.0204"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.0"
+        ]
+      ],
+      [
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0111"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "2.2"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.2359"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "31"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "0.4716"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.9076"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "2"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "186"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.4252"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.0302"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "92.0"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.0896"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.1432"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "65"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "1.9279"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0545"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.7936"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "70.3826"
+        ],
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "-0.0206"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.4165"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.918"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "2"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.4138"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_slow",
+          "51"
+        ],
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "0.8991"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.enabled",
+          "False"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "50.0"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.9"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "63.256"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_vol",
+          "2.8228"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.1579"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.1539"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "0.6099"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-1.8428"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.0358"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "49.6136"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.3851"
+        ],
+        [
+          "risk.max_bars_held",
+          "41"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "60.0"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "95.0"
+        ],
+        [
+          "risk.max_bars_held",
+          "237"
+        ],
+        [
+          "risk.take_profit",
+          "0.1513"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "76.8482"
+        ],
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.2409"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0504"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.2329"
+        ],
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "1.1424"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.3852"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_slow",
+          "85"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.2356"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "46.437"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_slow",
+          "100"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.2245"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.103"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "72.303"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.34"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.2064"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "53.3664"
+        ],
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.431"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "37.0174"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "1.2394"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "21"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "0.6791"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0513"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "1.0821"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "0.5694"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.3828"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "1"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.1242"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "0.9499"
+        ],
+        [
+          "risk.take_profit",
+          "0.5455"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "7"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.0492"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.6185"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.8876"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.regime_scale.bear",
+          "0.125"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_slow",
+          "146"
+        ],
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "59.7926"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "28"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "92.0"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.5844"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "7"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "-0.0227"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "2.0767"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-1.7289"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "91.0619"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0222"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.3918"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.2068"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "4"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.1704"
+        ],
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "1.3034"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "10"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "2"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.2755"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "0.9921"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "70.1831"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.2218"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.3036"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.2244"
+        ],
+        [
+          "risk.take_profit",
+          "0.1405"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "92.0"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.135"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.3957"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.2134"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "87"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.1146"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "0.3887"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.121"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.3978"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.0729"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.5383"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.1041"
+        ],
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "38.3585"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.1742"
+        ],
+        [
+          "risk.take_profit",
+          "0.5975"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "129"
+        ],
+        [
+          "agents.analyst.genes.trend_fast",
+          "22"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-0.259"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "70.9084"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.4061"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.1112"
+        ]
+      ],
+      [
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "0.6686"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.3613"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "59"
+        ],
+        [
+          "agents.analyst.genes.rsi_len",
+          "19"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "0.0097"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.1069"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.1333"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "1"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "2.8406"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "1.0731"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "61.5623"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.0395"
+        ],
+        [
+          "risk.max_bars_held",
+          "113"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0443"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "60.0"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "1.417"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.1305"
+        ],
+        [
+          "risk.take_profit",
+          "0.8854"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "0.0794"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.1463"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.3031"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "22"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.2337"
+        ],
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "0.0799"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "1.7979"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "2.7143"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "4"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "0.3"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "99.0"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.1957"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.1022"
+        ],
+        [
+          "risk.take_profit",
+          "0.3086"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "19.7492"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "82.0879"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.1895"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.4019"
+        ],
+        [
+          "risk.take_profit",
+          "1.2152"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "60"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.8255"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "19.4901"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "73.0996"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "65.0937"
+        ],
+        [
+          "agents.superior_judge.genes.max_new_positions_per_bar",
+          "4"
+        ],
+        [
+          "risk.max_bars_held",
+          "59"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "50.0"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "0.0135"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.2079"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.6403"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "63.4795"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "67.576"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.078"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.5522"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-2.9452"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.5543"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.6005"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "76.7608"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.2374"
+        ]
+      ],
+      [
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.0467"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.1274"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.8884"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "85"
+        ],
+        [
+          "agents.analyst.genes.rsi_len",
+          "8"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "0.4629"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "69.1604"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.2401"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.0212"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "0.0076"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0384"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "4"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "95.0"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.4067"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "0.3"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0131"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "0.0159"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "60.0"
+        ],
+        [
+          "risk.max_bars_held",
+          "44"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "43.5173"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.0972"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "42.8019"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.0679"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "88"
+        ],
+        [
+          "agents.analyst.genes.regime_ma",
+          "110"
+        ],
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "42.0803"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "1.8995"
+        ],
+        [
+          "agents.risk_judge.genes.base_size_pct",
+          "0.1579"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "76"
+        ],
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "-0.0283"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "76.6238"
+        ],
+        [
+          "risk.take_profit",
+          "0.0976"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.enabled",
+          "False"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "59"
+        ],
+        [
+          "agents.risk_judge.genes.cash_floor_pct",
+          "0.0309"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_slow",
+          "149"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0091"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.3238"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "21"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-0.4559"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "0.3141"
+        ],
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "0.0146"
+        ],
+        [
+          "risk.take_profit",
+          "0.9177"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "32"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.0863"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.7616"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.7959"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "3.0"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "66.7178"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "-0.0189"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.3825"
+        ],
+        [
+          "agents.risk_judge.genes.lone_voice_scale",
+          "0.0812"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.regime_scale.bull",
+          "1.5"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "49"
+        ],
+        [
+          "agents.analyst.genes.trend_fast",
+          "4"
+        ],
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.5956"
+        ],
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "16.586"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "0.48"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.309"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.2359"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "1.1009"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.4945"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-1.1693"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "3"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_slow",
+          "123"
+        ],
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "50.0"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "1.9467"
+        ],
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "3.5"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0492"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "8"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0197"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.3"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "1.0191"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.regime_scale.chop",
+          "0.9"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-2.7648"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "2.9405"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.3839"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "21"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "0.0426"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "78.7748"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "10"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.407"
+        ],
+        [
+          "risk.take_profit",
+          "0.6932"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.regime_scale.bull",
+          "0.5"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "0.9466"
+        ],
+        [
+          "agents.consult_moderate.genes.min_trend",
+          "0.0738"
+        ],
+        [
+          "agents.risk_judge.genes.max_positions",
+          "2"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.2405"
+        ]
+      ],
+      [
+        [
+          "agents.consult_risky.enabled",
+          "False"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "50.0"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "0.0082"
+        ],
+        [
+          "agents.consult_moderate.genes.max_vol",
+          "2.0209"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.0476"
+        ],
+        [
+          "agents.consult_risky.genes.min_rank_mom",
+          "0.3517"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.3187"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "37"
+        ],
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "0.8248"
+        ],
+        [
+          "agents.consult_conservative.genes.min_trend",
+          "0.0392"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "0.5706"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-1.5122"
+        ],
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "1.0309"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.0502"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "1.1941"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.5151"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "54.6541"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "1.7994"
+        ],
+        [
+          "agents.consult_risky.genes.exit_trend_below",
+          "-0.0695"
+        ],
+        [
+          "agents.risk_judge.genes.unanimous_bonus",
+          "3.0"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.rsi_len",
+          "29"
+        ],
+        [
+          "agents.consult_moderate.genes.exit_trend_below",
+          "-0.1539"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.1666"
+        ],
+        [
+          "agents.risk_judge.genes.sell_conviction_threshold",
+          "0.3474"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.exit_rsi",
+          "74.6894"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "60.0"
+        ],
+        [
+          "risk.take_profit",
+          "0.8428"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "25"
+        ],
+        [
+          "agents.consult_conservative.genes.max_dd_from_high",
+          "-0.75"
+        ],
+        [
+          "agents.consult_moderate.genes.min_rank_mom",
+          "0.3252"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "78.0526"
+        ],
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.1246"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "0.8089"
+        ]
+      ],
+      [
+        [
+          "agents.consult_conservative.genes.exit_rsi",
+          "83.5936"
+        ],
+        [
+          "agents.consult_conservative.genes.z_buy_below",
+          "-0.9837"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.regime_ma",
+          "112"
+        ],
+        [
+          "agents.analyst.genes.trend_slow",
+          "79"
+        ],
+        [
+          "agents.consult_conservative.genes.conviction_scale",
+          "0.97"
+        ],
+        [
+          "agents.consult_risky.genes.min_breakout",
+          "-0.1277"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "82.9996"
+        ],
+        [
+          "risk.stop_loss",
+          "-0.0949"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.min_conviction",
+          "0.0673"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "1.3865"
+        ]
+      ],
+      [
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.175"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.trend_fast",
+          "9"
+        ],
+        [
+          "agents.consult_moderate.genes.rsi_lo",
+          "36.3786"
+        ],
+        [
+          "agents.risk_judge.genes.two_agree_bonus",
+          "0.8426"
+        ]
+      ],
+      [
+        [
+          "agents.analyst.genes.breakout_len",
+          "5"
+        ],
+        [
+          "agents.consult_conservative.genes.rsi_buy_below",
+          "23.7945"
+        ],
+        [
+          "risk.trailing_stop",
+          "-0.1128"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.conviction_scale",
+          "1.412"
+        ],
+        [
+          "agents.consult_risky.genes.exit_rsi",
+          "99.0"
+        ]
+      ],
+      [
+        [
+          "agents.consult_moderate.genes.rsi_hi",
+          "73.5073"
+        ],
+        [
+          "agents.consult_risky.genes.conviction_scale",
+          "0.6897"
+        ],
+        [
+          "agents.consult_risky.genes.rsi_max",
+          "93.0996"
+        ],
+        [
+          "agents.risk_judge.genes.max_position_pct",
+          "0.0669"
+        ],
+        [
+          "risk.max_bars_held",
+          "10"
+        ]
+      ]
+    ],
+    "stagnation": 9
+  }
+}
