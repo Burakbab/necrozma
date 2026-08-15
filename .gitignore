@@ -12,3 +12,9 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Sensitive local docs — do not commit to git
+docs/journal/
+docs/*-meeting*.md
+docs/*-discussion*.md
+docs/*-evaluation*.md
