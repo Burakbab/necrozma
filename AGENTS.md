@@ -43,8 +43,12 @@ Every scheduled run, in order:
 
 5. **Rebuild the dashboard** if state changed:
    ```
-   EVO_STATE="$(pwd)/live_state.json" EVO_DASHBOARD="$(pwd)/reports/dashboard.html" python3 evotrader_dashboard.py
+   EVO_STATE="$(pwd)/live_state.json" python3 evotrader_dashboard.py
    ```
+   This writes `index.html` at the repo root, which GitHub Pages serves as the
+   public site. It is written for a general audience, not for us — plain
+   language, jargon explained, caveats included. Keep it that way: if you add a
+   panel, add the one-line explanation and any glossary entry alongside it.
 
 6. **Write a run note** — one NEW dated file at `runs/YYYY-MM-DD-HHMM-<slug>.md`.
    Never append to a shared file; concurrent runs clobber each other. Keep run
@@ -81,7 +85,7 @@ and check `AMENDMENTS.md` first.
 | `live_state.json` | **the account**: cash, positions, trade ledger, NAV history, current genome, evolution lineage, researcher memory |
 | `AMENDMENTS.md` | the constitution amendment log — every gate change, argued in writing |
 | `runs/` | one dated note per scheduled run |
-| `reports/dashboard.html` | generated dashboard |
+| `index.html` | generated public dashboard, served by GitHub Pages — rebuilt each run, never hand-edited |
 
 `live_state.json` is the irreplaceable one. Everything else can be rebuilt.
 

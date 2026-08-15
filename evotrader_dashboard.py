@@ -21,7 +21,9 @@ P_LIVE = os.environ.get("EVO_STATE", os.path.join(ROOT, "state", "live", "accoun
 P_BT = os.environ.get("EVO_BACKTEST", os.path.join(ROOT, "reports", "backtest.json"))
 P_LIN = os.environ.get("EVO_LINEAGE", os.path.join(ROOT, "state", "lineage.jsonl"))
 P_CHAMP = os.environ.get("EVO_CHAMPION", os.path.join(ROOT, "state", "genomes", "champion.json"))
-P_OUT = os.environ.get("EVO_DASHBOARD", os.path.join(ROOT, "reports", "dashboard.html"))
+# index.html at the repo root, so GitHub Pages can serve it as-is with no build
+# step and no branch juggling.
+P_OUT = os.environ.get("EVO_DASHBOARD", os.path.join(ROOT, "index.html"))
  
 # One palette, used consistently: teal = the system, amber = benchmark,
 # red/green reserved exclusively for money outcomes so they always mean the
@@ -243,7 +245,11 @@ def build(out_path: str | None = None) -> str:
  
     doc = f'''<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EvoTrader — live paper account</title><style>
+<title>EvoTrader — a trading system that rewrites itself</title>
+<meta name="description" content="Live record of a self-improving paper-trading
+system: what it owns, how it decided, and every attempt it has made to rewrite
+its own rules. Imaginary money, real prices.">
+<style>
 *{{box-sizing:border-box}}
 body{{margin:0;background:{C['bg']};color:{C['text']};
  font:14px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -308,36 +314,115 @@ tr:last-child td{{border-bottom:0}}
 .note{{font-size:12.5px;color:{C['dim']};line-height:1.65}}
 .note b{{color:{C['text']}}}
 footer{{color:{C['faint']};font-size:11.5px;margin-top:26px;text-align:center}}
+.paper{{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;
+ text-transform:uppercase;color:{C['accent2']};background:#3d3520;border:1px solid #5c4d24;
+ padding:3px 10px;border-radius:20px;vertical-align:middle;margin-left:10px}}
+.hero{{background:{C['panel']};border:1px solid {C['line']};border-left:3px solid {C['accent']};
+ border-radius:12px;padding:18px 22px;margin-bottom:16px}}
+.hero p{{margin:0 0 10px;font-size:14px;color:{C['text']};line-height:1.7}}
+.hero p:last-child{{margin-bottom:0}}
+.hero .q{{font-weight:650;color:{C['accent']};font-size:13px;text-transform:uppercase;
+ letter-spacing:.06em;margin-bottom:6px}}
+.h2sub{{font-size:12.5px;color:{C['dim']};margin:-8px 0 14px;line-height:1.6;
+ text-transform:none;letter-spacing:0;font-weight:400}}
+.gloss{{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px 26px}}
+.g-t{{font-weight:650;font-size:13px;color:{C['text']};margin-bottom:2px}}
+.g-d{{font-size:12.5px;color:{C['dim']};line-height:1.6}}
 </style></head><body><div class="wrap">
-<h1>EvoTrader</h1>
-<div class="sub">self-evolving agent council · paper money · updated {gen_time}</div>
- 
+<h1>EvoTrader <span class="paper">paper money · not real</span></h1>
+<div class="sub">a trading system that rewrites itself · updated {gen_time}</div>
+
+<div class="hero">
+<div class="q">What am I looking at?</div>
+<p>A trading system that runs itself. Once a day it looks at real crypto prices,
+argues with itself about what to buy, places the trades, and writes down what it
+did. Nobody presses any buttons.</p>
+<p>The unusual part is the second loop: it also tries to <b>improve its own
+trading rules</b>. It proposes a tweak to itself, tests that tweak on years of
+past data it wasn't tuned on, and only adopts it if the result clears a
+statistical bar it is not allowed to move. Everything below is the live record of
+that process — including the parts where it loses money.</p>
+<p><b>No real money is involved.</b> The prices are real and every fee is charged,
+but the account is imaginary.</p>
+</div>
+
 <div class="stats">{stats_html}</div>
- 
-<div class="panel"><h2>live paper account</h2>{nav_chart}</div>
- 
-<div class="panel"><h2>the book</h2>{book}</div>
- 
-<div class="panel"><h2>last council session</h2>{council}</div>
- 
-<div class="panel"><h2>evolution lineage</h2>{lin}</div>
- 
-<div class="panel"><h2>champion backtest</h2>{bt_html}</div>
- 
-<div class="panel"><h2>what this is not</h2>
+
+<div class="panel"><h2>The account over time</h2>
+<div class="h2sub">What the imaginary $10,000 is worth now. The dashed line is where
+it started — above it means up, below means down.</div>{nav_chart}</div>
+
+<div class="panel"><h2>What it currently owns</h2>
+<div class="h2sub">Each row is one holding: how much it's worth, what share of the
+account it is, and whether it's up or down since it was bought. The last column
+names which of the internal advisors argued for buying it.</div>{book}</div>
+
+<div class="panel"><h2>How today's decision was made</h2>
+<div class="h2sub">The system runs as a committee. Three advisors with genuinely
+different theories of the market each propose trades and how strongly they believe
+in them; two judges can shrink or veto anything; then a trader executes whatever
+survives. This is that argument, verbatim.</div>{council}</div>
+
+<div class="panel"><h2>Attempts to improve itself</h2>
+<div class="h2sub">Each entry is one round of self-improvement. "Champion held"
+means it tried a batch of ideas and none of them were good enough to adopt —
+which is the normal, healthy outcome. "Promoted" means one cleared the bar.</div>
+{lin}</div>
+
+<div class="panel"><h2>How the current rules did on past data</h2>
+<div class="h2sub">A replay of the current ruleset over history. Treat these
+numbers with suspicion — see the caveats at the bottom.</div>{bt_html}</div>
+
+<div class="panel"><h2>Jargon, translated</h2>
+<div class="gloss">
+<div><div class="g-t">Paper trading</div><div class="g-d">Trading with fake money at
+real prices. A flight simulator for a strategy.</div></div>
+<div><div class="g-t">Genome</div><div class="g-d">The system's rulebook — every
+number it's allowed to change about how it trades. "v2" is the second version it
+has written for itself.</div></div>
+<div><div class="g-t">Backtest</div><div class="g-d">Replaying a strategy over past
+data to see how it would have done. Easy to fool yourself with.</div></div>
+<div><div class="g-t">Holdout</div><div class="g-d">A slice of history deliberately
+hidden from the tuning process, used once at the end. It's the difference between
+a real exam and one where you saw the answers.</div></div>
+<div><div class="g-t">Drawdown</div><div class="g-d">The worst peak-to-trough fall.
+"−24%" means that at some point the account was down 24% from its high.</div></div>
+<div><div class="g-t">Sortino</div><div class="g-d">Return earned per unit of
+<em>downside</em> risk. Higher is better; below zero means it lost money.</div></div>
+<div><div class="g-t">Buy &amp; hold</div><div class="g-d">The do-nothing benchmark:
+just buy and sit. Beating it is the whole job.</div></div>
+<div><div class="g-t">Conviction</div><div class="g-d">How strongly an advisor
+believes its own suggestion, from 0 to 1. Used to size the trade.</div></div>
+<div><div class="g-t">Breadth</div><div class="g-d">The share of tracked coins
+currently trending up — a rough read on whether the whole market is rising.</div></div>
+<div><div class="g-t">Veto</div><div class="g-d">A judge blocking a trade outright,
+usually for being too risky or too similar to something already held.</div></div>
+<div><div class="g-t">Market read</div><div class="g-d">The system's one-word summary
+of conditions — <em>bull</em> (rising), <em>bear</em> (falling), or <em>chop</em>
+(going sideways, the hardest to trade). It sizes trades differently in each.</div></div>
+<div><div class="g-t">Fitness</div><div class="g-d">The single score used to judge a
+proposed rule change, blending return, risk and consistency. A new version is only
+adopted if it beats the current one by more than luck would explain.</div></div>
+</div></div>
+
+<div class="panel"><h2>Honest caveats</h2>
 <div class="note">
 This is <b>paper money</b>. Every price is real and every fee and slippage cost is
 charged, but no capital is at risk.<br><br>
-The backtest numbers above are the champion genome replayed over history it was
-partly tuned on. The only numbers that carry real weight are the <b>live account</b>
-at the top and the <b>sealed-holdout</b> results inside the lineage — those come
-from data the search never saw.<br><br>
-Beating its own ancestors is not the same as being good. The buy-and-hold column
-is there so that comparison can't be quietly dropped.
+The "past data" numbers above are the current ruleset replayed over history it was
+partly tuned on, which flatters it. The only numbers that carry real weight are the
+<b>live account</b> at the top and the <b>holdout</b> results inside the
+self-improvement log — those come from data the system never saw while tuning.<br><br>
+<b>It is not currently profitable.</b> So far it has lost less than the market did
+over the same stretch, which is a start, not a strategy. Beating its own earlier
+versions is not the same as being good — that's why the buy-and-hold comparison is
+printed next to every result and can't be quietly dropped.<br><br>
+Nothing here is financial advice, and the system cannot promote itself to real
+money — that takes six months of evidence and a human signing off.
 </div></div>
- 
-<footer>state: state/live/account.json · genome: state/genomes/champion.json ·
-lineage: state/lineage.jsonl</footer>
+
+<footer>Built automatically from live_state.json ·
+<a href="https://github.com/Burakbab/necrozma" style="color:{C['dim']}">source on GitHub</a></footer>
 </div></body></html>'''
  
     d = os.path.dirname(out_path)
