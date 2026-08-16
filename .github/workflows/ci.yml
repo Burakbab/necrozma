@@ -1,0 +1,46 @@
+name: CI
+
+# There is no committed unit-test suite for this project (see the note in
+# AGENTS.md) — the "29 tests pass" claim lives only in local, uncommitted
+# dev notes. Until a real suite is checked in, this workflow is a smoke
+# test: it proves the bundle compiles, the constitution checksum matches
+# evotrader.manifest, and the live command paths (summary, signals, the
+# dashboard build) run end-to-end against a scratch copy of the real
+# ledger without erroring. It never writes to the tracked live_state.json.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile check
+        run: python -m py_compile evotrader_bundle.py evotrader_dashboard.py
+
+      - name: Constitution + live command smoke test
+        run: |
+          cp live_state.json "$RUNNER_TEMP/ci_state.json"
+          EVO_STATE="$RUNNER_TEMP/ci_state.json" python evotrader_bundle.py summary
+          EVO_STATE="$RUNNER_TEMP/ci_state.json" python evotrader_bundle.py signals
+          diff live_state.json "$RUNNER_TEMP/ci_state.json" > /dev/null || \
+            (echo "::error::summary/signals modified the ledger — they must be read-only" && exit 1)
+
+      - name: Dashboard build check
+        run: |
+          EVO_STATE="$RUNNER_TEMP/ci_state.json" \
+          EVO_DASHBOARD="$RUNNER_TEMP/ci_dashboard.html" \
+          python evotrader_dashboard.py

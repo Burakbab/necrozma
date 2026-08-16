@@ -122,9 +122,16 @@ is no brokerage account in this design and there does not need to be one.
   as a deliberately uncorrelated asset
 - **Roster:** analyst → risky/moderate/conservative consults → risk judge →
   superior judge → trader, with a guardian issuing unvetoable exits
-- **29 tests pass**, including two that attempt to *prove* lookahead bias by
-  poisoning future bars and checking nothing downstream notices. If those ever
-  fail, every performance number in this project is void.
+- **29 tests pass** (as of an earlier interactive session), including two that
+  attempt to *prove* lookahead bias by poisoning future bars and checking
+  nothing downstream notices — if those ever fail, every performance number in
+  this project is void. **Caveat found 2026-08-16: that suite was never
+  committed to git** — `git log --all` has no test file, ever, in this repo's
+  history. The claim is unverifiable and not reproducible by anyone (including
+  CI) until a real suite lands here. `.github/workflows/ci.yml` currently
+  smoke-tests compile + the live command paths only, which is a much weaker
+  guarantee. Rebuilding that suite is worth more than most items in "Next
+  steps" below.
 
 ### The first promotion (v1 → v2)
 

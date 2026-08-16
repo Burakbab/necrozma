@@ -1,5 +1,7 @@
 # Necrozma
 
+[![CI](https://github.com/Burakbab/necrozma/actions/workflows/ci.yml/badge.svg)](https://github.com/Burakbab/necrozma/actions/workflows/ci.yml)
+
 A self-evolving trading system. Paper money only, for now.
 
 **[→ Live dashboard](https://burakbab.github.io/necrozma/)** — what it owns right
