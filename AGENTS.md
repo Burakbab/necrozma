@@ -64,7 +64,12 @@ python3 evotrader_bundle.py tick        # one live paper tick, real prices
 python3 evotrader_bundle.py summary     # account status, no trading
 python3 evotrader_bundle.py signals     # today's decision in plain language
 python3 evotrader_bundle.py evolve N    # N generations of self-improvement
+python3 evotrader_bundle.py anatomy     # P&L post-mortem on every closed trade
+python3 evotrader_bundle.py consults    # are the three consults actually independent?
 ```
+
+`anatomy` and `consults` are diagnostics: they replay history and report, they
+never touch `live_state.json` or the champion. Both take a few minutes.
 
 `tick` refuses to trade the same bar twice — if it prints `already traded`, that
 is the idempotency guard working correctly, not an error. It decides on the last
@@ -81,7 +86,7 @@ and check `AMENDMENTS.md` first.
 |---|---|
 | `evotrader_bundle.py` | the entire runtime flattened into one file — agents, judges, broker, evolution loop |
 | `evotrader_dashboard.py` | dashboard builder (zero external deps, hand-rolled SVG) |
-| `evotrader.manifest` | constitution checksum (`d2a5525094382849`) — the anti-tampering seal |
+| `evotrader.manifest` | constitution checksum (`dfae6a697f51fb49`) — the anti-tampering seal |
 | `live_state.json` | **the account**: cash, positions, trade ledger, NAV history, current genome, evolution lineage, researcher memory |
 | `AMENDMENTS.md` | the constitution amendment log — every gate change, argued in writing |
 | `runs/` | one dated note per scheduled run |
@@ -268,11 +273,51 @@ every `evolve` call.
 
 ---
 
+## Measured 2026-08-16 — read before proposing more genes
+
+An outside review argued the project risks proving "the search can find
+something that scores well" rather than "the policy generalises". Three things
+were then measured rather than assumed. They are evidence, not opinion, and
+they should steer what gets built next.
+
+**1. The system underperforms doing nothing.** Over the full 4-year replay the
+champion returns **+34.5% against buy-and-hold's +63.0% — an excess of −28.4%**.
+It makes money and still loses to a lazy basket of the same coins. Fitness is
+Sortino-shaped and never saw this, which is why `edge_vs_benchmark()` now
+reports excess return, excess Sharpe and drawdown delta on every fold, every
+holdout check and every generation record. Reported, deliberately not optimised
+— folding it into fitness just moves the overfitting target.
+
+**2. Two of the three consults are substantially one opinion.** Measured
+signal correlation: conservative/moderate **+0.03**, conservative/risky
+**−0.13**, moderate/risky **+0.39** — with 28.6% proposal overlap and **93.2%
+same-side agreement when both act**. Worse, moderate/risky correlation *rises*
+in exactly the regimes where diversification is supposed to pay: **+0.51 in
+bear, +0.58 in crisis**. The conservative consult is a genuinely independent
+theory; the other two are close to one theory at two speeds, so the Risk
+Judge's "agreement" signal is partly reading its own echo. Run
+`evotrader_bundle.py consults` after any roster change.
+
+**3. The damage is broad, not tail-shaped.** The top 5 losses are only **11% of
+gross loss**, so this is not a fat-tail problem — expectancy is just thin
+($3/trade over 1,619 trades, profit factor 1.13). The sharper finding from
+`anatomy` is role asymmetry: `consult_conservative` is **−$8,159 as an entry
+signal (38% win)** but **+$25,706 as an exit signal (89% win)**. It is a bad
+buyer and an excellent seller. The circuit breaker is −$1,820 over 14 trades at
+a 7% win rate. Any future proposal should be argued against these numbers.
+
+**What this means for priorities.** Adding agents, genes or search
+sophistication is not the bottleneck — the bottleneck is that nothing yet shows
+the policy beating a benchmark out of sample. Prefer work that produces
+evidence (perturbation tests on fees/slippage/universe/start-date, convergence
+across independent seeds, genuinely untouched forward periods) over work that
+adds capability.
+
 ## Rules that must not be quietly dropped
 
 - The `constitution/` package is checksummed at every startup. If a run reports
   **CONSTITUTION MODIFIED**, stop and investigate — do not re-seal it.
-- Every constitution amendment gets a row in `AMENDMENTS.md`. Four so far, all
+- Every constitution amendment gets a row in `AMENDMENTS.md`. Five so far, all
   argued in writing.
 - Buy-and-hold is reported next to every result, permanently.
 - Never commit a personal email address, in metadata or in file contents.

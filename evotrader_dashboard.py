@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the EvoTrader dashboard — one self-contained HTML file.
+"""Build the Project Necrozma dashboard — one self-contained HTML file.
  
 Shows what the system is actually doing right now: the live paper account, the
 book, what each agent argued for on the last bar, and the genome's lineage.
@@ -245,7 +245,7 @@ def build(out_path: str | None = None) -> str:
  
     doc = f'''<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EvoTrader — a trading system that rewrites itself</title>
+<title>Project Necrozma — a trading system that rewrites itself</title>
 <meta name="description" content="Live record of a self-improving paper-trading
 system: what it owns, how it decided, and every attempt it has made to rewrite
 its own rules. Imaginary money, real prices.">
@@ -329,7 +329,7 @@ footer{{color:{C['faint']};font-size:11.5px;margin-top:26px;text-align:center}}
 .g-t{{font-weight:650;font-size:13px;color:{C['text']};margin-bottom:2px}}
 .g-d{{font-size:12.5px;color:{C['dim']};line-height:1.6}}
 </style></head><body><div class="wrap">
-<h1>EvoTrader <span class="paper">paper money · not real</span></h1>
+<h1>Project Necrozma <span class="paper">paper money · not real</span></h1>
 <div class="sub">a trading system that rewrites itself · updated {gen_time}</div>
 
 <div class="hero">
