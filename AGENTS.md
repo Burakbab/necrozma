@@ -325,6 +325,22 @@ every `evolve` call.
    is either dropping this line or building the fuller cross-universe
    factor-model version (bigger, separate structural step, not attempted).
 
+   **All five grid values now exhausted against three separate champions,
+   2026-08-16** (see `runs/2026-08-16-1000-shadow-evolve-vs-v3-correlation-check.md`):
+   a shadow `evolve 8` against a copy of the real live champion v3 found an
+   unrelated blind-search promotion to shadow v4 at generation 2 (fitness
+   1.389→1.761, sealed holdout passed, beat benchmark — not applied live,
+   same scoping as every prior shadow run), then ran 6 more generations
+   against that new v4 champion, during which all five widened-grid
+   `correlation_penalty` values (`0.1`/`0.25`/`0.5`/`0.75`/`0.9`) fired as
+   fresh structural proposals and every one lost outright (none in the
+   top-4 of any generation). Combined with earlier runs against v2 and v3,
+   every value in the grid has now lost against three independent
+   champions. Recommend treating this as resolved-negative at these five
+   magnitudes: either drop the single-fixed-value `correlation_penalty`
+   line, or move straight to the cross-universe pairwise factor-model
+   version if this is still worth pursuing structurally.
+
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
    shadow-found improvement (v4, fitness 2.461) that was deliberately never
