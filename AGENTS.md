@@ -228,6 +228,19 @@ every `evolve` call.
    symbols already held, not the whole universe pairwise) — a bigger,
    separate structural step.
 
+   **Range proposal shipped 2026-08-16** (see
+   `runs/2026-08-16-0403-correlation-penalty-range-search.md`):
+   `Researcher.structural()` now proposes `correlation_penalty` at `0.25`,
+   `0.5` and `0.75` from cold instead of a single fixed `0.5`, so search
+   picks the magnitude instead of a human guessing it. Verified mechanically
+   (all three appear as distinct ranked candidates in a shadow `evolve`) but
+   not yet resolved which value generalizes — the champion (v2, same
+   cumulative researcher_memory, 224 candidates tried by the end of this run)
+   held through 6 more shadow generations with no promotion at all this draw,
+   correlation gene or otherwise, so none of the three even reached a
+   sealed-holdout check. Needs more generations, or a run where the champion
+   actually gets beaten first.
+
 3a. **The live champion (v2) is now measurably behind a found-but-unapplied
    improvement.** The same 2026-08-16 shadow run found two real, gate-passing
    promotions in the process of testing the correlation gene — plain

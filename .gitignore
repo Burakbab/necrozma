@@ -3,8 +3,13 @@
 .env.*
 !.env.example
 
-# durable runtime state
-state/cache/
+# durable runtime state — genome archive + market cache are rebuildable
+# side effects of `evolve`, not the source of truth (live_state.json is).
+# Ignoring all of state/, not just state/cache/, because GENOME_DIR resolves
+# relative to cwd regardless of EVO_STATE, so an `evolve` invoked from the
+# repo root (even one meant to be a shadow/offline run) writes archive files
+# here unless the whole directory is ignored.
+state/
 *.pkl
 
 # python
