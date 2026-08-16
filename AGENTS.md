@@ -122,16 +122,34 @@ is no brokerage account in this design and there does not need to be one.
   as a deliberately uncorrelated asset
 - **Roster:** analyst → risky/moderate/conservative consults → risk judge →
   superior judge → trader, with a guardian issuing unvetoable exits
-- **29 tests pass** (as of an earlier interactive session), including two that
-  attempt to *prove* lookahead bias by poisoning future bars and checking
-  nothing downstream notices — if those ever fail, every performance number in
-  this project is void. **Caveat found 2026-08-16: that suite was never
-  committed to git** — `git log --all` has no test file, ever, in this repo's
-  history. The claim is unverifiable and not reproducible by anyone (including
-  CI) until a real suite lands here. `.github/workflows/ci.yml` currently
-  smoke-tests compile + the live command paths only, which is a much weaker
-  guarantee. Rebuilding that suite is worth more than most items in "Next
-  steps" below.
+- **Resolved 2026-08-16 (3-hourly check): a real test suite is now committed**,
+  closing the gap flagged earlier the same day (the old "29 tests pass" claim
+  was never in git — `git log --all` had no test file, ever). `tests/`
+  (36 tests, `pytest`) is hermetic: no network, never touches the real
+  `live_state.json` or `state/`. Covers `Genome` save/load/child/promote
+  roundtrip, the constitution's `fitness`/`accepts`/`holdout_accepts`/
+  `required_margin` gates including the multiple-testing margin's growth
+  with candidate count, checksum tamper detection, `LiveAccount.tick`'s
+  same-bar idempotency guard (including that it only checks `journal[-1]`,
+  by design, and that `force=True` bypasses it), and — the one that matters
+  most — anti-lookahead-bias: both a direct unit test on
+  `core.market.Replay`/`ReplayWindow`'s slicing, and an end-to-end
+  `run_backtest` test that poisons every bar after a backtest's window and
+  asserts the result (stats, trades, decision log, fitness) is bit-for-bit
+  identical to an unpoisoned run, plus a control test proving the comparison
+  is actually sensitive (poisoning a bar *inside* the window does change the
+  result). `.github/workflows/ci.yml` now runs `pytest tests/` as its own
+  job, ahead of the existing compile/live-path smoke test.
+  One caveat worth knowing for next time: `Genome`'s `GENOME_DIR` (and the
+  other bundle modules' cwd-derived paths — `core.live.STATE_PATH`,
+  `core.market.CACHE_DIR`, `loop.evolve.LINEAGE_PATH`) are computed **once**
+  at module-import time from the process's cwd at that moment, not
+  re-evaluated per test — `monkeypatch.chdir` alone does nothing for tests
+  that exercise them; a first draft of the genome tests briefly wrote real
+  files into this repo's `state/` before that was caught and fixed by
+  monkeypatching `GENOME_DIR` directly (see `tests/test_genome.py`'s
+  `isolated_cwd` fixture). Deleted before committing; nothing tracked was
+  ever affected.
 
 ### The first promotion (v1 → v2)
 

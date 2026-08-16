@@ -1,0 +1,91 @@
+"""LiveAccount.tick's idempotency guard: an unattended daily job firing twice
+(retry, manual re-run, clock wobble) must never double-trade the same bar.
+Entirely hermetic -- core.market.load_universe is monkeypatched to synthetic
+data, and the genome is passed in explicitly so the constructor never falls
+back to Genome.champion() (which would touch disk under the real cwd)."""
+import core.market as market
+from core.genome import Genome
+from core.live import LiveAccount
+from core.market import Replay
+
+from tests.helpers import synthetic_ohlcv
+
+SYMBOLS = ["FOO", "BAR"]
+
+
+def _synthetic_data(n=120):
+    return {s: synthetic_ohlcv(n, seed=i) for i, s in enumerate(SYMBOLS)}
+
+
+def _account(monkeypatch, data):
+    monkeypatch.setattr(market, "load_universe", lambda *a, **k: data)
+    genome = Genome().child([("universe", SYMBOLS)])
+    return LiveAccount({"genome": genome.data})
+
+
+def _expected_bar_id(data):
+    replay = Replay(data)
+    i = len(replay) - 2
+    return str(replay.index[i])
+
+
+def test_tick_trades_a_fresh_bar(monkeypatch):
+    data = _synthetic_data()
+    acct = _account(monkeypatch, data)
+    entry = acct.tick(use_live_price=False, refresh=False)
+
+    assert "skipped" not in entry
+    assert "error" not in entry
+    assert entry["bar"] == _expected_bar_id(data)
+    assert entry["tick"] == 1
+    assert len(acct.journal) == 1
+    assert acct.journal[-1] is entry
+
+
+def test_tick_refuses_to_double_trade_the_same_bar(monkeypatch):
+    data = _synthetic_data()
+    acct = _account(monkeypatch, data)
+    bar_id = _expected_bar_id(data)
+
+    # simulate a previous, already-recorded trade on this exact bar
+    acct.journal.append({"bar": bar_id, "tick": 1, "nav_after": 10_000.0})
+    acct.ticks = 1
+
+    result = acct.tick(use_live_price=False, refresh=False)
+
+    assert "skipped" in result
+    assert result["bar"] == bar_id
+    assert result["tick"] == 1  # unchanged -- no new tick was recorded
+    assert len(acct.journal) == 1  # nothing appended
+
+
+def test_force_bypasses_the_idempotency_guard(monkeypatch):
+    data = _synthetic_data()
+    acct = _account(monkeypatch, data)
+    bar_id = _expected_bar_id(data)
+    acct.journal.append({"bar": bar_id, "tick": 1, "nav_after": 10_000.0})
+    acct.ticks = 1
+
+    result = acct.tick(use_live_price=False, refresh=False, force=True)
+
+    assert "skipped" not in result
+    assert len(acct.journal) == 2
+    assert acct.journal[-1]["bar"] == bar_id
+
+
+def test_idempotency_guard_only_looks_at_the_most_recent_journal_entry(monkeypatch):
+    """The guard compares against journal[-1] only, by design -- not a scan
+    of the whole journal. Document that explicitly so a future "fix" that
+    changes this doesn't do so by accident."""
+    data = _synthetic_data()
+    acct = _account(monkeypatch, data)
+    bar_id = _expected_bar_id(data)
+
+    # this bar was traded once, long ago, but is no longer the last entry
+    acct.journal.append({"bar": bar_id, "tick": 1, "nav_after": 10_000.0})
+    acct.journal.append({"bar": "some-other-bar", "tick": 2, "nav_after": 10_050.0})
+    acct.ticks = 2
+
+    result = acct.tick(use_live_price=False, refresh=False)
+    assert "skipped" not in result
+    assert len(acct.journal) == 3

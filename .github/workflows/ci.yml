@@ -1,12 +1,15 @@
 name: CI
 
-# There is no committed unit-test suite for this project (see the note in
-# AGENTS.md) — the "29 tests pass" claim lives only in local, uncommitted
-# dev notes. Until a real suite is checked in, this workflow is a smoke
-# test: it proves the bundle compiles, the constitution checksum matches
-# evotrader.manifest, and the live command paths (summary, signals, the
-# dashboard build) run end-to-end against a scratch copy of the real
-# ledger without erroring. It never writes to the tracked live_state.json.
+# `tests/` (added 2026-08-16) is a real, hermetic pytest suite -- no network,
+# never touches live_state.json or the repo's state/ dir -- covering genome
+# roundtrip, the constitution's fitness/acceptance/holdout gates, the
+# anti-lookahead-bias guarantee (poisoning bars after a backtest's window
+# must not change the result), and the live-tick idempotency guard. The
+# rest of this workflow is still a smoke test on top of that: it proves the
+# bundle compiles, the constitution checksum matches evotrader.manifest, and
+# the live command paths (summary, signals, the dashboard build) run
+# end-to-end against a scratch copy of the real ledger without erroring. It
+# never writes to the tracked live_state.json.
 
 on:
   push:
@@ -16,6 +19,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Unit tests
+        run: python -m pytest tests/ -q
+
   smoke-test:
     runs-on: ubuntu-latest
     steps:
