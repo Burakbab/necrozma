@@ -241,6 +241,27 @@ every `evolve` call.
    sealed-holdout check. Needs more generations, or a run where the champion
    actually gets beaten first.
 
+   **Grid was silently exhausted, then widened, 2026-08-16** (see
+   `runs/2026-08-16-0716-correlation-penalty-exhausted-widened.md`): a
+   10-generation shadow run against v2 produced **zero** `correlation_penalty`
+   candidates — all three of `0.25`/`0.5`/`0.75` had already been tried and
+   excluded against this exact champion version by the 04:03 run, and
+   `Researcher.structural()`'s cold-start branch is deterministic + excluded
+   by exact patch value, so it silently stops firing once every value in it
+   has been tried once. This is invisible in the generation log (14 blind
+   proposals/gen looks the same with or without structural proposals also
+   firing) — check `researcher_memory.tested` directly, don't infer from
+   generation counts. Widened the grid to `(0.1, 0.25, 0.5, 0.75, 0.9)`.
+   Verified live: `correlation_penalty_0.1` scored fold-aggregate fitness
+   **0.7021** (above champion's raw 0.682, still short of the ~252-candidate
+   multiple-testing margin — correctly rejected) — the best any
+   correlation_penalty value has scored yet, though one draw. `0.9` scored
+   0.3174. Next: if `0.1`/`0.9` also get exhausted with no promotion, that's
+   reasonably strong evidence this gene doesn't help at any single fixed
+   value near the ones tried, and the honest move is either dropping this
+   line or building the fuller cross-universe factor-model version (bigger,
+   separate structural step, not attempted).
+
 3a. **The live champion (v2) is now measurably behind a found-but-unapplied
    improvement.** The same 2026-08-16 shadow run found two real, gate-passing
    promotions in the process of testing the correlation gene — plain
