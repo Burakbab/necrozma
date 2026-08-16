@@ -170,9 +170,30 @@ is no brokerage account in this design and there does not need to be one.
   cost-sensitivity signal — the run note explains why the fitness column
   and the return columns tell different stories here.) Not promotion-grade,
   not walk-forward — a full-history point estimate per scenario, same
-  caveat as `anatomy`/`consults`. Next: point the same tool at the sealed
-  holdout window specifically to see if the drawdown-gate margin is
-  thinner out of sample.
+  caveat as `anatomy`/`consults`.
+- **Resolved 2026-08-16 (3-hourly check): the holdout-window question above
+  answered, and the answer is the opposite of what was suspected.** Added a
+  `--holdout` flag to `evotrader_bundle.py costs` (same guarantees, still
+  read-only) that replays only the sealed `HOLDOUT_FRAC` slice (newest 15%
+  of history, never touched during search) instead of the full 4 years.
+  Baseline holdout numbers sanity-check against the known v3 promotion
+  record (+21.7% excess return here, matching "Current state" above) —
+  confidence the window slicing is correct. Result: baseline holdout maxDD
+  is -26.2%, rising only to -31.7% at 2x costs — nowhere near the 40%
+  hard-fail gate, and notably *safer* than the full-history stress test's
+  -34.1% to -45.1% range, not thinner as speculated. Read this together, not
+  separately: the champion is losing money outright on this specific
+  holdout slice under every cost scenario (baseline return -15.0%, fitness
+  -1.172) while still beating buy-and-hold by the same +21.7% margin that
+  passed the original promotion gate — it is a genuinely hard window for
+  the strategy, just not one that trips the drawdown gate. Full numbers in
+  `runs/2026-08-16-1846-costs-holdout-diagnostic.md`. Next: the
+  full-history run is the one with the thin drawdown margin, so a
+  worthwhile follow-up is finding which sub-period of the full 4 years
+  drives that -34.1% baseline maxDD (bear-market segment? one specific
+  crash bar?) — `costs --holdout` plus the existing full-history `costs`
+  bracket the two ends already measured; nothing yet isolates what's in
+  between.
 
 ### The first promotion (v1 → v2)
 

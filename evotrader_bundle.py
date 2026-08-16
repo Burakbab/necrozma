@@ -260,18 +260,29 @@ def main():
     elif cmd == "costs":
         # Diagnostic: how sensitive is the champion to the fee/slippage
         # assumptions baked into its own genome? Never touches live_state.json
-        # or the champion — replays the same full history at scaled cost
-        # multipliers and reports the drag. Slow (one full backtest per
-        # scenario), meant for a human to read.
+        # or the champion — replays history at scaled cost multipliers and
+        # reports the drag. Slow (one full backtest per scenario), meant for a
+        # human to read.
+        #
+        # --holdout: replay only the sealed HOLDOUT_FRAC slice (the newest
+        # bars, never touched during search) instead of the full history.
+        # Full-history numbers average over years the champion was tuned
+        # against; the holdout is the honest out-of-sample check, and
+        # AGENTS.md flagged after the first `costs` run that its maxDD margin
+        # to the hard-fail gate looked thinner than the full-history numbers
+        # suggested — this answers that directly instead of inferring it.
         import copy
+        from constitution import HOLDOUT_FRAC
         from core import market
         from core.genome import Genome
         from loop.engine import run_backtest
+        use_holdout = "--holdout" in sys.argv
         g0 = acct.genome
         data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
         if not data:
             print("no market data")
             sys.exit(1)
+        start_frac, end_frac = (1.0 - HOLDOUT_FRAC, 1.0) if use_holdout else (0.0, 1.0)
         base_fee = float(g0.data["broker"]["fee_bps"])
         base_slip = float(g0.data["broker"]["slippage_bps"])
         scenarios = [
@@ -281,17 +292,19 @@ def main():
             ("3x costs", 3.0, 3.0),
             ("slippage stress (5x)", 1.0, 5.0),
         ]
+        window_desc = (f"sealed holdout (newest {HOLDOUT_FRAC:.0%} of history)"
+                       if use_holdout else "full history")
         print(f"[costs] replaying {len(data)} symbols against champion v{g0.version} "
-              f"({g0.bar_interval} bars) at {len(scenarios)} cost scenarios "
-              f"(baseline fee {base_fee:.1f}bps / slippage {base_slip:.1f}bps) ...",
-              flush=True)
+              f"({g0.bar_interval} bars) over the {window_desc} at {len(scenarios)} "
+              f"cost scenarios (baseline fee {base_fee:.1f}bps / "
+              f"slippage {base_slip:.1f}bps) ...", flush=True)
         rows = []
         for label, fee_mult, slip_mult in scenarios:
             d = copy.deepcopy(g0.data)
             d["broker"]["fee_bps"] = base_fee * fee_mult
             d["broker"]["slippage_bps"] = base_slip * slip_mult
             g = Genome(d)
-            res = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+            res = run_backtest(g, data, start_frac, end_frac, log_detail=False)
             if "error" in res:
                 print(f"  {label}: backtest failed: {res['error']}")
                 continue
@@ -299,7 +312,7 @@ def main():
             rows.append((label, fee_mult, slip_mult, st, edge, res.get("fitness")))
             print(f"  ... {label} done", flush=True)
         print()
-        print(f"COST SENSITIVITY — champion v{g0.version}")
+        print(f"COST SENSITIVITY — champion v{g0.version} — {window_desc}")
         print("=" * 96)
         print(f"  {'scenario':<22s} {'fitness':>8s} {'return':>9s} {'sharpe':>7s} "
               f"{'maxDD':>7s} {'trades':>7s} {'fees paid':>11s} {'excess ret':>11s}")
