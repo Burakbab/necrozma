@@ -273,6 +273,24 @@ every `evolve` call.
    invocation — the default proposal batch size is not calibrated for this
    bar size's backtest cost.
 
+   **Resolved 2026-08-16 (3-hourly check): `n_blind=6` confirmed workable**
+   (see `runs/2026-08-16-1404-4h-shadow-nblind6-correlation.md`). The
+   bundled CLI's `evolve` command hardcodes `n_blind=14`, so this needed a
+   small standalone script calling `EvolutionRun.run()` directly — same
+   scratch-isolation discipline as prior runs. 6 generations at `n_blind=6`
+   took ~72 minutes total (~10-12 min/generation vs. 25-27 at the default),
+   workable inside a 3-hourly slot if kicked off early. Result: a fourth
+   independent x6-scaled-seed generation-1 promotion (fitness −4.231 → 0.839,
+   holdout passed, real edge over benchmark), via `correlation_penalty`
+   0.0→0.75 this time, then held through 5 more generations. Same
+   catastrophic-seed → quick-fix → plateau shape as the three prior runs,
+   each via a different unrelated gene — read this as one more draw from
+   that distribution, not a convergent search, and see the note for why it
+   does NOT reopen item 3 below (different value tried against a broken
+   champion vs. a competent one). Next, still not attempted: a genuinely
+   fresh unscaled-seed 4h search, or 10+ generations past the first plateau
+   at the now-workable `n_blind=6` to see if a second plateau exists.
+
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
    parametric search plateaued at fitness 0.889 for 13+ generations:
