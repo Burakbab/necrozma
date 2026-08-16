@@ -208,13 +208,38 @@ every `evolve` call.
    less-correlated trades (1,401 vs 1,618), lower turnover (24.6 vs 39.0
    annualized), and a smaller drawdown (−28.1% vs −38.1%) than the default — a
    single full-period point estimate, **not** a promotion-grade result.
-   **Not yet evolved or promoted.** `Researcher.structural()` now automatically
-   proposes turning the gene on (`0.0 → 0.5`) each generation so a future
-   `evolve` run can search for a real value against live champion v2 under the
-   actual walk-forward/holdout/multiple-testing gates; that search has not been
-   run. Also not attempted: a fuller cross-universe factor-model version (the
-   current one only compares a candidate against symbols already held, not the
-   whole universe pairwise) — a bigger, separate structural step.
+   **Search finally run 2026-08-16** (see
+   `runs/2026-08-16-0059-shadow-evolve-vs-live-champion.md`): shadow `evolve 6`
+   against a copy of the real live champion v2 (real data, real gates,
+   real `researcher_memory`), never touching `live_state.json`. The
+   `correlation_penalty=0.5` proposal actually topped the fold-aggregate
+   ranking once (fitness 2.73, generation 3, ahead of the then-champion's
+   2.461) but **failed the sealed holdout** (−0.48 vs champion's −0.25) and
+   was correctly rejected. Answer to the open question: `0.5` doesn't
+   generalize as tuned — not a promotion candidate. A different penalty
+   value, or letting the Researcher search a range instead of one fixed
+   proposal, hasn't been tried. Also not attempted: a fuller cross-universe
+   factor-model version (the current one only compares a candidate against
+   symbols already held, not the whole universe pairwise) — a bigger,
+   separate structural step.
+
+3a. **The live champion (v2) is now measurably behind a found-but-unapplied
+   improvement.** The same 2026-08-16 shadow run found two real, gate-passing
+   promotions in the process of testing the correlation gene — plain
+   `tune`-kind blind search, unrelated to correlation awareness:
+   v2 (fitness 0.889, max_dd ~30%) → **v3** → **v4** (fitness 2.461, max_dd
+   4.4%), both passing walk-forward + sealed holdout + drawdown-regression
+   gates. Full patch, live v2 → shadow v4:
+   `consult_moderate.rsi_lo` 35.18→60.0, `consult_moderate.rsi_hi` 72→92.0,
+   `consult_risky.conviction_scale` 0.7356→1.9437, `consult_risky.min_breakout`
+   −0.02→−0.0148, `consult_conservative.exit_rsi` 68→50.934,
+   `risk_judge.max_positions` 6→4. **Deliberately not applied to
+   `live_state.json`** — that's out of scope for the 3-hourly shadow slot by
+   design. Next daily run with `tick % 7 == 0` (or the weekend all-hands)
+   should either let its own `evolve 3` rediscover this independently (blind
+   search is randomized per invocation, so not guaranteed) or a human/future
+   session can decide whether to fast-track it — full numbers and holdout
+   results are in the run note above.
 
 4. **LLM-backed consults.** Plan changed 2026-08-15: no longer waiting on an
    Anthropic API key. Since every trading/evolution cycle already runs inside a
