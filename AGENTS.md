@@ -55,7 +55,17 @@ Every scheduled run, in order:
    notes **technical**: NAV, decisions, what changed, what you tried and why.
    No personal content — this directory is public.
 
-7. **Update this file's Current state / Next steps**, then commit and push.
+7. **If this run promoted a new live champion** (`live_state.json`'s genome
+   version increased), update `README.md`'s `## Status` section in the same
+   commit — name the new version and why. That section is hand-written prose,
+   not generated, and it renders on the repo's GitHub landing page
+   (`github.com/.../tree/main`), which is a different surface from the
+   generated dashboard `index.html`. It does not update itself: it said
+   "genome v2" for a day after the v2→v3 promotion because nothing was
+   responsible for touching it. Mandatory, not optional — same standing as
+   the `AMENDMENTS.md` rule below.
+
+8. **Update this file's Current state / Next steps**, then commit and push.
 
 ### Commands
 
@@ -91,6 +101,7 @@ and check `AMENDMENTS.md` first.
 | `AMENDMENTS.md` | the constitution amendment log — every gate change, argued in writing |
 | `runs/` | one dated note per scheduled run |
 | `index.html` | generated public dashboard, served by GitHub Pages — rebuilt each run, never hand-edited |
+| `README.md` | hand-written, renders on the GitHub repo page — its `## Status` section names the current genome version and must be updated on every promotion (see Run protocol step 7) |
 
 `live_state.json` is the irreplaceable one. Everything else can be rebuilt.
 
@@ -398,6 +409,10 @@ adds capability.
   **CONSTITUTION MODIFIED**, stop and investigate — do not re-seal it.
 - Every constitution amendment gets a row in `AMENDMENTS.md`. Five so far, all
   argued in writing.
+- Every genome promotion updates `README.md`'s `## Status` section in the same
+  commit. It is hand-written and renders on the GitHub repo page — it does not
+  update itself, and a stale version number there was already caught once
+  (2026-08-16, fixed manually after the v2→v3 promotion).
 - Buy-and-hold is reported next to every result, permanently.
 - Never commit a personal email address, in metadata or in file contents.
 - The system **cannot promote itself to real money.** That is the owner's
