@@ -88,10 +88,14 @@ python evotrader_bundle.py evolve 5    # 5 generations of self-improvement
 
 ## Status
 
-**Genome v2 is live and trading** — promoted from the hand-written v0.1 seed on
-2026-08-15, the first self-promotion. The live paper account opened 2026-08-15
-with $10,000 imaginary and trades on a daily schedule against real historical
-and current market data.
+**Genome v3 is live and trading** — self-promoted from v2 on 2026-08-16 (a
+multi-gene patch: tighter stops, shorter max hold, retuned entry thresholds
+across all three consults, larger base position size with a higher cash
+floor). Cleared the sealed holdout under the stricter margin added the same
+day: excess return +21.7% and excess Sharpe +0.44 against buy-and-hold in the
+holdout window, merged fitness 0.805 → 1.591. The live paper account opened
+2026-08-15 with $10,000 imaginary and trades on a daily schedule against real
+historical and current market data.
 
 Cross-asset correlation awareness (for the Risk Judge) and 4h-bar infrastructure
 have both shipped but are **dormant/opt-in** — built, tested, and verified
