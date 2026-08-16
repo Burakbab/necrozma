@@ -76,10 +76,12 @@ python3 evotrader_bundle.py signals     # today's decision in plain language
 python3 evotrader_bundle.py evolve N    # N generations of self-improvement
 python3 evotrader_bundle.py anatomy     # P&L post-mortem on every closed trade
 python3 evotrader_bundle.py consults    # are the three consults actually independent?
+python3 evotrader_bundle.py costs       # fee/slippage perturbation sensitivity
 ```
 
-`anatomy` and `consults` are diagnostics: they replay history and report, they
-never touch `live_state.json` or the champion. Both take a few minutes.
+`anatomy`, `consults` and `costs` are diagnostics: they replay history and
+report, they never touch `live_state.json` or the champion. All three take a
+few minutes (`costs` replays history once per cost scenario, so longer).
 
 `tick` refuses to trade the same bar twice — if it prints `already traded`, that
 is the idempotency guard working correctly, not an error. It decides on the last
@@ -150,6 +152,27 @@ is no brokerage account in this design and there does not need to be one.
   monkeypatching `GENOME_DIR` directly (see `tests/test_genome.py`'s
   `isolated_cwd` fixture). Deleted before committing; nothing tracked was
   ever affected.
+- **Resolved 2026-08-16 (3-hourly check): fee/slippage cost-sensitivity now
+  measured.** New read-only diagnostic `evotrader_bundle.py costs` (same
+  guarantees as `anatomy`/`consults` — full-history replay, never touches
+  `live_state.json`) answers the "perturbation tests on fees/slippage" item
+  from "Measured 2026-08-16" below. Full numbers in
+  `runs/2026-08-16-1552-cost-sensitivity.md`. Headline: excess return over
+  buy-and-hold degrades smoothly and stays strongly positive under stress
+  (+473% baseline -> +209-261% at 2x-5x cost multipliers on this
+  full-history replay) — costs are a real drag, not what breaks the
+  strategy. The one number worth carrying forward: baseline maxDD on this
+  same replay is already -34.1% against the constitution's 40%
+  hard-fail-gate (`MAX_DD_HARD_FAIL`), and a 1.5x cost multiplier is enough
+  to cross it (-45.1%) — a thinner margin to that gate than the return
+  numbers alone suggest. (Two of the five scenarios show `fitness = -inf`;
+  that's the hard-fail gate firing on drawdown, not a monotonic
+  cost-sensitivity signal — the run note explains why the fitness column
+  and the return columns tell different stories here.) Not promotion-grade,
+  not walk-forward — a full-history point estimate per scenario, same
+  caveat as `anatomy`/`consults`. Next: point the same tool at the sealed
+  holdout window specifically to see if the drawdown-gate margin is
+  thinner out of sample.
 
 ### The first promotion (v1 → v2)
 
