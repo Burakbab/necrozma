@@ -104,8 +104,8 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
-- **v0.1 · genome v2** — first self-promoted roster, promoted from the
-  hand-written seed on 2026-08-15
+- **v0.1 · genome v3** — second self-promotion, found by the live account's
+  own blind search on 2026-08-16 (weekend all-hands)
 - **Live paper account** opened 2026-08-15 with $10,000 imaginary
 - **Universe:** 27 liquid USDT pairs with 4+ years of history, plus PAXG (gold)
   as a deliberately uncorrelated asset
@@ -135,6 +135,30 @@ Fold-aggregate fitness 0.576 → 0.889. On the **sealed holdout it never saw**:
 Read this honestly: v2 is a real improvement that generalises to unseen data, and
 both genomes lost less than the market in a bear window. Neither makes money.
 Losing less than buy-and-hold in a downturn is a start, not a strategy.
+
+### The second promotion (v2 → v3), 2026-08-16 weekend all-hands
+
+v2 had plateaued for 13+ generations by the time the 2026-08-16 shadow runs
+(see "Measured 2026-08-16" and the run notes from that day) started finding
+gate-passing improvements over it in isolated copies but never applied them
+live. The weekend all-hands ran real `evolve` against the actual account
+instead of splicing in a shadow result: `evolve 8` found nothing (252
+candidates tried, cumulatively excluded), `evolve 15` continuing from there
+found a promotion at generation 6. Full patch and reasoning in
+`runs/2026-08-16-0600-weekend-all-hands.md`. Headline numbers:
+
+Fold-aggregate fitness 0.682 → 1.389, merged fitness 0.805 → 1.591 (no
+regression), drawdown 32.6% (within the 15% regression tolerance on v2's
+~30%). Sealed holdout: challenger beat both champion and buy-and-hold —
+excess return +21.7%, excess Sharpe +0.44, drawdown 16.0 points better than
+benchmark in that window. Thirteen genes moved together (tighter
+stop-loss/trailing-stop, `max_bars_held` 60→15, retuned RSI/regime/z-score
+thresholds across all three consults, larger `base_size_pct` with a much
+higher `cash_floor_pct`) — not a one-line tune.
+
+Same caveat as v1→v2: this beats the previous champion and the holdout, it
+is not yet evidence the policy beats doing nothing on the full replay — see
+"Measured 2026-08-16" below, which still applies unchanged to v3.
 
 ### Two flaws found by watching it run
 
@@ -196,6 +220,23 @@ every `evolve` call.
    search from a genuinely fresh (unscaled) seed to see if it converges to
    similar period values on its own.
 
+   **Second shadow run 2026-08-16 (weekend all-hands)** (see
+   `runs/2026-08-16-0600-weekend-all-hands.md`): a fresh scaled-seed 4h run
+   (correctly isolated this time — the first attempt that session
+   accidentally re-ran the real 1d champion v2 due to a scratch-dir setup
+   bug, logged in the same run note as a caught mistake) found its own
+   generation-1 promotion, fitness −2.374 → 0.469 (`breakout_len`,
+   `max_position_pct`), then held at generation 2. Weaker magnitude than the
+   first run's 0.81 but the same qualitative shape: catastrophic unscaled
+   seed → workable after ×6 scaling → quick first promotion → stagnation.
+   Stopped after 2 generations on a time-budget call — at `n_blind=14`
+   (the CLI default, calibrated for 1d cost) each 4h generation took
+   ~25-27 minutes, ~6x the 1d cost as expected from ~6.3x more bars per
+   fold. **Open item, sharper than before**: run 4h shadow evolution with
+   `n_blind=5-8` instead of the default, or fewer generations per
+   invocation — the default proposal batch size is not calibrated for this
+   bar size's backtest cost.
+
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
    parametric search plateaued at fitness 0.889 for 13+ generations:
@@ -256,29 +297,33 @@ every `evolve` call.
    **0.7021** (above champion's raw 0.682, still short of the ~252-candidate
    multiple-testing margin — correctly rejected) — the best any
    correlation_penalty value has scored yet, though one draw. `0.9` scored
-   0.3174. Next: if `0.1`/`0.9` also get exhausted with no promotion, that's
-   reasonably strong evidence this gene doesn't help at any single fixed
-   value near the ones tried, and the honest move is either dropping this
-   line or building the fuller cross-universe factor-model version (bigger,
-   separate structural step, not attempted).
+   0.3174. Note this was drawn against **v2** (raw fitness 0.682) — the
+   live champion is now v3 (fitness 1.389, see "Current state"), so the
+   comparison point for any future correlation-penalty draw has moved and
+   this specific number will not be directly comparable. Next: if
+   `0.1`/`0.9` also get exhausted with no promotion against whichever
+   champion is current, that's reasonably strong evidence this gene doesn't
+   help at any single fixed value near the ones tried, and the honest move
+   is either dropping this line or building the fuller cross-universe
+   factor-model version (bigger, separate structural step, not attempted).
 
-3a. **The live champion (v2) is now measurably behind a found-but-unapplied
-   improvement.** The same 2026-08-16 shadow run found two real, gate-passing
-   promotions in the process of testing the correlation gene — plain
-   `tune`-kind blind search, unrelated to correlation awareness:
-   v2 (fitness 0.889, max_dd ~30%) → **v3** → **v4** (fitness 2.461, max_dd
-   4.4%), both passing walk-forward + sealed holdout + drawdown-regression
-   gates. Full patch, live v2 → shadow v4:
-   `consult_moderate.rsi_lo` 35.18→60.0, `consult_moderate.rsi_hi` 72→92.0,
-   `consult_risky.conviction_scale` 0.7356→1.9437, `consult_risky.min_breakout`
-   −0.02→−0.0148, `consult_conservative.exit_rsi` 68→50.934,
-   `risk_judge.max_positions` 6→4. **Deliberately not applied to
-   `live_state.json`** — that's out of scope for the 3-hourly shadow slot by
-   design. Next daily run with `tick % 7 == 0` (or the weekend all-hands)
-   should either let its own `evolve 3` rediscover this independently (blind
-   search is randomized per invocation, so not guaranteed) or a human/future
-   session can decide whether to fast-track it — full numbers and holdout
-   results are in the run note above.
+3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
+   on its own.** This item used to flag that v2 was measurably behind a
+   shadow-found improvement (v4, fitness 2.461) that was deliberately never
+   applied live. The weekend all-hands ran real `evolve` against the actual
+   account instead of importing that shadow result — `evolve 8` found
+   nothing, `evolve 15` continuing from there found a real promotion to
+   **v3** (fitness 0.682 → 1.389, sealed holdout passed, beat buy-and-hold
+   in that window) at generation 6. Different specific gene combination than
+   any shadow run found, same overall story. Full numbers in "Current
+   state" above and `runs/2026-08-16-0600-weekend-all-hands.md`. The shadow
+   v4 candidates (from this run and an earlier one) were deliberately still
+   not hand-applied — using them would mean merging a holdout-draw count
+   from an isolated copy into the live account's `researcher_memory`,
+   which is more surgery than was justified once honest search found its
+   own promotion anyway. v3 is not confirmed to be at the same fitness
+   level as any shadow v4 — more generations against v3 may find further
+   improvement, unprompted, the normal way.
 
 4. **LLM-backed consults.** Plan changed 2026-08-15: no longer waiting on an
    Anthropic API key. Since every trading/evolution cycle already runs inside a
