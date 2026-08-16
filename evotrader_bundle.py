@@ -257,6 +257,64 @@ def main():
             print("  Reading it: correlations near +1 mean the consults are one "
                   "opinion wearing\n  three hats, and their agreement carries no "
                   "extra information for the Risk Judge.")
+    elif cmd == "costs":
+        # Diagnostic: how sensitive is the champion to the fee/slippage
+        # assumptions baked into its own genome? Never touches live_state.json
+        # or the champion — replays the same full history at scaled cost
+        # multipliers and reports the drag. Slow (one full backtest per
+        # scenario), meant for a human to read.
+        import copy
+        from core import market
+        from core.genome import Genome
+        from loop.engine import run_backtest
+        g0 = acct.genome
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        base_fee = float(g0.data["broker"]["fee_bps"])
+        base_slip = float(g0.data["broker"]["slippage_bps"])
+        scenarios = [
+            ("baseline", 1.0, 1.0),
+            ("1.5x costs", 1.5, 1.5),
+            ("2x costs", 2.0, 2.0),
+            ("3x costs", 3.0, 3.0),
+            ("slippage stress (5x)", 1.0, 5.0),
+        ]
+        print(f"[costs] replaying {len(data)} symbols against champion v{g0.version} "
+              f"({g0.bar_interval} bars) at {len(scenarios)} cost scenarios "
+              f"(baseline fee {base_fee:.1f}bps / slippage {base_slip:.1f}bps) ...",
+              flush=True)
+        rows = []
+        for label, fee_mult, slip_mult in scenarios:
+            d = copy.deepcopy(g0.data)
+            d["broker"]["fee_bps"] = base_fee * fee_mult
+            d["broker"]["slippage_bps"] = base_slip * slip_mult
+            g = Genome(d)
+            res = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+            if "error" in res:
+                print(f"  {label}: backtest failed: {res['error']}")
+                continue
+            st, edge = res.get("stats", {}), res.get("edge", {})
+            rows.append((label, fee_mult, slip_mult, st, edge, res.get("fitness")))
+            print(f"  ... {label} done", flush=True)
+        print()
+        print(f"COST SENSITIVITY — champion v{g0.version}")
+        print("=" * 96)
+        print(f"  {'scenario':<22s} {'fitness':>8s} {'return':>9s} {'sharpe':>7s} "
+              f"{'maxDD':>7s} {'trades':>7s} {'fees paid':>11s} {'excess ret':>11s}")
+        for label, fee_mult, slip_mult, st, edge, fit in rows:
+            print(f"  {label:<22s} {fit:>8.3f} {st.get('total_return', 0):>8.1%} "
+                  f"{st.get('sharpe', 0):>7.2f} {st.get('max_dd', 0):>7.1%} "
+                  f"{st.get('trades', 0):>7d} ${st.get('fees_paid', 0):>9,.0f} "
+                  f"{edge.get('excess_return', 0):>10.1%}")
+        if rows:
+            base = rows[0]
+            worst = min(rows, key=lambda r: r[5])
+            print()
+            print(f"  baseline fitness {base[5]:.3f} -> worst scenario "
+                  f"'{worst[0]}' fitness {worst[5]:.3f} "
+                  f"({worst[5] - base[5]:+.3f})")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)
