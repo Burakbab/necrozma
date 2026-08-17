@@ -171,6 +171,32 @@ is no brokerage account in this design and there does not need to be one.
   and the return columns tell different stories here.) Not promotion-grade,
   not walk-forward — a full-history point estimate per scenario, same
   caveat as `anatomy`/`consults`.
+- **Resolved 2026-08-17 (3-hourly check): the "flag hard calls" half of item
+  4 (LLM-backed consults) is now built.** New `agents.judges.flag_hard_call`
+  is a pure, deterministic function that labels a decision-log bar as a hard
+  call when: the circuit breaker just tripped, the Superior Judge overrode
+  the Risk Judge on at least one order that bar, or a live buy went through
+  behind agreement below 0.4 (three consults, weak consensus, real money
+  moving anyway). Wired into `loop.engine.Council.tick`, which now attaches a
+  `"hard_call": {"is_hard_call": bool, "reasons": [...]}` field to every
+  decision-log entry it already logs. Purely additive and verified so: the
+  flag is computed strictly *after* `Trader.execute()` has already filled the
+  bar, and a new test (`tests/test_hard_calls.py`) asserts
+  `log_detail=True` vs `log_detail=False` produce byte-identical `stats` and
+  `closed_trades` on the same synthetic data — the flag cannot change what
+  gets traded, only what gets logged about it. Constitution checksum
+  unaffected (`agents.judges`/`loop.engine` aren't in the checksummed set);
+  verified live via `evotrader_bundle.py summary`/`signals`/`tick` all still
+  reporting `constitution verified dfae6a697f51fb49`, plus the full test
+  suite (45 passed, up from 36). Not yet built: the other half of item 4 —
+  actually spending a scheduled session's own reasoning on a flagged bar and
+  feeding a verdict back into the trading decision. This only marks the
+  candidates a future phase would look at; nothing reads `hard_call` yet.
+  Next: run a live tick or two and check whether any real bars actually get
+  flagged (the 0.4 agreement threshold and the buy-only gating are first
+  guesses, not tuned against real decision-log data yet), then design what
+  "apply consult verdict" actually means procedurally for an unattended
+  schedule that can't pause mid-tick for a human.
 - **Resolved 2026-08-16 (3-hourly check): the holdout-window question above
   answered, and the answer is the opposite of what was suspected.** Added a
   `--holdout` flag to `evotrader_bundle.py costs` (same guarantees, still
@@ -444,9 +470,24 @@ every `evolve` call.
    live scheduled Claude session, that session itself serves as the LLM
    consultant — read a flagged hard-call case, reason about it inline, write the
    verdict back into state — instead of the executed code making its own separate
-   API call. Not yet built: needs `evotrader_bundle.py`'s tick flow split into an
-   "analyze & flag hard calls" phase and an "apply consult verdict & execute"
-   phase. Queued as the next real code-build task.
+   API call.
+
+   **"Flag hard calls" half shipped 2026-08-17** (see "Current state" above
+   and `runs/2026-08-17-*-hard-call-flagging.md`): `agents.judges.flag_hard_call`
+   + wiring in `loop.engine.Council.tick`, additive-only, tested. What's left is
+   the harder half — "apply consult verdict & execute". That still needs a
+   real design, not just code: a scheduled tick runs unattended and can't
+   pause mid-function waiting on a human/LLM turn, so "consult inline" likely
+   means either (a) `tick` stops *before* execution when it sees a hard call,
+   writes the flagged case to state, and a second scheduled step later reads
+   it, reasons, and calls a resume-and-execute path — or (b) hard calls get
+   downgraded automatically (e.g. sized down or skipped) and a session
+   reviews the log after the fact rather than gating execution in real time.
+   (a) is truer to the original plan but reintroduces the fills-happen-later
+   problem the codebase deliberately avoided elsewhere (see `core.live`'s
+   "fill at the live price at the moment of execution" convention); (b) is
+   weaker but fits the existing single-pass `tick`. Worth a decision before
+   more code goes into this, not just more architecture.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.
