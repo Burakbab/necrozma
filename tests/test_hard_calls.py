@@ -42,23 +42,37 @@ def test_superior_override_is_a_hard_call():
     assert any("superior_judge intervened" in r for r in flag["reasons"])
 
 
-def test_lone_voice_highest_conviction_buy_is_a_hard_call():
+def test_solo_lone_voice_buy_is_a_hard_call():
+    """A lone-voice buy that is the *only* order the bar produced -- the
+    whole council went quiet except this one weak-consensus bet -- is the
+    narrowed trigger as of 2026-08-17 (see the module docstring for why the
+    prior "also the conviction leader" narrowing measured worse, not
+    better)."""
     flag = flag_hard_call(orders=[_buy(agreement=0.1)], just_halted=False,
                           overrides_this_bar=0)
     assert flag["is_hard_call"] is True
-    assert any("lone-voice buy" in r for r in flag["reasons"])
+    assert any("lone-voice buy" in r and "only order" in r for r in flag["reasons"])
 
 
-def test_lone_voice_buy_is_not_a_hard_call_when_not_the_conviction_leader():
-    """A lone-voice buy sitting alongside a stronger, better-agreed buy that
-    bar is exactly the pattern `lone_voice_scale` already prices in -- it
-    isn't the system's biggest bet resting on thin consensus, so it shouldn't
-    escalate. This is the narrowing behind the 2026-08-17 measurement that the
-    old bar-aggregate trigger fired on 38.6% of bars, almost all of them this
-    shape."""
-    lone = _buy(symbol="FOO", agreement=0.1, conviction=0.3)
-    leader = _buy(symbol="BAR", agreement=1.0, conviction=0.9)
-    flag = flag_hard_call(orders=[lone, leader], just_halted=False, overrides_this_bar=0)
+def test_lone_voice_buy_is_not_a_hard_call_when_another_buy_accompanies_it():
+    """A lone-voice buy sitting alongside another buy that bar is "one of
+    several independent picks happened to be lone-voice", not "the whole
+    council is quiet except one loud voice" -- not a hard call, regardless of
+    which one has the higher conviction."""
+    lone = _buy(symbol="FOO", agreement=0.1, conviction=0.9)
+    other = _buy(symbol="BAR", agreement=1.0, conviction=0.3)
+    flag = flag_hard_call(orders=[lone, other], just_halted=False, overrides_this_bar=0)
+    assert flag == {"is_hard_call": False, "reasons": []}
+
+
+def test_lone_voice_buy_is_not_a_hard_call_when_a_sell_accompanies_it():
+    """The stricter 2026-08-17 narrowing looks at *all* orders that bar, not
+    just other buys -- a lone-voice buy next to an unrelated exit is still a
+    bar with more than one signal firing, not a quiet bar with a single weak
+    bet."""
+    lone = _buy(symbol="FOO", agreement=0.1)
+    exit_ = _sell(symbol="BAR")
+    flag = flag_hard_call(orders=[lone, exit_], just_halted=False, overrides_this_bar=0)
     assert flag == {"is_hard_call": False, "reasons": []}
 
 
@@ -137,8 +151,8 @@ def test_summarize_counts_and_rate():
         _entry({"is_hard_call": True, "reasons": ["circuit breaker tripped this bar"]}),
         _entry({"is_hard_call": True,
                 "reasons": ["superior_judge intervened on 2 order(s)",
-                           "lone-voice buy on FOO (agreement 0.20) is also "
-                           "the bar's highest-conviction buy (0.30)"]}),
+                           "lone-voice buy on FOO (agreement 0.20) is the "
+                           "only order the bar produced (0.30 conviction)"]}),
     ]
     s = summarize_hard_calls(log)
     assert s["n_bars"] == 3

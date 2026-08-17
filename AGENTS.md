@@ -250,6 +250,25 @@ is no brokerage account in this design and there does not need to be one.
   something that isn't just "lone voice, yes/no") is the judgment call this
   item already flagged as needing a decision — now with real numbers behind
   it instead of a guess.
+- **Resolved 2026-08-17 (3-hourly check): a second narrowing attempt —
+  "solo bar" (lone-voice buy must be the bar's *only* order at all, no other
+  buy, no sell) — worked, real reduction not another backfire.** (see
+  `runs/2026-08-17-1850-hard-call-solo-bar-narrowing.md`) Rate: 38.6%
+  (original) → 52.0% (highest-conviction attempt, backfired) → **24.4%**
+  (this change). `agents.judges.flag_hard_call`'s low-agreement trigger now
+  requires `len(orders) == 1`, distinguishing "the whole council went quiet
+  except one loud voice" from "one of several independent picks that bar
+  happened to be lone-voice" — the axis the prior run's item explicitly
+  named as untried. Tested (`tests/test_hard_calls.py`, 51 passed up from
+  50, including a new case the old conviction-only logic couldn't even
+  express: a lone-voice buy next to an unrelated *sell* doesn't flag).
+  Verified live path unaffected (`constitution verified dfae6a697f51fb49`,
+  `live_state.json` md5 identical before/after). 24.4% is real progress but
+  still well above the ~6.4% `circuit_breaker`+`superior_override`-only
+  floor — not yet at a rate either (a) or (b) from item 4 below can
+  comfortably act on. `circuit_breaker` (4) and `superior_override` (85)
+  counts unchanged, as expected — this only touches the low-agreement
+  trigger.
 - **Resolved 2026-08-17 (3-hourly check): tried the suggested narrowing —
   "only fire when a lone-voice buy is also the highest-conviction/largest
   order that bar" — and it made the rate worse, not better.** (see
@@ -674,20 +693,22 @@ every `evolve` call.
    38.6% → 52.0%, because lone-voice and highest-conviction-that-bar turn
    out to be strongly correlated in this system, not independent. Ruled out:
    "which order is the biggest bet" as a discriminating axis by itself.
-   Still open, candidates not yet tried: (i) size relative to the rest of
+
+   **Tried 2026-08-17 (3-hourly check): candidate (ii), "solo bar" —
+   requiring zero corroborating signal anywhere that bar — and it worked**
+   (see "Current state" above and
+   `runs/2026-08-17-1850-hard-call-solo-bar-narrowing.md`): rate fell
+   38.6% → **24.4%**, the first narrowing attempt to actually reduce it.
+   Still open, one candidate not yet tried: (i) size relative to the rest of
    the *portfolio*, not just conviction within the bar (a large fraction of
    equity going into a lone-voice pick is a different claim than merely
-   winning the bar's own conviction ranking); (ii) requiring zero
-   corroborating signal *anywhere that bar*, not just for the same symbol —
-   i.e. distinguish "the whole council is quiet except one loud voice" from
-   "one of several independent picks happened to be lone-voice"; (iii)
-   dropping `low_agreement_buy` outright and keeping only
-   `circuit_breaker` + `superior_override` (≈6.4% of bars, already measured,
-   already human/LLM-reviewable) as the practical trigger set for whichever
-   of (a)/(b) gets built. (iii) is the lowest-risk option if another
-   narrowing attempt doesn't pan out — it gives up on flagging pure
-   low-consensus buys at all, but it's already known to land at a workable
-   rate.
+   being the bar's only order) — composes with the solo-bar requirement
+   rather than replacing it, so worth trying on top. If that still doesn't
+   clear a workable rate, (iii) dropping `low_agreement_buy` outright and
+   keeping only `circuit_breaker` + `superior_override` (≈6.4% of bars,
+   already measured, already human/LLM-reviewable) remains the fallback —
+   24.4% is real progress but still likely too high for either (a) or (b)
+   below to act on comfortably.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.
