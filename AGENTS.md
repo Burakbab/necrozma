@@ -361,6 +361,33 @@ every `evolve` call.
    fresh unscaled-seed 4h search, or 10+ generations past the first plateau
    at the now-workable `n_blind=6` to see if a second plateau exists.
 
+   **Resolved 2026-08-17 (3-hourly check): a second plateau exists.** (see
+   `runs/2026-08-17-0510-4h-shadow-second-plateau.md`) A fresh x6-scaled-seed
+   run, 10 generations at `n_blind=6` in one continuous script (~82 min
+   wall time), found **two** promotions, not one. Generation 1: the usual
+   quick fix (v1 −2.369 → v2 0.618, `correlation_penalty` 0.0→0.1 — a
+   *different* magnitude than the 2026-08-16-1404 run's 0.75, both fixing
+   different broken seeds on the first try, reinforcing that this gene isn't
+   specially validated at either value against a catastrophic baseline).
+   Then 7 generations of real stagnation (boldness climbing 0→7, 52
+   candidates cumulatively tried, none clearing the bar). Generation 9: v2
+   → **v3**, fitness 0.618 → 1.010, via a genuinely combined 5-gene patch
+   (`consult_conservative.z_buy_below`/`min_trend`,
+   `consult_moderate.min_trend`, `risk_judge.max_positions`/
+   `cash_floor_pct`) — sealed holdout passed convincingly (challenger 0.008
+   vs champion −2.242, excess return +35.3%, excess Sharpe +1.29,
+   `beat_benchmark: true`). Generation 10 then held, and did so via the
+   holdout gate specifically: the top fold-aggregate candidate (fitness
+   1.364, would have cleared the multiple-testing margin) **failed the
+   sealed holdout** (−0.021 vs champion 0.008 + margin) and was correctly
+   rejected — a clean live example of the holdout gate overruling a
+   fold-winning candidate. Answers the open question: yes, a second plateau
+   is reachable past the first, it just takes patience (7 stagnant
+   generations here) and the boldness mechanism's wider mutation batches.
+   One data point, not a law — still open: whether a third plateau exists
+   past generation 10, and whether a genuinely unscaled fresh seed shows the
+   same shape.
+
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
    parametric search plateaued at fitness 0.889 for 13+ generations:
