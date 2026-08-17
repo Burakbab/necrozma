@@ -250,6 +250,37 @@ is no brokerage account in this design and there does not need to be one.
   something that isn't just "lone voice, yes/no") is the judgment call this
   item already flagged as needing a decision — now with real numbers behind
   it instead of a guess.
+- **Resolved 2026-08-17 (3-hourly check): the third narrowing axis — size
+  relative to portfolio equity, composing with the solo-bar requirement —
+  worked, cutting the rate further to 9.6%.** (see
+  `runs/2026-08-17-2146-hard-call-size-gate.md`) Rate: 38.6% (original) →
+  52.0% (conviction-only, backfired) → 24.4% (solo-bar) → **9.6%** (this
+  change), close to the ~6.1% `circuit_breaker`+`superior_override`-only
+  floor instead of ~4x it. `agents.judges.flag_hard_call` gained two new
+  optional parameters, `nav` and `min_size_pct` (both default to off —
+  `min_size_pct=0.0` reproduces the exact solo-bar-only behavior, so this is
+  purely additive): when `min_size_pct > 0`, a solo lone-voice buy only
+  flags if its `quote_amount / nav` clears that fraction. No `nav` supplied
+  while `min_size_pct > 0` fails safe (does not flag) rather than guessing.
+  Chose `min_size_pct=0.10` empirically: of the 253 solo lone-voice bars on
+  a full-history replay, position sizes ranged continuously from a fraction
+  of a percent of equity to 24.8% with no natural break, and 10% was the
+  point where this trigger's own contribution drops from 18.3% of all bars
+  to 3.5% (48 bars) while still catching every solo bet that risks a real
+  slice of the account. Wired into `loop.engine.Council.tick`'s
+  `flag_hard_call` call (`nav=nav, min_size_pct=0.10` — `nav` was already
+  computed in that scope, nothing new to thread through). Tested
+  (`tests/test_hard_calls.py`, 55 passed up from 51, including cases for:
+  size gate off by default, a big-enough solo buy flags, a too-small solo
+  buy does not, and no-`nav`-supplied fails safe). Verified live path
+  unaffected: `constitution verified dfae6a697f51fb49`, `live_state.json`
+  md5 identical before/after, `hard-calls` reproduced the projected number
+  exactly (133/1386, 4 circuit_breaker + 85 superior_override + 48
+  low_agreement_buy). 9.6% is real progress and the closest yet to a rate
+  either (a) or (b) from item 4 below could plausibly act on — the fallback
+  of dropping `low_agreement_buy` entirely (≈6.4%/6.1%) is now a much
+  smaller step down from here than from the original 38.6%, so the next
+  useful move is picking (a) vs (b) rather than narrowing further.
 - **Resolved 2026-08-17 (3-hourly check): a second narrowing attempt —
   "solo bar" (lone-voice buy must be the bar's *only* order at all, no other
   buy, no sell) — worked, real reduction not another backfire.** (see
@@ -699,16 +730,19 @@ every `evolve` call.
    (see "Current state" above and
    `runs/2026-08-17-1850-hard-call-solo-bar-narrowing.md`): rate fell
    38.6% → **24.4%**, the first narrowing attempt to actually reduce it.
-   Still open, one candidate not yet tried: (i) size relative to the rest of
-   the *portfolio*, not just conviction within the bar (a large fraction of
-   equity going into a lone-voice pick is a different claim than merely
-   being the bar's only order) — composes with the solo-bar requirement
-   rather than replacing it, so worth trying on top. If that still doesn't
-   clear a workable rate, (iii) dropping `low_agreement_buy` outright and
-   keeping only `circuit_breaker` + `superior_override` (≈6.4% of bars,
-   already measured, already human/LLM-reviewable) remains the fallback —
-   24.4% is real progress but still likely too high for either (a) or (b)
-   below to act on comfortably.
+
+   **Tried 2026-08-17 (3-hourly check): candidate (i), size relative to
+   portfolio equity, composed on top of the solo-bar requirement — and it
+   also worked** (see "Current state" above and
+   `runs/2026-08-17-2146-hard-call-size-gate.md`): rate fell further,
+   24.4% → **9.6%** (133/1386 bars: 4 circuit_breaker + 85
+   superior_override + 48 low_agreement_buy, `min_size_pct=0.10`). This is
+   close enough to the ≈6.1% circuit_breaker+superior_override-only floor
+   that the remaining gap is small — **the (a)-vs-(b) architecture decision
+   from the top of this item is now the actual next step**, not further
+   narrowing. (iii) dropping `low_agreement_buy` outright remains available
+   as a fallback if 9.6% still proves too high once (a)/(b) is designed in
+   more detail, but hasn't been needed yet.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.

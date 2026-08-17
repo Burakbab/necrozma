@@ -97,6 +97,44 @@ def test_agreement_threshold_is_configurable():
     assert flag["is_hard_call"] is True
 
 
+def test_size_gate_off_by_default_ignores_a_small_solo_buy():
+    """min_size_pct defaults to 0.0 -- a solo lone-voice buy still flags
+    regardless of how small it is, same as before this axis existed."""
+    small = _buy(agreement=0.1)
+    small.quote_amount = 1.0  # 0.01% of a $10k nav
+    flag = flag_hard_call(orders=[small], just_halted=False,
+                          overrides_this_bar=0, nav=10_000.0)
+    assert flag["is_hard_call"] is True
+
+
+def test_size_gate_flags_a_solo_buy_that_commits_enough_equity():
+    big = _buy(agreement=0.1)
+    big.quote_amount = 1_500.0  # 15% of a $10k nav
+    flag = flag_hard_call(orders=[big], just_halted=False, overrides_this_bar=0,
+                          nav=10_000.0, min_size_pct=0.10)
+    assert flag["is_hard_call"] is True
+    assert any("lone-voice buy" in r and "of equity" in r for r in flag["reasons"])
+
+
+def test_size_gate_does_not_flag_a_solo_buy_that_is_too_small():
+    small = _buy(agreement=0.1)
+    small.quote_amount = 500.0  # 5% of a $10k nav
+    flag = flag_hard_call(orders=[small], just_halted=False, overrides_this_bar=0,
+                          nav=10_000.0, min_size_pct=0.10)
+    assert flag == {"is_hard_call": False, "reasons": []}
+
+
+def test_size_gate_without_nav_fails_safe_and_does_not_flag():
+    """If a caller opts into the size gate (min_size_pct > 0) but can't supply
+    nav, there is no way to compute the fraction -- treat that as "gate not
+    satisfied", not "gate skipped"."""
+    big = _buy(agreement=0.1)
+    big.quote_amount = 5_000.0
+    flag = flag_hard_call(orders=[big], just_halted=False, overrides_this_bar=0,
+                          min_size_pct=0.10)
+    assert flag == {"is_hard_call": False, "reasons": []}
+
+
 def _genome():
     return Genome().child([("universe", SYMBOLS)])
 
