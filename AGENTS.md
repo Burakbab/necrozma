@@ -250,6 +250,32 @@ is no brokerage account in this design and there does not need to be one.
   something that isn't just "lone voice, yes/no") is the judgment call this
   item already flagged as needing a decision — now with real numbers behind
   it instead of a guess.
+- **Resolved 2026-08-17 (3-hourly check): tried the suggested narrowing —
+  "only fire when a lone-voice buy is also the highest-conviction/largest
+  order that bar" — and it made the rate worse, not better.** (see
+  `runs/2026-08-17-1553-hard-call-trigger-narrowing.md`)
+  `agents.judges.flag_hard_call` reworked to read each buy `Order`'s own
+  `agreement` field instead of the old bar-level average `agreement_score`
+  (signature changed: `flag_hard_call(orders, just_halted,
+  overrides_this_bar, low_agreement_threshold=0.4)`), and only flags the
+  bar's single highest-conviction buy if that specific order is lone-voice.
+  Tested (`tests/test_hard_calls.py`, 50 passed up from 49, including a new
+  test asserting a lone-voice buy sitting next to a stronger better-agreed
+  buy does *not* flag). Verified live path unaffected (`summary` still
+  reports `constitution verified dfae6a697f51fb49`, same NAV;
+  `live_state.json` untouched). Re-ran `hard-calls` against champion v3: the
+  `low_agreement_buy` rate rose from 32.8% to 46.4% of bars (total flagged
+  38.6% → 52.0%). Diagnosed why: "lone-voice" and "highest-conviction buy
+  that bar" are not independent in this system — 73-89% of bars with any buy
+  orders have their top-conviction buy also be the lone voice (trivially true
+  whenever there's only one buy order that bar, which is most of them; even
+  in multi-buy bars a single confident consult routinely outranks
+  weaker-conviction unanimous/two-agree proposals). The old bar-aggregate
+  version accidentally diluted this by averaging in sell orders' typically
+  higher agreement; reading the buy's own agreement directly removes that
+  dilution and exposes more bars, not fewer. Real negative result, not a
+  wasted change — it rules out "conviction leadership" as a narrowing axis
+  and sharpens what's actually still open (see Next steps item 4).
 - **Resolved 2026-08-16 (3-hourly check): the holdout-window question above
   answered, and the answer is the opposite of what was suspected.** Added a
   `--holdout` flag to `evotrader_bundle.py costs` (same guarantees, still
@@ -641,6 +667,27 @@ every `evolve` call.
    `hard-calls` to see what rate that leaves; the (a)-vs-(b) architecture
    choice is much easier to reason about once the flagged set is actually
    small.
+
+   **Tried 2026-08-17 (3-hourly check): the highest-conviction narrowing,
+   and it backfired** (see "Current state" above and
+   `runs/2026-08-17-1553-hard-call-trigger-narrowing.md`) — rate rose
+   38.6% → 52.0%, because lone-voice and highest-conviction-that-bar turn
+   out to be strongly correlated in this system, not independent. Ruled out:
+   "which order is the biggest bet" as a discriminating axis by itself.
+   Still open, candidates not yet tried: (i) size relative to the rest of
+   the *portfolio*, not just conviction within the bar (a large fraction of
+   equity going into a lone-voice pick is a different claim than merely
+   winning the bar's own conviction ranking); (ii) requiring zero
+   corroborating signal *anywhere that bar*, not just for the same symbol —
+   i.e. distinguish "the whole council is quiet except one loud voice" from
+   "one of several independent picks happened to be lone-voice"; (iii)
+   dropping `low_agreement_buy` outright and keeping only
+   `circuit_breaker` + `superior_override` (≈6.4% of bars, already measured,
+   already human/LLM-reviewable) as the practical trigger set for whichever
+   of (a)/(b) gets built. (iii) is the lowest-risk option if another
+   narrowing attempt doesn't pan out — it gives up on flagging pure
+   low-consensus buys at all, but it's already known to land at a workable
+   rate.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.

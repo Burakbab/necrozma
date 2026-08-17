@@ -14,8 +14,9 @@ from tests.helpers import synthetic_ohlcv
 SYMBOLS = ["FOO", "BAR", "BAZ"]
 
 
-def _buy(symbol="FOO"):
-    return Order(symbol=symbol, side="buy", quote_amount=100.0)
+def _buy(symbol="FOO", agreement=0.33, conviction=0.5):
+    return Order(symbol=symbol, side="buy", quote_amount=100.0,
+                agreement=agreement, conviction=conviction)
 
 
 def _sell(symbol="FOO"):
@@ -23,50 +24,61 @@ def _sell(symbol="FOO"):
 
 
 def test_quiet_bar_is_not_a_hard_call():
-    flag = flag_hard_call(agreement_score=0.9, orders=[_buy()],
+    flag = flag_hard_call(orders=[_buy(agreement=0.9)],
                           just_halted=False, overrides_this_bar=0)
     assert flag == {"is_hard_call": False, "reasons": []}
 
 
 def test_circuit_breaker_trip_is_always_a_hard_call():
-    flag = flag_hard_call(agreement_score=0.9, orders=[], just_halted=True,
-                          overrides_this_bar=0)
+    flag = flag_hard_call(orders=[], just_halted=True, overrides_this_bar=0)
     assert flag["is_hard_call"] is True
     assert "circuit breaker" in flag["reasons"][0]
 
 
 def test_superior_override_is_a_hard_call():
-    flag = flag_hard_call(agreement_score=0.9, orders=[_buy()], just_halted=False,
+    flag = flag_hard_call(orders=[_buy(agreement=0.9)], just_halted=False,
                           overrides_this_bar=1)
     assert flag["is_hard_call"] is True
     assert any("superior_judge intervened" in r for r in flag["reasons"])
 
 
-def test_low_agreement_behind_a_live_buy_is_a_hard_call():
-    flag = flag_hard_call(agreement_score=0.1, orders=[_buy()], just_halted=False,
+def test_lone_voice_highest_conviction_buy_is_a_hard_call():
+    flag = flag_hard_call(orders=[_buy(agreement=0.1)], just_halted=False,
                           overrides_this_bar=0)
     assert flag["is_hard_call"] is True
-    assert any("low consult agreement" in r for r in flag["reasons"])
+    assert any("lone-voice buy" in r for r in flag["reasons"])
+
+
+def test_lone_voice_buy_is_not_a_hard_call_when_not_the_conviction_leader():
+    """A lone-voice buy sitting alongside a stronger, better-agreed buy that
+    bar is exactly the pattern `lone_voice_scale` already prices in -- it
+    isn't the system's biggest bet resting on thin consensus, so it shouldn't
+    escalate. This is the narrowing behind the 2026-08-17 measurement that the
+    old bar-aggregate trigger fired on 38.6% of bars, almost all of them this
+    shape."""
+    lone = _buy(symbol="FOO", agreement=0.1, conviction=0.3)
+    leader = _buy(symbol="BAR", agreement=1.0, conviction=0.9)
+    flag = flag_hard_call(orders=[lone, leader], just_halted=False, overrides_this_bar=0)
+    assert flag == {"is_hard_call": False, "reasons": []}
 
 
 def test_low_agreement_without_any_buy_is_not_a_hard_call():
     """The threshold only matters when it's actually gating money moving --
     a sell-only bar with weak agreement isn't a disagreement worth escalating,
     it's just an exit."""
-    flag = flag_hard_call(agreement_score=0.1, orders=[_sell()], just_halted=False,
-                          overrides_this_bar=0)
+    flag = flag_hard_call(orders=[_sell()], just_halted=False, overrides_this_bar=0)
     assert flag == {"is_hard_call": False, "reasons": []}
 
 
 def test_reasons_accumulate_for_multiple_triggers():
-    flag = flag_hard_call(agreement_score=0.1, orders=[_buy()], just_halted=True,
+    flag = flag_hard_call(orders=[_buy(agreement=0.1)], just_halted=True,
                           overrides_this_bar=3)
     assert flag["is_hard_call"] is True
     assert len(flag["reasons"]) == 3
 
 
 def test_agreement_threshold_is_configurable():
-    flag = flag_hard_call(agreement_score=0.5, orders=[_buy()], just_halted=False,
+    flag = flag_hard_call(orders=[_buy(agreement=0.5)], just_halted=False,
                           overrides_this_bar=0, low_agreement_threshold=0.6)
     assert flag["is_hard_call"] is True
 
@@ -125,7 +137,8 @@ def test_summarize_counts_and_rate():
         _entry({"is_hard_call": True, "reasons": ["circuit breaker tripped this bar"]}),
         _entry({"is_hard_call": True,
                 "reasons": ["superior_judge intervened on 2 order(s)",
-                           "low consult agreement (0.20) behind a live buy"]}),
+                           "lone-voice buy on FOO (agreement 0.20) is also "
+                           "the bar's highest-conviction buy (0.30)"]}),
     ]
     s = summarize_hard_calls(log)
     assert s["n_bars"] == 3
