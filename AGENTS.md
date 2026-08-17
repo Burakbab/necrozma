@@ -171,6 +171,21 @@ is no brokerage account in this design and there does not need to be one.
   and the return columns tell different stories here.) Not promotion-grade,
   not walk-forward — a full-history point estimate per scenario, same
   caveat as `anatomy`/`consults`.
+- **Resolved 2026-08-17 (3-hourly check): a genuinely unscaled 4h seed does
+  NOT reach the same outcome as the x6-scaled seed used in every prior 4h
+  shadow run.** 10 generations, `bar_interval=4h`, period genes left at
+  their 1d values: three generations (not one) to claw from fitness -4.515
+  to -0.445, never crossing into positive fold-aggregate fitness across 10
+  generations, vs. every scaled run's single-generation jump to 0.6-0.8+.
+  Also surfaced an anomaly worth a closer look later: every accepted
+  version's fold-aggregate fitness stayed negative while its sealed-holdout
+  fitness was strongly positive and rising — the opposite of the usual
+  overfitting pattern, likely a regime mismatch between the newest-15%
+  holdout slice and the older search folds for this genome specifically.
+  Full numbers and the fold/holdout table in
+  `runs/2026-08-17-0820-4h-shadow-unscaled-seed.md`. Shadow-only, as always:
+  did not touch `live_state.json`, `researcher_memory`, or the real
+  champion (still v3, 1d bars).
 - **Resolved 2026-08-17 (3-hourly check): the "flag hard calls" half of item
   4 (LLM-backed consults) is now built.** New `agents.judges.flag_hard_call`
   is a pure, deterministic function that labels a decision-log bar as a hard
@@ -387,6 +402,34 @@ every `evolve` call.
    One data point, not a law — still open: whether a third plateau exists
    past generation 10, and whether a genuinely unscaled fresh seed shows the
    same shape.
+
+   **Resolved 2026-08-17 (3-hourly check): the unscaled seed does NOT show
+   the same shape** (see `runs/2026-08-17-0820-4h-shadow-unscaled-seed.md`).
+   10 generations at `n_blind=6` from the seed genome with `bar_interval`
+   flipped to `"4h"` but every period gene left at its 1d value (no x6
+   scaling at all) — same isolation discipline as every prior 4h shadow run.
+   Unlike every x6-scaled run (one quick fix in generation 1, straight to
+   positive fitness 0.6-0.8+), the unscaled seed needed **three** separate
+   generations to claw back from catastrophic (-4.515) to -0.445 (disable
+   `consult_moderate` as an entry source entirely, then
+   `correlation_penalty` 0.9, then halve chop-regime sizing), then held flat
+   through 7 more generations (53 candidates tried, boldness to 6) — fold-
+   aggregate fitness never went positive at all. Sharper anomaly worth
+   following up: every accepted version's fold-aggregate fitness stayed
+   negative (0/3 folds beat benchmark) while its sealed-holdout fitness was
+   strongly positive and rising (0.815 -> 1.704 -> 2.486, all
+   `beat_benchmark: true`) — the opposite of typical overfitting, and unlike
+   any x6-scaled run, where fold and holdout fitness moved together. Most
+   likely a regime mismatch between the newest 15% holdout slice and the
+   older 85% search folds for this specific genome, not evidence of genuine
+   generalization; not chased further this run. Answers the open question:
+   manual pre-scaling before evolving isn't just a head start, it reaches a
+   categorically different (positive-fitness, fewer-trades, fold/holdout-
+   aligned) outcome than blind search alone gets to from the raw seed in a
+   workable generation budget. Still open: whether more generations past 10
+   let the unscaled seed's fold fitness eventually turn positive too, and
+   what's actually different between the two windows driving the fold/
+   holdout split.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
