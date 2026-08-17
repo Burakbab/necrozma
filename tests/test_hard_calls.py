@@ -4,7 +4,7 @@ the Trader has already executed fills, so it can never change what a tick
 does, only what gets logged about it. This is the "flag hard calls" half of
 the LLM-backed-consult item in AGENTS.md; the other half (acting on a flag)
 is not built yet."""
-from agents.judges import flag_hard_call
+from agents.judges import flag_hard_call, summarize_hard_calls
 from core.genome import Genome
 from core.types import Order
 from loop.engine import run_backtest
@@ -102,3 +102,57 @@ def test_hard_call_computation_cannot_affect_execution():
     without_log = run_backtest(_genome(), data, log_detail=False)
     assert with_log["stats"] == without_log["stats"]
     assert with_log["closed_trades"] == without_log["closed_trades"]
+
+
+def _entry(hard_call=None):
+    """A minimal decision-log-shaped dict -- summarize_hard_calls only ever
+    reads the "ts" and "hard_call" keys, so tests don't need a real bar."""
+    return {"ts": "2020-01-01", "hard_call": hard_call or {"is_hard_call": False,
+                                                            "reasons": []}}
+
+
+def test_summarize_empty_log():
+    s = summarize_hard_calls([])
+    assert s == {"n_bars": 0, "n_flagged": 0, "flag_rate": 0.0,
+                 "by_category": {"circuit_breaker": 0, "superior_override": 0,
+                                  "low_agreement_buy": 0},
+                 "flagged": []}
+
+
+def test_summarize_counts_and_rate():
+    log = [
+        _entry(),
+        _entry({"is_hard_call": True, "reasons": ["circuit breaker tripped this bar"]}),
+        _entry({"is_hard_call": True,
+                "reasons": ["superior_judge intervened on 2 order(s)",
+                           "low consult agreement (0.20) behind a live buy"]}),
+    ]
+    s = summarize_hard_calls(log)
+    assert s["n_bars"] == 3
+    assert s["n_flagged"] == 2
+    assert s["flag_rate"] == 2 / 3
+    assert s["by_category"] == {"circuit_breaker": 1, "superior_override": 1,
+                                "low_agreement_buy": 1}
+    assert [f["ts"] for f in s["flagged"]] == ["2020-01-01", "2020-01-01"]
+
+
+def test_summarize_tolerates_entries_missing_the_field():
+    """The live journal's earliest ticks predate the hard_call field entirely
+    -- summarize_hard_calls must treat a missing key as "not flagged", not
+    raise, so the CLI can run it over the whole journal unconditionally."""
+    log = [{"ts": "2020-01-01"}, _entry()]
+    s = summarize_hard_calls(log)
+    assert s["n_bars"] == 2
+    assert s["n_flagged"] == 0
+
+
+def test_summarize_on_real_backtest_log_is_well_shaped():
+    """End-to-end: feed a real run_backtest decision_log through and check
+    the aggregate is internally consistent, without asserting on which bars
+    got flagged (that depends on genome tuning)."""
+    data = {s: synthetic_ohlcv(240, seed=i) for i, s in enumerate(SYMBOLS)}
+    result = run_backtest(_genome(), data, log_detail=True)
+    s = summarize_hard_calls(result["decision_log"])
+    assert s["n_bars"] == len(result["decision_log"])
+    assert s["n_flagged"] == len(s["flagged"])
+    assert sum(s["by_category"].values()) >= s["n_flagged"]

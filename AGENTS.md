@@ -78,15 +78,16 @@ python3 evotrader_bundle.py anatomy     # P&L post-mortem on every closed trade
 python3 evotrader_bundle.py consults    # are the three consults actually independent?
 python3 evotrader_bundle.py costs       # fee/slippage perturbation sensitivity
 python3 evotrader_bundle.py regime      # what market regime does each fold/holdout window contain?
+python3 evotrader_bundle.py hard-calls  # how often would agents.judges.flag_hard_call fire?
 ```
 
-`anatomy`, `consults`, `costs` and `regime` are diagnostics: they replay
-history and report, they never touch `live_state.json` or the champion.
-`anatomy`/`consults`/`costs` take a few minutes (`costs` replays history once
-per cost scenario, so longer). `regime` is cheap — no genome or council
-involved, just equal-weight buy-and-hold over each walk-forward fold and the
-sealed holdout — and takes `--interval 1h|4h|1d` to inspect a bar size other
-than the champion's own.
+`anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
+they replay history and report, they never touch `live_state.json` or the
+champion. `anatomy`/`consults`/`costs`/`hard-calls` take a few minutes
+(`costs` replays history once per cost scenario, so longer). `regime` is
+cheap — no genome or council involved, just equal-weight buy-and-hold over
+each walk-forward fold and the sealed holdout — and takes `--interval
+1h|4h|1d` to inspect a bar size other than the champion's own.
 
 `tick` refuses to trade the same bar twice — if it prints `already traded`, that
 is the idempotency guard working correctly, not an error. It decides on the last
@@ -217,6 +218,38 @@ is no brokerage account in this design and there does not need to be one.
   guesses, not tuned against real decision-log data yet), then design what
   "apply consult verdict" actually means procedurally for an unattended
   schedule that can't pause mid-tick for a human.
+- **Resolved 2026-08-17 (3-hourly check): measured how often `flag_hard_call`
+  actually fires, and the threshold as shipped is too loose to be useful.**
+  New read-only diagnostic `evotrader_bundle.py hard-calls` (same guarantees
+  as `anatomy`/`consults`/`costs`/`regime` — full-history replay, never
+  touches `live_state.json`) plus a pure aggregator
+  `agents.judges.summarize_hard_calls` (tested, `tests/test_hard_calls.py`
+  now 12 tests up from 7, full suite 49 passed up from 45) answer the "run a
+  live tick or two and check whether any real bars actually get flagged"
+  line directly above — a full backtest replay runs every bar through the
+  same `Council.tick`/`flag_hard_call` call a live tick would, so it answers
+  this across four years of bars instead of one tick a day. Result against
+  the real champion v3: **535/1386 logged bars (38.6%) flag as hard calls.**
+  Broken down by trigger: `circuit_breaker` 4, `superior_override` 85,
+  `low_agreement_buy` 455 (some bars trip more than one, so these don't sum
+  to 535). The dominant trigger is nearly meaningless as a filter: with
+  exactly 3 consults, agreement is discretized to 0/0.33/0.67/1.0, so
+  "agreement < 0.4 behind a buy" is mechanically identical to "exactly one
+  consult proposed this buy" — a normal, frequent pattern the system already
+  handles procedurally (`risk_judge.lone_voice_scale` sizes it down), not an
+  exceptional disagreement worth a slower second look. Drop that one trigger
+  and the rate falls to `circuit_breaker` + `superior_override` ≈ 89/1386
+  (6.4%) — a rate a human or LLM review pass could plausibly keep up with;
+  38.6% is not. The live journal has 0 flagged ticks so far, but all 3 real
+  ticks predate the field (it shipped after tick 3 ran) — nothing to compare
+  against yet from real trading; `evotrader_bundle.py hard-calls` will start
+  reporting real flags from tick 4 onward. Not changed this run:
+  `flag_hard_call`'s own logic and threshold are untouched — this only
+  measures what the as-shipped definition does. Narrowing what counts as a
+  "hard call" (e.g. dropping the low-agreement trigger, or replacing it with
+  something that isn't just "lone voice, yes/no") is the judgment call this
+  item already flagged as needing a decision — now with real numbers behind
+  it instead of a guess.
 - **Resolved 2026-08-16 (3-hourly check): the holdout-window question above
   answered, and the answer is the opposite of what was suspected.** Added a
   `--holdout` flag to `evotrader_bundle.py costs` (same guarantees, still
@@ -589,6 +622,25 @@ every `evolve` call.
    "fill at the live price at the moment of execution" convention); (b) is
    weaker but fits the existing single-pass `tick`. Worth a decision before
    more code goes into this, not just more architecture.
+
+   **Frequency measured 2026-08-17** (see "Current state" above and
+   `evotrader_bundle.py hard-calls`): as shipped, 38.6% of logged bars flag
+   as hard calls on the full-history replay, almost entirely driven by the
+   low-agreement-buy trigger, which is mechanically just "exactly one
+   consult proposed this buy" (discretized 3-consult agreement) rather than
+   a genuinely unusual disagreement — a pattern the system already prices
+   in via `lone_voice_scale`, not a rare event worth escalating. That rate
+   is too high for either design in (a)/(b) above to be practical — a
+   review-after-the-fact session in (b) can't meaningfully look at over a
+   third of all trading bars, and (a) pausing mid-tick that often would
+   turn "occasional slow path" into "the normal path." **Sharper next step
+   before picking (a) vs (b): narrow the trigger set first** (drop
+   low-agreement-buy entirely, or replace it with something that isn't a
+   simple share-of-3 threshold — e.g. only fire when a lone-voice buy is
+   *also* the highest-conviction/largest order that bar) and re-run
+   `hard-calls` to see what rate that leaves; the (a)-vs-(b) architecture
+   choice is much easier to reason about once the flagged set is actually
+   small.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.
