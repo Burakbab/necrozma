@@ -432,9 +432,35 @@ every `evolve` call.
    categorically different (positive-fitness, fewer-trades, fold/holdout-
    aligned) outcome than blind search alone gets to from the raw seed in a
    workable generation budget. Still open: whether more generations past 10
-   let the unscaled seed's fold fitness eventually turn positive too, and
-   what's actually different between the two windows driving the fold/
-   holdout split.
+   let the unscaled seed's fold fitness eventually turn positive too.
+
+   **Resolved 2026-08-17 (3-hourly check): the fold/holdout split anomaly
+   chased down, and the answer is the opposite of the "easier holdout
+   window" guess.** New read-only diagnostic `evotrader_bundle.py regime
+   [--interval ...]` (same guarantees as `anatomy`/`consults`/`costs`) reports
+   equal-weight buy-and-hold return/sharpe/maxDD per walk-forward fold and
+   the sealed holdout, independent of any genome. Full numbers in
+   `runs/2026-08-17-0956-regime-diagnostic-fold-holdout.md`. Headline: 1d and
+   4h bars see essentially the *same* calendar regimes per window (same
+   universe, same fraction-based split of the same history) — fold 2 is a
+   +200%+ melt-up (sharpe ~1.7-1.8), the holdout is the worst window of the
+   four by raw buy-and-hold terms (-36%, sharpe ~-1.2), not a lucky bull run.
+   That rules out "the genome got lucky on an easy holdout" and points at the
+   real mechanism instead: fitness is *relative* to buy-and-hold, and the
+   08:20 run's unscaled-seed fixes were all risk-reducing (disabled
+   `consult_moderate`, near-max `correlation_penalty`, halved chop sizing) —
+   exactly the profile that structurally underperforms a +200% melt-up
+   (dragging fold-aggregate fitness negative) and structurally outperforms a
+   -36% crash (driving holdout fitness up), for the same underlying reason.
+   Not evidence the policy generalises — raw fold-aggregate fitness never
+   went positive, so it still lost to benchmark in 2 of 3 folds — but it
+   replaces a vague "regime mismatch" guess with a mechanistic one. Flags a
+   sharper open question for whoever next touches the fold scheme: is
+   `FOLD_CONSISTENCY_WEIGHT`'s cross-fold variance penalty enough when one of
+   three fixed folds is permanently a +200% outlier, or does that call for a
+   rolling/regime-stratified fold scheme instead of the current fixed 85/15
+   split? Not attempted this run — `regime` only characterised the existing
+   windows, it doesn't propose a new fold scheme.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
