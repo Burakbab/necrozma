@@ -328,6 +328,63 @@ def main():
             print(f"  baseline fitness {base[5]:.3f} -> worst scenario "
                   f"'{worst[0]}' fitness {worst[5]:.3f} "
                   f"({worst[5] - base[5]:+.3f})")
+    elif cmd == "regime":
+        # Diagnostic: what does each walk-forward fold and the sealed holdout
+        # actually look like as a *market*, independent of any genome or
+        # backtest? Never touches live_state.json or the champion — just
+        # slices the same windows Evaluator.folds()/HOLDOUT_FRAC use and
+        # reports buy-and-hold behaviour over each one. Exists because the
+        # 2026-08-17 4h shadow runs found every accepted promotion's
+        # fold-aggregate fitness staying negative while its holdout fitness
+        # was strongly positive and rising -- this answers "what's actually
+        # different about the two windows" directly instead of inferring it
+        # from fitness numbers alone. `--interval` overrides the champion's
+        # own bar_interval, so this can be pointed at a bar size nothing live
+        # trades on yet.
+        from constitution import HOLDOUT_FRAC, N_FOLDS
+        from core import market
+        from core.market import Replay
+        from loop.engine import benchmark_buy_hold
+        interval = None
+        if "--interval" in sys.argv:
+            interval = sys.argv[sys.argv.index("--interval") + 1]
+        g0 = acct.genome
+        interval = interval or g0.bar_interval
+        data = market.load_universe(g0.universe, interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        replay = Replay({s: df for s, df in data.items() if s in g0.universe})
+        n = len(replay)
+        search_end = 1.0 - HOLDOUT_FRAC
+        edges = [i / N_FOLDS * search_end for i in range(N_FOLDS + 1)]
+        windows = [(f"fold {i + 1}", edges[i], edges[i + 1]) for i in range(N_FOLDS)]
+        windows.append(("holdout", search_end, 1.0))
+        bcfg = g0.data.get("broker", {})
+        cash = float(bcfg.get("start_cash", 10_000.0))
+        bpy = market.BARS_PER_YEAR.get(interval, 365.25)
+        print(f"[regime] {len(data)} symbols, {interval} bars, {n} total bars", flush=True)
+        print()
+        print(f"REGIME BY FOLD/HOLDOUT — {interval} bars, {len(data)} symbols, "
+              f"equal-weight buy-and-hold")
+        print("=" * 92)
+        print(f"  {'window':<10s} {'start':<12s} {'end':<12s} {'bars':>6s} "
+              f"{'return':>9s} {'sharpe':>7s} {'maxDD':>7s}")
+        for label, a, b in windows:
+            start = max(60, int(n * a))
+            end = min(n - 1, int(n * b))
+            if end - start < 5:
+                print(f"  {label:<10s} window too short ({end - start} bars)")
+                continue
+            bench = benchmark_buy_hold(replay, g0.universe, start, end, cash,
+                                       bars_per_year=bpy)
+            if not bench:
+                print(f"  {label:<10s} no benchmark data")
+                continue
+            print(f"  {label:<10s} {str(replay.index[start])[:10]:<12s} "
+                  f"{str(replay.index[end])[:10]:<12s} {end - start:>6d} "
+                  f"{bench['total_return']:>+8.1%} {bench['sharpe']:>7.2f} "
+                  f"{bench['max_dd']:>7.1%}")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)

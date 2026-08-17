@@ -77,11 +77,16 @@ python3 evotrader_bundle.py evolve N    # N generations of self-improvement
 python3 evotrader_bundle.py anatomy     # P&L post-mortem on every closed trade
 python3 evotrader_bundle.py consults    # are the three consults actually independent?
 python3 evotrader_bundle.py costs       # fee/slippage perturbation sensitivity
+python3 evotrader_bundle.py regime      # what market regime does each fold/holdout window contain?
 ```
 
-`anatomy`, `consults` and `costs` are diagnostics: they replay history and
-report, they never touch `live_state.json` or the champion. All three take a
-few minutes (`costs` replays history once per cost scenario, so longer).
+`anatomy`, `consults`, `costs` and `regime` are diagnostics: they replay
+history and report, they never touch `live_state.json` or the champion.
+`anatomy`/`consults`/`costs` take a few minutes (`costs` replays history once
+per cost scenario, so longer). `regime` is cheap — no genome or council
+involved, just equal-weight buy-and-hold over each walk-forward fold and the
+sealed holdout — and takes `--interval 1h|4h|1d` to inspect a bar size other
+than the champion's own.
 
 `tick` refuses to trade the same bar twice — if it prints `already traded`, that
 is the idempotency guard working correctly, not an error. It decides on the last
