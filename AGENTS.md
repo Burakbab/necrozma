@@ -82,6 +82,7 @@ python3 evotrader_bundle.py hard-calls  # how often would agents.judges.flag_har
 python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
 python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the sealed holdout has rejected
 python3 evotrader_bundle.py fold-scheme       # fold-count sensitivity of fold-aggregate fitness
+python3 evotrader_bundle.py drawdown          # which date range actually drives maxDD, ranked by depth
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -159,6 +160,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-18 (3-hourly check): the "which sub-period drives the
+  -34.1% baseline maxDD" question open since the 2026-08-16 costs/holdout
+  diagnostic now has a real answer — one specific 127-bar episode, not a
+  spread of many.** New read-only diagnostic `evotrader_bundle.py drawdown
+  [--holdout]` (see `runs/2026-08-18-1846-drawdown-episode-diagnostic.md`)
+  adds `loop.engine.drawdown_episodes(nav_history)`, a pure function that
+  walks the champion's own `nav_history` (already returned by
+  `run_backtest`, nothing new computed) into peak-to-trough-to-recovery
+  episodes ranked by depth, each tagged with the walk-forward fold (or
+  sealed holdout) its peak falls in. Verified the deepest episode
+  reproduces `stats()`'s own `max_dd` to the decimal (same running-peak
+  definition, cross-checked in `tests/test_drawdown.py`, 7 new tests, full
+  suite 85 passed up from 78). Result against champion v3, full history:
+  the reported -34.1% maxDD is **one episode**, 2024-03-31 to 2024-08-05
+  (127 bars, recovered by 2024-11-10), sitting inside **fold 2** — the same
+  fold every prior regime/fold-scheme diagnostic already flagged as a
+  +200%+ melt-up outlier. Reading them together: a violent pullback inside
+  a violent melt-up is exactly what you'd expect from that fold's own
+  character, not a separate finding — this diagnostic supplies the missing
+  "when and how much" the regime/fold-scheme work had been inferring
+  indirectly. The next-deepest full-history episode (-29.2%,
+  2025-11-08 to today, still unrecovered) falls in fold 3, and under
+  `--holdout` alone the same still-open episode reappears as the sealed
+  holdout's own worst drawdown (-26.6%, 2026-05-08 to today) — the current
+  live drawdown is not a fold-2 echo, it is its own ongoing episode.
+  Verified safe: purely additive (new CLI branch plus one new pure function
+  in `loop.engine`, not in the checksummed set), `live_state.json` md5 and
+  `git status` confirm untouched, `constitution verified dfae6a697f51fb49`
+  unchanged. One bug caught and fixed before commit: the first draft tagged
+  every episode's fold/holdout window using full-history fraction math even
+  under `--holdout`, which mislabeled every row "fold 1"/"fold 2" inside a
+  replay that was already 100% holdout data — fixed to report `holdout` for
+  every row when `--holdout` is passed. Next: this is diagnostic-only, no
+  code path acts on it; if the regime-stratified/rolling fold-scheme
+  redesign mentioned throughout this file's fold-scheme entries is ever
+  attempted, `drawdown --holdout` is now a one-line way to check whether a
+  redesigned holdout window still contains the same still-open drawdown or
+  a cleaner one.
 - **Resolved 2026-08-18 (3-hourly check): swept the third and final real
   champion (v1, the seed) through `fold-scheme`, and it flips the prior
   run's read.** (see `runs/2026-08-18-1549-fold-scheme-third-champion.md`)
@@ -522,13 +561,16 @@ is no brokerage account in this design and there does not need to be one.
   -1.172) while still beating buy-and-hold by the same +21.7% margin that
   passed the original promotion gate — it is a genuinely hard window for
   the strategy, just not one that trips the drawdown gate. Full numbers in
-  `runs/2026-08-16-1846-costs-holdout-diagnostic.md`. Next: the
-  full-history run is the one with the thin drawdown margin, so a
-  worthwhile follow-up is finding which sub-period of the full 4 years
-  drives that -34.1% baseline maxDD (bear-market segment? one specific
-  crash bar?) — `costs --holdout` plus the existing full-history `costs`
-  bracket the two ends already measured; nothing yet isolates what's in
-  between.
+  `runs/2026-08-16-1846-costs-holdout-diagnostic.md`.
+
+  **Resolved 2026-08-18 (3-hourly check): the sub-period question above
+  answered.** See "Current state" above and
+  `runs/2026-08-18-1846-drawdown-episode-diagnostic.md` — new
+  `evotrader_bundle.py drawdown` isolates the -34.1% full-history maxDD to
+  one 127-bar episode (2024-03-31 to 2024-08-05) inside fold 2, the same
+  fold the regime/fold-scheme diagnostics already flagged as a +200%+
+  melt-up outlier — not a bear-market segment, a sharp pullback inside a
+  violent bull fold.
 
 ### The first promotion (v1 → v2)
 
