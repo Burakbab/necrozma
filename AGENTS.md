@@ -80,6 +80,7 @@ python3 evotrader_bundle.py costs       # fee/slippage perturbation sensitivity
 python3 evotrader_bundle.py regime      # what market regime does each fold/holdout window contain?
 python3 evotrader_bundle.py hard-calls  # how often would agents.judges.flag_hard_call fire?
 python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
+python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the sealed holdout has rejected
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -100,6 +101,15 @@ it's read-only (lists flagged-but-unreviewed bars), but `--tick N --verdict
 intentional exception to "diagnostics never touch state" in this list. It
 never touches trading, cash, positions, or the genome, only the
 `hard_call_reviews` field.
+
+`holdout-pressure` is the cheapest diagnostic here — it never runs a
+backtest or touches market data, just reads `acct.lineage` (already in
+`live_state.json`) and reports every individual real challenger that has
+cleared the fold-aggregate gate against the current champion and then lost
+at the sealed holdout, since that champion's promotion. Run it after any
+`evolve` call that doesn't promote, to see whether the champion is holding
+because nothing better exists or because a lucky holdout draw is entrenching
+it against genuinely fold-superior challengers (see "Current state").
 
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
@@ -131,6 +141,38 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-18 (3-hourly check): the live 1d champion v3 shows the
+  same fold-vs-holdout entrenchment pattern the 2026-08-18 4h-shadow work
+  hypothesized, confirmed with 9 real draws, not one shadow anomaly.** New
+  read-only diagnostic `evotrader_bundle.py holdout-pressure` (see
+  `runs/2026-08-18-0655-holdout-pressure-diagnostic.md`) reads
+  `live_state.json`'s own recorded `lineage` — no new `evolve` run needed —
+  and separates "nothing cleared the fold-aggregate gate" from "something
+  did and the sealed holdout rejected it anyway." Result: since v3's
+  promotion, 9 generations of real search (the weekend all-hands' `evolve
+  15`, round 2, continuing past the promotion) produced 9 individual
+  candidates whose fold-aggregate fitness (1.6–1.98) comfortably beat
+  champion v3's own 1.389, cleared the multiple-testing margin, and every
+  single one still lost the sealed holdout. Sharper than "lost": 6 of the 9
+  scored holdout fitness identical to the champion's own (-1.172 to 3
+  decimals) rather than clearly worse — those specific patches apparently
+  make no difference to trading behavior inside this particular short,
+  crash-regime holdout window, so the gate ties instead of discriminating.
+  Only 3 of 9 scored meaningfully worse; none scored better. Not evidence
+  the gate is miscalibrated — it's doing what it's designed to do — but a
+  concrete, non-hypothetical data point that this specific holdout window is
+  currently closer to "a fixed hurdle most patches can't move" than "a
+  discriminating out-of-sample test," worth weighing if the fold/holdout
+  scheme ever gets revisited (see item 2's existing open question about
+  `FOLD_CONSISTENCY_WEIGHT` and a rolling/regime-stratified fold scheme).
+  Verified safe: purely additive (`loop.evolve` isn't in the checksummed
+  set), tested (`tests/test_holdout_pressure.py`, 8 new tests built from the
+  real `constitution.holdout_accepts()` output so a template change breaks
+  the parser loudly, full suite 72 passed up from 64), `live_state.json`
+  untouched (`git status` confirms), `summary`/`signals`/`tick` all still
+  report `constitution verified dfae6a697f51fb49`. Next: run
+  `holdout-pressure` after any future `evolve` call that doesn't promote —
+  folded into the routine post-evolve checklist alongside `hard-calls`.
 - **v0.1 · genome v3** — second self-promotion, found by the live account's
   own blind search on 2026-08-16 (weekend all-hands)
 - **Live paper account** opened 2026-08-15 with $10,000 imaginary
@@ -629,6 +671,18 @@ every `evolve` call.
    Not chased further this run (one lucky draw, not proof of a systemic
    problem) but worth checking whether the live 1d champion shows the same
    fold-vs-holdout gap the next time a promotion is evaluated.
+
+   **Resolved 2026-08-18 (3-hourly check): didn't need to wait for a new
+   promotion — the live 1d champion's own post-promotion search history,
+   already recorded in `live_state.json`, shows the same pattern.** See
+   "Current state" above and
+   `runs/2026-08-18-0655-holdout-pressure-diagnostic.md`. New diagnostic
+   `evotrader_bundle.py holdout-pressure` found 9/9 real post-promotion
+   challengers against champion v3 that cleared the fold-aggregate gate
+   still lost the sealed holdout, 6 of them by tying the champion's exact
+   holdout score rather than losing outright. Confirms the 4h-shadow
+   hypothesis with real 1d data, not a shadow-run anomaly. Next: run this
+   after every future non-promoting `evolve` call, live or shadow.
 
    **Resolved 2026-08-17 (3-hourly check): the fold/holdout split anomaly
    chased down, and the answer is the opposite of the "easier holdout
