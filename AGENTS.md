@@ -192,6 +192,27 @@ is no brokerage account in this design and there does not need to be one.
   `runs/2026-08-17-0820-4h-shadow-unscaled-seed.md`. Shadow-only, as always:
   did not touch `live_state.json`, `researcher_memory`, or the real
   champion (still v3, 1d bars).
+- **Resolved 2026-08-18 (3-hourly check): a fresh 16-generation unscaled-seed
+  run answers the follow-up question (more generations alone doesn't help)
+  and explains *why* it stalls.** (see
+  `runs/2026-08-18-0232-4h-shadow-unscaled-seed-16gen.md`) Same two-promotion
+  shape as the 10-generation run (fold-aggregate -4.508 -> -1.054 (gen 4) ->
+  -0.241 (gen 8)), then held through 8 more generations despite dozens of
+  candidates clearing the fold-aggregate acceptance bar with solidly
+  positive fitness (0.099 to 1.080) — every one was rejected at the sealed
+  holdout instead. Champion v3's own holdout draw happened to land at a
+  strong 1.079 on a genome whose fold fitness is -0.241 (the same
+  fold/holdout anomaly as the 10-generation run), and every challenger's
+  holdout score is one noisy point estimate on that same short crash window
+  (7 challenger draws ranged -1.664 to +0.907, no correlation with
+  fold-side quality) that essentially never clears 1.079 plus a
+  cumulative-draws margin. **General finding, not 4h-specific: a lucky
+  holdout draw at promotion time can entrench a champion against
+  genuinely-better-on-search-folds challengers**, for as long as the
+  holdout window is short enough for its per-candidate score to be noisy —
+  worth watching for on the live 1d account too. Flagged, not fixed; one
+  lucky draw, not proof the gate is mistuned. Shadow-only, verified
+  `git status` clean and `live_state.json` md5 unchanged.
 - **Resolved 2026-08-17 (3-hourly check): the "flag hard calls" half of item
   4 (LLM-backed consults) is now built.** New `agents.judges.flag_hard_call`
   is a pure, deterministic function that labels a decision-log bar as a hard
@@ -542,6 +563,24 @@ every `evolve` call.
    aligned) outcome than blind search alone gets to from the raw seed in a
    workable generation budget. Still open: whether more generations past 10
    let the unscaled seed's fold fitness eventually turn positive too.
+
+   **Resolved 2026-08-18 (3-hourly check): no, 16 generations still doesn't
+   get there, and now there's a mechanism, not just a data point.** (see
+   "Current state" above and
+   `runs/2026-08-18-0232-4h-shadow-unscaled-seed-16gen.md`) From generation 8
+   onward, dozens of candidates cleared the fold-aggregate acceptance bar
+   with fitness well above champion v3's -0.241, and every one was rejected
+   at the sealed holdout: v3's own holdout draw landed at a strong 1.079,
+   and every challenger's holdout score is one noisy point estimate on the
+   same short window (7 draws ranged -1.664 to +0.907) that almost never
+   clears that bar. This reframes the open question: it isn't "does the
+   unscaled seed need more generations," it's "a champion that draws a
+   lucky holdout score becomes hard to unseat regardless of how many
+   generations run after it" — a property of the fixed 85/15 holdout split
+   plus per-candidate draw noise, not of this seed or bar size specifically.
+   Not chased further this run (one lucky draw, not proof of a systemic
+   problem) but worth checking whether the live 1d champion shows the same
+   fold-vs-holdout gap the next time a promotion is evaluated.
 
    **Resolved 2026-08-17 (3-hourly check): the fold/holdout split anomaly
    chased down, and the answer is the opposite of the "easier holdout
