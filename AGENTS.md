@@ -81,6 +81,7 @@ python3 evotrader_bundle.py regime      # what market regime does each fold/hold
 python3 evotrader_bundle.py hard-calls  # how often would agents.judges.flag_hard_call fire?
 python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
 python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the sealed holdout has rejected
+python3 evotrader_bundle.py fold-scheme       # fold-count sensitivity of fold-aggregate fitness
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -110,6 +111,16 @@ at the sealed holdout, since that champion's promotion. Run it after any
 `evolve` call that doesn't promote, to see whether the champion is holding
 because nothing better exists or because a lucky holdout draw is entrenching
 it against genuinely fold-superior challengers (see "Current state").
+
+`fold-scheme` re-evaluates the live champion under alternative `n_folds`
+counts (via `loop.evolve.Evaluator`, which already accepted `n_folds` as a
+constructor argument — no engine or constitution change) and reports how
+much one outlier calendar fold dominates `aggregate_fitness` at each count.
+Read-only, full replay per scheme (same cost class as `regime`/`costs`). Only
+valid for relative comparison across fold counts on the same data snapshot —
+its absolute `aggregate_fitness` numbers will not match a champion's
+recorded promotion-time fold-aggregate fitness (different sliding 4-year
+window). See "Current state" for the first result.
 
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
@@ -141,6 +152,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-18 (3-hourly check): the fold-scheme open question from
+  the 2026-08-17 regime diagnostic has a first quantified answer — fold 2's
+  dominance is a fold-*count* artefact, and fixing it isn't as simple as
+  raising `N_FOLDS`.** New read-only diagnostic `evotrader_bundle.py
+  fold-scheme` (see `runs/2026-08-18-0952-fold-scheme-sensitivity.md`)
+  re-evaluates champion v3 under `n_folds` 3/5/8 via the existing
+  `loop.evolve.Evaluator` class (already took `n_folds` as a constructor
+  argument, so nothing structural changed). Result: the "outlier gap"
+  (fold 2's +220% b&h return vs the mean of the other folds) shrinks sharply
+  and monotonically as fold count rises — +219.4% (n=3) → +53.8% (n=5) →
+  +52.0% (n=8) — confirming the outlier's leverage over `aggregate_fitness`
+  is mostly an artefact of there being only 3 folds. But
+  `aggregate_fitness` itself does *not* move safely with fold count: -1.224
+  (n=3) → +1.633 (n=5) → -0.500 (n=8), and at n=8 the smallest fold (95
+  bars) came within 25 bars of `run_backtest`'s 120-bar hard minimum and one
+  fold failed a hard gate outright (`fitness=-inf` despite positive excess
+  return). Reading both together: naively raising `N_FOLDS` on the current
+  fixed 85/15 calendar split just trades "one big outlier fold" for "small
+  folds hitting the MIN_TRADES/MIN_BARS/maxDD floor more often" — not a fix
+  by itself. A regime-stratified or rolling fold scheme (not attempted this
+  run, bigger scope) looks like the more promising direction: it could
+  dilute the outlier the same way more folds do, without shrinking any
+  individual fold below the hard-gate minimums. Caveat carried from every
+  full-history diagnostic here: this run's -1.224 at n_folds=3 does not
+  match v3's recorded 1.389 promotion-time fold-aggregate fitness, because
+  `load_universe(..., 4.0)` loads a different sliding 4-year window (ending
+  today, not 2026-08-16) — only valid for relative comparison across fold
+  counts on the same snapshot. Verified safe: purely additive (only a new
+  CLI branch in `main()`, outside the embedded `_SRC` bundle strings; no
+  constitution or `Evaluator` code changed), `live_state.json` md5 identical
+  before/after, `constitution verified dfae6a697f51fb49` unchanged, full
+  test suite still 72 passed (no new tests needed — print-only CLI glue over
+  an already-tested class, same bar `regime`/`costs`/`anatomy`/`consults`
+  are held to). Next: if a fold-scheme redesign is ever undertaken, target a
+  regime-stratified/rolling scheme, not a higher fixed `N_FOLDS` — that is a
+  constitution change (checksummed, needs an `AMENDMENTS.md` row and much
+  more design than fit in one 3-hourly session) and should not be done
+  without first checking whether the pattern replicates on other champions
+  (this is one champion, one data snapshot).
 - **Resolved 2026-08-18 (3-hourly check): the live 1d champion v3 shows the
   same fold-vs-holdout entrenchment pattern the 2026-08-18 4h-shadow work
   hypothesized, confirmed with 9 real draws, not one shadow anomaly.** New
@@ -711,6 +761,21 @@ every `evolve` call.
    rolling/regime-stratified fold scheme instead of the current fixed 85/15
    split? Not attempted this run — `regime` only characterised the existing
    windows, it doesn't propose a new fold scheme.
+
+   **Resolved 2026-08-18 (3-hourly check): first quantified answer — the
+   outlier's dominance is a fold-count artefact, but raising `N_FOLDS` alone
+   isn't the fix.** New diagnostic `evotrader_bundle.py fold-scheme` (see
+   "Current state" above and
+   `runs/2026-08-18-0952-fold-scheme-sensitivity.md`) re-evaluates champion
+   v3 at `n_folds` 3/5/8: fold 2's outlier gap over the other folds shrinks
+   monotonically (+219.4% → +53.8% → +52.0%), but `aggregate_fitness`
+   itself swings non-monotonically (-1.224 → +1.633 → -0.500) and at n=8 a
+   fold came close to `run_backtest`'s hard 120-bar minimum and one fold
+   failed a hard gate outright. Next: a regime-stratified/rolling scheme,
+   not a higher fixed `N_FOLDS`, looks like the right direction — but that's
+   a constitution change (checksummed, needs an `AMENDMENTS.md` row) and
+   deserves its own design pass, plus checking the pattern on more than one
+   champion/snapshot, before anything gets proposed.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after

@@ -11,6 +11,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py anatomy          # P&L post-mortem on every closed trade
     python evotrader_bundle.py consults         # are the three consults actually independent?
     python evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
+    python evotrader_bundle.py fold-scheme      # fold-count sensitivity of fold-aggregate fitness
 """
 import sys, types, json, os
 
@@ -515,6 +516,85 @@ def main():
                   "holdout draw -- the more of these\n  accumulate, the likelier this "
                   "champion is entrenched by holdout luck rather than\n  by being "
                   "the best genome the search has actually found.")
+    elif cmd == "fold-scheme":
+        # Diagnostic: the 2026-08-17 regime diagnostic found fold 2 of the
+        # fixed 3-fold walk-forward split is a permanent +200%+ melt-up that
+        # structurally rewards/punishes strategies by their risk profile
+        # rather than their edge, and left open whether
+        # FOLD_CONSISTENCY_WEIGHT's cross-fold variance penalty is enough or
+        # whether the fold scheme itself (currently N_FOLDS=3, fixed 85/15
+        # split) needs to change. This re-evaluates the live champion's own
+        # genome under alternative fold counts using the exact same
+        # Evaluator class `evolve` uses -- just a different n_folds -- so the
+        # numbers are directly comparable. Purely a re-slicing of the
+        # *search* region for reporting purposes: does NOT touch the
+        # constitution's N_FOLDS constant, live_state.json, or the sealed
+        # holdout (evaluate() never looks past search_end regardless of
+        # n_folds). Same guarantees as anatomy/consults/costs/regime/
+        # hard-calls: full replay, read-only, slow (one backtest per fold
+        # per scheme).
+        from loop.evolve import Evaluator
+        from core import market
+        from constitution import N_FOLDS
+        g0 = acct.genome
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        schemes = sorted({N_FOLDS, 5, 8})
+        print(f"[fold-scheme] replaying {len(data)} symbols against champion "
+              f"v{g0.version} ({g0.bar_interval} bars) under {len(schemes)} fold "
+              f"counts ({', '.join(str(s) for s in schemes)}) ...", flush=True)
+        print()
+        print(f"FOLD-SCHEME SENSITIVITY — champion v{g0.version}")
+        print("=" * 96)
+        agg_by_scheme = {}
+        gap_by_scheme = {}
+        for n_folds in schemes:
+            ev = Evaluator(data, n_folds=n_folds)
+            res = ev.evaluate(g0, log_detail=False)
+            tag = " (current constitution default)" if n_folds == N_FOLDS else ""
+            print(f"  n_folds={n_folds}{tag}")
+            beat, rets = 0, []
+            for i, f in enumerate(res["folds"]):
+                if "error" in f:
+                    print(f"    fold {i + 1:<2d} {f['error']}")
+                    continue
+                bench, edge = f.get("benchmark", {}), f.get("edge", {})
+                ret = bench.get("total_return", 0.0)
+                rets.append(ret)
+                if edge.get("beat_benchmark"):
+                    beat += 1
+                print(f"    fold {i + 1:<2d} fitness {f['fitness']:>7.3f}  "
+                      f"b&h return {ret:>+8.1%}  excess {edge.get('excess_return', 0.0):>+8.1%}  "
+                      f"{'beat' if edge.get('beat_benchmark') else 'lost to'} benchmark")
+            print(f"    aggregate_fitness = {res['aggregate_fitness']:>7.3f}   "
+                  f"{beat}/{len(res['folds'])} folds beat benchmark")
+            agg_by_scheme[n_folds] = res['aggregate_fitness']
+            if rets:
+                mx = max(rets)
+                rest_mean = (sum(rets) - mx) / max(len(rets) - 1, 1)
+                gap = mx - rest_mean
+                gap_by_scheme[n_folds] = gap
+                print(f"    largest single-fold b&h return {mx:+.1%} vs mean of the "
+                      f"rest {rest_mean:+.1%} (outlier gap {gap:+.1%})")
+            print()
+        if len(agg_by_scheme) > 1:
+            base = agg_by_scheme[N_FOLDS]
+            print(f"  aggregate_fitness at N_FOLDS={N_FOLDS} (live): {base:.3f}")
+            for n_folds, agg in agg_by_scheme.items():
+                if n_folds == N_FOLDS:
+                    continue
+                print(f"  aggregate_fitness at n_folds={n_folds}: {agg:.3f} "
+                      f"({agg - base:+.3f} vs live scheme)")
+            if len(gap_by_scheme) > 1:
+                base_gap = gap_by_scheme.get(N_FOLDS)
+                shrinking = all(gap_by_scheme[s] <= base_gap + 1e-9
+                                for s in schemes if s != N_FOLDS and base_gap is not None)
+                print()
+                print(f"  outlier gap {'shrinks' if shrinking else 'does not shrink'} "
+                      "monotonically as fold count rises "
+                      f"({', '.join(f'n={s}: {gap_by_scheme[s]:+.1%}' for s in schemes if s in gap_by_scheme)})")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)
