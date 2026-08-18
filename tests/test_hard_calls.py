@@ -4,7 +4,8 @@ the Trader has already executed fills, so it can never change what a tick
 does, only what gets logged about it. This is the "flag hard calls" half of
 the LLM-backed-consult item in AGENTS.md; the other half (acting on a flag)
 is not built yet."""
-from agents.judges import flag_hard_call, summarize_hard_calls
+from agents.judges import (flag_hard_call, pending_hard_call_reviews,
+                          summarize_hard_calls)
 from core.genome import Genome
 from core.types import Order
 from loop.engine import run_backtest
@@ -221,3 +222,40 @@ def test_summarize_on_real_backtest_log_is_well_shaped():
     assert s["n_bars"] == len(result["decision_log"])
     assert s["n_flagged"] == len(s["flagged"])
     assert sum(s["by_category"].values()) >= s["n_flagged"]
+
+
+def _journal_entry(tick, hard_call=None, bar="2020-01-01"):
+    """A minimal journal-entry-shaped dict -- pending_hard_call_reviews only
+    ever reads "tick", "bar" and decision.hard_call."""
+    return {"tick": tick, "bar": bar,
+           "decision": {"hard_call": hard_call or {"is_hard_call": False,
+                                                    "reasons": []}}}
+
+
+def test_pending_reviews_empty_when_nothing_flagged():
+    journal = [_journal_entry(1), _journal_entry(2)]
+    assert pending_hard_call_reviews(journal, reviews=[]) == []
+
+
+def test_pending_reviews_lists_flagged_ticks_with_no_review():
+    flagged = {"is_hard_call": True, "reasons": ["circuit breaker tripped this bar"]}
+    journal = [_journal_entry(1), _journal_entry(2, flagged), _journal_entry(3, flagged)]
+    pending = pending_hard_call_reviews(journal, reviews=[])
+    assert [p["tick"] for p in pending] == [2, 3]
+    assert pending[0]["bar"] == "2020-01-01"
+    assert pending[0]["reasons"] == flagged["reasons"]
+
+
+def test_pending_reviews_excludes_already_reviewed_ticks():
+    flagged = {"is_hard_call": True, "reasons": ["circuit breaker tripped this bar"]}
+    journal = [_journal_entry(2, flagged), _journal_entry(3, flagged)]
+    reviews = [{"tick": 2, "verdict": "proceed"}]
+    pending = pending_hard_call_reviews(journal, reviews)
+    assert [p["tick"] for p in pending] == [3]
+
+
+def test_pending_reviews_tolerates_entries_missing_the_decision_or_hard_call_key():
+    """Ticks from before hard_call shipped, or a tick whose council.tick call
+    somehow logged no decision at all, must not raise."""
+    journal = [{"tick": 1}, {"tick": 2, "decision": {}}]
+    assert pending_hard_call_reviews(journal, reviews=[]) == []

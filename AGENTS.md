@@ -79,6 +79,7 @@ python3 evotrader_bundle.py consults    # are the three consults actually indepe
 python3 evotrader_bundle.py costs       # fee/slippage perturbation sensitivity
 python3 evotrader_bundle.py regime      # what market regime does each fold/holdout window contain?
 python3 evotrader_bundle.py hard-calls  # how often would agents.judges.flag_hard_call fire?
+python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -92,6 +93,13 @@ each walk-forward fold and the sealed holdout — and takes `--interval
 `tick` refuses to trade the same bar twice — if it prints `already traded`, that
 is the idempotency guard working correctly, not an error. It decides on the last
 *closed* daily bar, which is why the daily run fires at 00:20 UTC.
+
+`review-hard-calls` is not a diagnostic like the five above: run with no args
+it's read-only (lists flagged-but-unreviewed bars), but `--tick N --verdict
+'...'` deliberately writes a review record onto `live_state.json` — the one
+intentional exception to "diagnostics never touch state" in this list. It
+never touches trading, cash, positions, or the genome, only the
+`hard_call_reviews` field.
 
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
@@ -443,6 +451,46 @@ every `evolve` call.
 
 ---
 
+- **Resolved 2026-08-18 (3-hourly check): the "review after the fact" half of
+  item 4 (LLM-backed consults) now has its first piece of infrastructure —
+  design (b) was chosen over (a).** `LiveAccount` gained a new durable field,
+  `hard_call_reviews` (defaults to `[]`, backward-compatible with every
+  state saved before this shipped), and a new method
+  `add_hard_call_review(tick, verdict, notes)` that appends a reasoned
+  verdict onto a flagged journal entry — raising if the tick doesn't exist
+  or was never actually flagged, so a typo can't manufacture a review out of
+  nothing. A new pure function, `agents.judges.pending_hard_call_reviews`,
+  is a read-only set difference between `journal` and `hard_call_reviews`
+  (matched by tick). New CLI command `evotrader_bundle.py review-hard-calls`:
+  with no args, lists any flagged-but-unreviewed bars in plain language and
+  exits; with `--tick N --verdict '...' [--notes '...']`, records a verdict
+  and saves — the only thing this command does that touches
+  `live_state.json`. Chose (b) over (a) explicitly: the measured flag rate
+  (~9.6% as of 2026-08-17, well down from the original 38.6%) is low enough
+  that a scheduled session reviewing after the fact is workable — at most
+  one live bar a day, so under 1 in 10 days produces anything to review —
+  whereas (a)'s stop-before-execution split would still reintroduce the
+  fills-happen-later problem `core.live`'s docstring deliberately avoids,
+  for a rate that no longer needs it. Verified safe: purely additive (no
+  code upstream of this touches trading), tested
+  (`tests/test_hard_calls.py` +4, `tests/test_live_account.py` +5, full
+  suite 64 passed up from 55, including the ValueError guards and a
+  save/load round-trip test), and smoke-tested against a throwaway copy of
+  `live_state.json` with a synthetic flagged entry (list → record a verdict
+  → list again shows 0 pending) — the real `live_state.json` md5 was
+  identical before and after this entire cycle's work, and
+  `constitution verified dfae6a697f51fb49` unchanged throughout. As of this
+  writing no live journal entry has ever actually flagged
+  (`is_hard_call: true`) — tick 4 was the first tick with the field present
+  and it was `false` — so this ships ahead of its first real case, not in
+  response to one; nothing in the scheduled run protocol calls this command
+  yet. Next: once a real live tick actually flags (watch for it in
+  `runs/*-daily-trading.md` notes or a `review-hard-calls` check), a
+  scheduled session should read the flagged case, reason about it inline,
+  and record a verdict via `--tick`/`--verdict`/`--notes` — that first real
+  review is the thing this infrastructure was built for, not more tooling
+  around it.
+
 ## Next steps (rough priority order)
 
 1. **Accumulate live forward-test data** — the only track record not contaminated
@@ -782,6 +830,22 @@ every `evolve` call.
    narrowing. (iii) dropping `low_agreement_buy` outright remains available
    as a fallback if 9.6% still proves too high once (a)/(b) is designed in
    more detail, but hasn't been needed yet.
+
+   **(a)-vs-(b) decided and (b)'s first piece shipped 2026-08-18 (3-hourly
+   check)** (see "Current state" above): design (b), review-after-the-fact,
+   chosen over (a)'s stop-before-execution split — the 9.6% flag rate is low
+   enough (at most one candidate a day off the live daily tick) that a
+   scheduled session can plausibly look at every one. `LiveAccount` now has
+   a durable `hard_call_reviews` field and `add_hard_call_review(...)`; new
+   CLI `review-hard-calls` lists what's pending and records a verdict with
+   `--tick`/`--verdict`/`--notes`. No live bar has ever actually flagged
+   yet, so this is infrastructure ahead of its first real case. **Next: the
+   first time a real live tick flags `is_hard_call: true`, a scheduled
+   session should actually use it** — read the flagged case from
+   `review-hard-calls`, reason about it inline (this is the "session serves
+   as the LLM consultant" idea from the top of this item, now with somewhere
+   concrete to write the verdict), and record the verdict. That first real
+   review is the point of this infrastructure, not more code around it.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.
