@@ -159,6 +159,29 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-18 (3-hourly check): swept the third and final real
+  champion (v1, the seed) through `fold-scheme`, and it flips the prior
+  run's read.** (see `runs/2026-08-18-1549-fold-scheme-third-champion.md`)
+  `--also-version 1` needed no code change — `_reconstruct_champion_genome`
+  already handles version 1 (the seed, no patches) — so this was a pure
+  read-only re-run of the existing diagnostic. `aggregate_fitness` at v1:
+  -2.577 (n=3) → 0.244 (n=5) → -0.938 (n=8) — **non-monotonic**, the same
+  qualitative swing shape v3 showed, not v2's monotonic decrease. That
+  means 2 of 3 known champions swing non-monotonically and only 1
+  decreases monotonically — the opposite conclusion from the 12:56 UTC
+  run below, which (with only v2 and v3 to compare) called the swing
+  "v3-specific." With all three real champions this account has ever had
+  now checked, non-monotonicity looks like the more common shape on this
+  fixed 3-fold calendar split, not an outlier tied to one genome — though
+  n=3 is still small, and v1's fitness was weak throughout (0/3, 1/5, 1/8
+  folds beat benchmark), a possible confound not teased apart. Verified
+  safe: no code changed, `git status` clean, `live_state.json` md5
+  unchanged, `constitution verified dfae6a697f51fb49`, full suite still 78
+  passed. Next: `--also-version N` has now swept every champion this
+  account has had; the next genuinely new data point only arrives when a
+  fourth champion is promoted. If a regime-stratified/rolling fold-scheme
+  redesign is ever attempted, treat non-monotonicity as a property of the
+  fold split worth designing around, not a v3 quirk to dismiss.
 - **Resolved 2026-08-18 (3-hourly check): checked whether the fold-scheme
   finding replicates across champions, as the prior run's "Next" line
   flagged — and it sharpens the finding rather than confirming it as
@@ -829,6 +852,19 @@ every `evolve` call.
    whether a third champion looks like v2's shape, v3's shape, or a third
    one; `--also-version N` makes that a one-line check next time a
    champion promotes.
+
+   **Resolved 2026-08-18 (3-hourly check): checked the third champion (v1,
+   the seed) and it reverses the read above.** (see "Current state" above
+   and `runs/2026-08-18-1549-fold-scheme-third-champion.md`) v1 swings
+   non-monotonically too (-2.577 → 0.244 → -0.938), the same shape as v3,
+   not v2's monotonic decrease — so 2 of 3 known champions swing and only
+   1 decreases monotonically. Non-monotonicity is not v3-specific; it looks
+   like the more common shape on this fixed 3-fold split. `--also-version
+   N` has now swept all three real champions this account has had (1, 2,
+   3) — closed until a fourth champion is promoted. Any future
+   regime-stratified/rolling fold-scheme redesign should treat
+   non-monotonicity as a property worth designing around, not a
+   champion-specific artefact.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
