@@ -64,6 +64,38 @@ def _install():
 _install()
 
 
+def _reconstruct_champion_genome(version, lineage):
+    """Rebuild a historical champion genome purely from live_state.json's own
+    recorded `lineage` (every accepted promotion's patch), by replaying
+    accepted patches from the seed forward. There is no persisted genome
+    archive to load from directly -- `state/genomes/` is gitignored,
+    rebuildable-cache-only (see .gitignore) -- so this is the only way to get
+    at a specific past champion's actual genes for a comparison diagnostic.
+    Used by `fold-scheme --also-version N`. Raises ValueError if `version`
+    was never an accepted promotion recorded in lineage (version 1, the
+    seed, always succeeds and needs no patches)."""
+    from core.genome import Genome
+
+    patches_by_version = {}
+    for e in lineage:
+        acc = e.get("accepted")
+        if acc:
+            patches_by_version[acc["new_version"]] = acc["patch"]
+
+    g = Genome.champion()
+    versions = {1: g}
+    for v in sorted(patches_by_version):
+        g = g.child(list(patches_by_version[v].items()), note=f"reconstructed-v{v}")
+        versions[v] = g
+
+    if version not in versions:
+        raise ValueError(
+            f"genome version {version} has no accepted promotion recorded in "
+            f"lineage (known versions: {sorted(versions)})"
+        )
+    return versions[version]
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "tick"
     import constitution
@@ -523,78 +555,124 @@ def main():
         # rather than their edge, and left open whether
         # FOLD_CONSISTENCY_WEIGHT's cross-fold variance penalty is enough or
         # whether the fold scheme itself (currently N_FOLDS=3, fixed 85/15
-        # split) needs to change. This re-evaluates the live champion's own
-        # genome under alternative fold counts using the exact same
-        # Evaluator class `evolve` uses -- just a different n_folds -- so the
-        # numbers are directly comparable. Purely a re-slicing of the
-        # *search* region for reporting purposes: does NOT touch the
-        # constitution's N_FOLDS constant, live_state.json, or the sealed
-        # holdout (evaluate() never looks past search_end regardless of
-        # n_folds). Same guarantees as anatomy/consults/costs/regime/
-        # hard-calls: full replay, read-only, slow (one backtest per fold
-        # per scheme).
+        # split) needs to change. This re-evaluates a champion's genome
+        # under alternative fold counts using the exact same Evaluator class
+        # `evolve` uses -- just a different n_folds -- so the numbers are
+        # directly comparable. Purely a re-slicing of the *search* region
+        # for reporting purposes: does NOT touch the constitution's N_FOLDS
+        # constant, live_state.json, or the sealed holdout (evaluate() never
+        # looks past search_end regardless of n_folds). Same guarantees as
+        # anatomy/consults/costs/regime/hard-calls: full replay, read-only,
+        # slow (one backtest per fold per scheme, per champion).
+        #
+        # --also-version N reconstructs a second, independently-arrived-at
+        # champion (by version number) from live_state.json's own recorded
+        # lineage patches (see _reconstruct_champion_genome) and runs the
+        # same sweep on it, to check whether a fold-scheme finding is a
+        # property of one genome or replicates across champions -- the open
+        # question the 2026-08-18 fold-scheme diagnostic's "Next" line
+        # flagged. First answer (see
+        # runs/2026-08-18-*-fold-scheme-champion-replication.md): the
+        # outlier gap is computed purely from buy-and-hold return per fold,
+        # which never depends on the genome under test -- it is IDENTICAL
+        # across champions by construction, not informative to compare.
+        # aggregate_fitness *is* genome-dependent and is the column that
+        # actually answers the replication question.
         from loop.evolve import Evaluator
         from core import market
         from constitution import N_FOLDS
         g0 = acct.genome
+        genomes = [(f"v{g0.version} (live)", g0)]
+        if "--also-version" in sys.argv:
+            also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+            try:
+                g_other = _reconstruct_champion_genome(also_version, acct.lineage)
+            except ValueError as e:
+                print(f"[fold-scheme] {e}")
+                sys.exit(1)
+            genomes.append((f"v{also_version} (reconstructed)", g_other))
         data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
         if not data:
             print("no market data")
             sys.exit(1)
         schemes = sorted({N_FOLDS, 5, 8})
-        print(f"[fold-scheme] replaying {len(data)} symbols against champion "
-              f"v{g0.version} ({g0.bar_interval} bars) under {len(schemes)} fold "
-              f"counts ({', '.join(str(s) for s in schemes)}) ...", flush=True)
+        print(f"[fold-scheme] replaying {len(data)} symbols under {len(schemes)} fold "
+              f"counts ({', '.join(str(s) for s in schemes)}) against "
+              f"{' and '.join(label for label, _ in genomes)} ...", flush=True)
         print()
-        print(f"FOLD-SCHEME SENSITIVITY — champion v{g0.version}")
-        print("=" * 96)
         agg_by_scheme = {}
         gap_by_scheme = {}
-        for n_folds in schemes:
-            ev = Evaluator(data, n_folds=n_folds)
-            res = ev.evaluate(g0, log_detail=False)
-            tag = " (current constitution default)" if n_folds == N_FOLDS else ""
-            print(f"  n_folds={n_folds}{tag}")
-            beat, rets = 0, []
-            for i, f in enumerate(res["folds"]):
-                if "error" in f:
-                    print(f"    fold {i + 1:<2d} {f['error']}")
-                    continue
-                bench, edge = f.get("benchmark", {}), f.get("edge", {})
-                ret = bench.get("total_return", 0.0)
-                rets.append(ret)
-                if edge.get("beat_benchmark"):
-                    beat += 1
-                print(f"    fold {i + 1:<2d} fitness {f['fitness']:>7.3f}  "
-                      f"b&h return {ret:>+8.1%}  excess {edge.get('excess_return', 0.0):>+8.1%}  "
-                      f"{'beat' if edge.get('beat_benchmark') else 'lost to'} benchmark")
-            print(f"    aggregate_fitness = {res['aggregate_fitness']:>7.3f}   "
-                  f"{beat}/{len(res['folds'])} folds beat benchmark")
-            agg_by_scheme[n_folds] = res['aggregate_fitness']
-            if rets:
-                mx = max(rets)
-                rest_mean = (sum(rets) - mx) / max(len(rets) - 1, 1)
-                gap = mx - rest_mean
-                gap_by_scheme[n_folds] = gap
-                print(f"    largest single-fold b&h return {mx:+.1%} vs mean of the "
-                      f"rest {rest_mean:+.1%} (outlier gap {gap:+.1%})")
-            print()
-        if len(agg_by_scheme) > 1:
-            base = agg_by_scheme[N_FOLDS]
-            print(f"  aggregate_fitness at N_FOLDS={N_FOLDS} (live): {base:.3f}")
-            for n_folds, agg in agg_by_scheme.items():
-                if n_folds == N_FOLDS:
-                    continue
-                print(f"  aggregate_fitness at n_folds={n_folds}: {agg:.3f} "
-                      f"({agg - base:+.3f} vs live scheme)")
-            if len(gap_by_scheme) > 1:
-                base_gap = gap_by_scheme.get(N_FOLDS)
-                shrinking = all(gap_by_scheme[s] <= base_gap + 1e-9
-                                for s in schemes if s != N_FOLDS and base_gap is not None)
+        for label, genome in genomes:
+            print(f"FOLD-SCHEME SENSITIVITY — champion {label}")
+            print("=" * 96)
+            agg_by_scheme[label] = {}
+            gap_by_scheme[label] = {}
+            for n_folds in schemes:
+                ev = Evaluator(data, n_folds=n_folds)
+                res = ev.evaluate(genome, log_detail=False)
+                tag = " (current constitution default)" if n_folds == N_FOLDS else ""
+                print(f"  n_folds={n_folds}{tag}")
+                beat, rets = 0, []
+                for i, f in enumerate(res["folds"]):
+                    if "error" in f:
+                        print(f"    fold {i + 1:<2d} {f['error']}")
+                        continue
+                    bench, edge = f.get("benchmark", {}), f.get("edge", {})
+                    ret = bench.get("total_return", 0.0)
+                    rets.append(ret)
+                    if edge.get("beat_benchmark"):
+                        beat += 1
+                    print(f"    fold {i + 1:<2d} fitness {f['fitness']:>7.3f}  "
+                          f"b&h return {ret:>+8.1%}  excess {edge.get('excess_return', 0.0):>+8.1%}  "
+                          f"{'beat' if edge.get('beat_benchmark') else 'lost to'} benchmark")
+                print(f"    aggregate_fitness = {res['aggregate_fitness']:>7.3f}   "
+                      f"{beat}/{len(res['folds'])} folds beat benchmark")
+                agg_by_scheme[label][n_folds] = res['aggregate_fitness']
+                if rets:
+                    mx = max(rets)
+                    rest_mean = (sum(rets) - mx) / max(len(rets) - 1, 1)
+                    gap = mx - rest_mean
+                    gap_by_scheme[label][n_folds] = gap
+                    print(f"    largest single-fold b&h return {mx:+.1%} vs mean of the "
+                          f"rest {rest_mean:+.1%} (outlier gap {gap:+.1%})")
                 print()
-                print(f"  outlier gap {'shrinks' if shrinking else 'does not shrink'} "
-                      "monotonically as fold count rises "
-                      f"({', '.join(f'n={s}: {gap_by_scheme[s]:+.1%}' for s in schemes if s in gap_by_scheme)})")
+            base = agg_by_scheme[label].get(N_FOLDS)
+            if base is not None and len(agg_by_scheme[label]) > 1:
+                print(f"  aggregate_fitness at N_FOLDS={N_FOLDS}: {base:.3f}")
+                for n_folds, agg in agg_by_scheme[label].items():
+                    if n_folds == N_FOLDS:
+                        continue
+                    print(f"  aggregate_fitness at n_folds={n_folds}: {agg:.3f} "
+                          f"({agg - base:+.3f} vs n_folds={N_FOLDS})")
+                gaps = gap_by_scheme[label]
+                base_gap = gaps.get(N_FOLDS)
+                if len(gaps) > 1 and base_gap is not None:
+                    shrinking = all(gaps[s] <= base_gap + 1e-9
+                                    for s in schemes if s != N_FOLDS and s in gaps)
+                    print(f"  outlier gap {'shrinks' if shrinking else 'does not shrink'} "
+                          "monotonically as fold count rises "
+                          f"({', '.join(f'n={s}: {gaps[s]:+.1%}' for s in schemes if s in gaps)})")
+            print()
+        if len(genomes) > 1:
+            labels = [l for l, _ in genomes]
+            print("CROSS-CHAMPION COMPARISON")
+            print("=" * 96)
+            print("  outlier gap by scheme (identical across champions by construction --")
+            print("  it's computed from buy-and-hold return per fold, which never depends")
+            print("  on the genome under test):")
+            for n_folds in schemes:
+                vals = [gap_by_scheme[l].get(n_folds) for l in labels]
+                if all(v is not None for v in vals):
+                    print(f"    n_folds={n_folds}: " +
+                          "  ".join(f"{l}: {v:+.1%}" for l, v in zip(labels, vals)))
+            print()
+            print("  aggregate_fitness by scheme (genome-dependent -- this is the column")
+            print("  that actually tests whether a fold-scheme finding is genome-specific):")
+            for n_folds in schemes:
+                vals = [agg_by_scheme[l].get(n_folds) for l in labels]
+                if all(v is not None for v in vals):
+                    print(f"    n_folds={n_folds}: " +
+                          "  ".join(f"{l}: {v:.3f}" for l, v in zip(labels, vals)))
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)

@@ -120,7 +120,14 @@ Read-only, full replay per scheme (same cost class as `regime`/`costs`). Only
 valid for relative comparison across fold counts on the same data snapshot —
 its absolute `aggregate_fitness` numbers will not match a champion's
 recorded promotion-time fold-aggregate fitness (different sliding 4-year
-window). See "Current state" for the first result.
+window). See "Current state" for the first result. `--also-version N`
+reconstructs a past champion (by version) from `live_state.json`'s own
+`lineage` and runs the same sweep on it alongside the live champion, for
+checking whether a fold-scheme finding is genome-specific or general —
+e.g. `fold-scheme --also-version 2`. See "Current state" 2026-08-18 for
+why the outlier-gap column is guaranteed identical across any champion
+(it's buy-and-hold-only) while `aggregate_fitness` is the column that
+actually differs.
 
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
@@ -152,6 +159,35 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-18 (3-hourly check): checked whether the fold-scheme
+  finding replicates across champions, as the prior run's "Next" line
+  flagged — and it sharpens the finding rather than confirming it as
+  stated.** New capability `evotrader_bundle._reconstruct_champion_genome`
+  (see `runs/2026-08-18-1256-fold-scheme-champion-replication.md`) rebuilds
+  a historical champion genome purely from `live_state.json`'s own recorded
+  `lineage` patches (no genome archive persists — `state/genomes/` is
+  gitignored, rebuildable-cache-only), verified bit-exact against the real
+  live champion's genes before trusting it
+  (`tests/test_fold_scheme_reconstruction.py`, 6 new tests built from the
+  real lineage, full suite 78 passed up from 72). Wired into the CLI as
+  `fold-scheme --also-version N` (purely additive — no flag reproduces the
+  exact prior output, verified against the 09:52 run's numbers). Ran it
+  against v2 (the account's first real self-promotion) alongside live v3.
+  Result: the **outlier gap** (fold 2's b&h-return dominance) is identical
+  to the decimal across both champions at every fold count — but that's not
+  really a replication finding, since the outlier gap is computed purely
+  from buy-and-hold return per fold, which by construction never depends on
+  the genome under test; any genome would show the same number. The column
+  that actually is genome-dependent, **aggregate_fitness**, does *not*
+  replicate the same shape: v3 swings non-monotonically across fold counts
+  (-1.224 → +1.633 → -0.500) while v2 decreases monotonically
+  (0.581 → 0.196 → -0.836). Two points isn't a law, but it does mean the
+  09:52 run's "aggregate_fitness swings non-monotonically" finding is
+  specific to v3's genome, not a fold-scheme property every champion would
+  show. Next: `--also-version N` is now available for any future
+  cross-champion check without re-deriving the reconstruction; if the
+  regime-stratified/rolling fold scheme redesign is ever built, evaluate it
+  per-genome, not assuming one champion's behavior generalizes.
 - **Resolved 2026-08-18 (3-hourly check): the fold-scheme open question from
   the 2026-08-17 regime diagnostic has a first quantified answer — fold 2's
   dominance is a fold-*count* artefact, and fixing it isn't as simple as
@@ -776,6 +812,23 @@ every `evolve` call.
    a constitution change (checksummed, needs an `AMENDMENTS.md` row) and
    deserves its own design pass, plus checking the pattern on more than one
    champion/snapshot, before anything gets proposed.
+
+   **Resolved 2026-08-18 (3-hourly check): checked against a second
+   champion (v2), and it sharpens rather than confirms the finding above.**
+   (see "Current state" above and
+   `runs/2026-08-18-1256-fold-scheme-champion-replication.md`) New
+   `fold-scheme --also-version N` reconstructs any past champion from
+   `live_state.json`'s own lineage (verified bit-exact, tested) and runs
+   the same sweep on it. The outlier gap matches v3's to the decimal at
+   every fold count — but that's guaranteed by construction (it's a
+   buy-and-hold-only number, genome-independent), not evidence of anything.
+   `aggregate_fitness`, which *is* genome-dependent, does **not** show the
+   same shape: v2 decreases monotonically with fold count where v3 swings.
+   So the "aggregate_fitness swings non-monotonically" half of the finding
+   above is v3-specific, not a general fold-scheme property. Still open:
+   whether a third champion looks like v2's shape, v3's shape, or a third
+   one; `--also-version N` makes that a one-line check next time a
+   champion promotes.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
    structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
