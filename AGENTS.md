@@ -83,6 +83,7 @@ python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged
 python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the sealed holdout has rejected
 python3 evotrader_bundle.py fold-scheme       # fold-count sensitivity of fold-aggregate fitness
 python3 evotrader_bundle.py drawdown          # which date range actually drives maxDD, ranked by depth
+python3 evotrader_bundle.py correlation-universe  # full-universe pairwise return correlation by fold/holdout
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -112,6 +113,20 @@ at the sealed holdout, since that champion's promotion. Run it after any
 `evolve` call that doesn't promote, to see whether the champion is holding
 because nothing better exists or because a lucky holdout draw is entrenching
 it against genuinely fold-superior challengers (see "Current state").
+
+`correlation-universe` is read-only, same cost class as `regime` (~80s: one
+`load_universe` call, no backtest, no Council). For each walk-forward fold and
+the sealed holdout it samples `--samples` points (default 8) spaced through
+the window, computes the full pairwise Pearson correlation matrix of
+`--lookback`-bar (default 30, matching the `correlation_lookback` gene's
+default) raw returns across every universe symbol at each point
+(`loop.engine.pairwise_correlation_stats`), and reports the mean/range per
+window. Genome-independent (raw price correlation, not any consult or
+genome signal) — exists to check what `agents.judges.RiskJudge.
+_correlation_scale` never looks at: the live mechanism only ever compares a
+buy candidate against symbols already *held*, never the wider universe. See
+"Current state" for the first result and what it means for AGENTS.md item 3's
+open drop-vs-build decision.
 
 `fold-scheme` re-evaluates the live champion under alternative `n_folds`
 counts (via `loop.evolve.Evaluator`, which already accepted `n_folds` as a
@@ -160,6 +175,50 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-18 (3-hourly check): first evidence for item 3's
+  open "drop the correlation_penalty line, or build the fuller
+  cross-universe factor-model version" decision — the universe is broadly
+  and consistently correlated, not clustered, which weakens the case for
+  the bigger structural build.** New read-only diagnostic
+  `evotrader_bundle.py correlation-universe` (see
+  `runs/2026-08-18-2146-correlation-universe-diagnostic.md`) adds
+  `loop.engine.pairwise_correlation_stats`, a pure function summarising
+  every pairwise Pearson correlation across a set of return series
+  (tested, `tests/test_universe_correlation.py`, 9 new tests, full suite 94
+  passed up from 85), and wires it into a new CLI command that samples 8
+  points per walk-forward fold/holdout window and reports the full-universe
+  30-bar-lookback correlation structure — the wider view
+  `agents.judges.RiskJudge._correlation_scale` never takes (it only ever
+  compares a buy candidate against symbols already *held*). Result against
+  the real 27-symbol universe, full history: mean pairwise correlation is
+  high everywhere (+0.52 to +0.64 across the three folds, +0.58 on the
+  sealed holdout) and the holdout is not meaningfully different from the
+  fold mean (+0.577 vs +0.592, a 0.015 gap, smaller than the within-window
+  sample spread). Reading this against item 3's open decision: the
+  five-magnitude `correlation_penalty` grid already lost against three
+  champions using only held-vs-candidate comparison; this result says the
+  wider universe wasn't hiding a differently-structured opportunity that a
+  fuller factor model would have caught instead — correlation here is high
+  and broadly uniform across regimes, not concentrated in clusters or
+  spiking specifically on the holdout's crash window the way item 3's
+  original crisis-contagion hypothesis expected. That leans the decision
+  toward "drop the line" over "build the bigger version", though not
+  conclusively — this measures raw price correlation, not
+  portfolio-realized correlation (which symbols the champion actually
+  holds together), and 8 samples/window is a coarse read of within-window
+  variance. Verified safe: purely additive (`loop.engine` isn't in the
+  checksummed set — `constitution` + `core.portfolio` only), `git status`
+  clean of anything but the diagnostic, `live_state.json` md5 identical
+  before/after (`c4289723973ee8ace977f7abaf0003a8`), `constitution verified
+  dfae6a697f51fb49` unchanged throughout, `tick` still correctly reports
+  "already traded" (no double-trade). Next: if item 3 is revisited, either
+  act on this as the deciding evidence (drop `correlation_penalty`,
+  `correlation_lookback`, and `_correlation_scale`, all currently dead
+  weight at the default `0.0`), or run `correlation-universe` at a tighter
+  `--lookback` (this run used 30, matching the gene's own default) or with
+  the champion's actual held-symbol history to check whether
+  portfolio-realized correlation tells a different story than raw
+  universe-wide correlation does.
 - **Resolved 2026-08-18 (3-hourly check): the "which sub-period drives the
   -34.1% baseline maxDD" question open since the 2026-08-16 costs/holdout
   diagnostic now has a real answer — one specific 127-bar episode, not a
@@ -993,6 +1052,21 @@ every `evolve` call.
    magnitudes: either drop the single-fixed-value `correlation_penalty`
    line, or move straight to the cross-universe pairwise factor-model
    version if this is still worth pursuing structurally.
+
+   **Resolved 2026-08-18 (3-hourly check): first evidence on the
+   drop-vs-build decision, leaning toward drop.** (see "Current state"
+   above and `runs/2026-08-18-2146-correlation-universe-diagnostic.md`) New
+   `evotrader_bundle.py correlation-universe` measured the wider universe's
+   pairwise correlation structure the held-vs-candidate mechanism never
+   looks at. Result: correlation is high (+0.52 to +0.64) and broadly
+   uniform across every fold and the sealed holdout, not clustered or
+   crisis-spiking the way the factor-model case assumed — weak evidence the
+   bigger structural build would find much the fixed-value grid's failure
+   didn't already rule out. Not conclusive (raw universe correlation, not
+   portfolio-realized correlation of what the champion actually holds
+   together) — see "Current state" for the exact caveat and what a
+   follow-up measurement would need to check before actually dropping the
+   gene.
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
