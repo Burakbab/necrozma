@@ -190,6 +190,48 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): the "genuinely different genome"
+  follow-up the previous run flagged is done — a second, unrelated champion
+  (v1, the seed) shows the same held-set-less-correlated-than-universe
+  pattern as v3.** (see
+  `runs/2026-08-19-0350-correlation-realized-second-genome.md`) New
+  `correlation-universe --realized --also-version N` flag (reuses
+  `_reconstruct_champion_genome`, already bit-exact-verified for
+  `fold-scheme --also-version N` — no new pure function, CLI glue only, no
+  new tests needed, same bar that command was held to) reconstructs any past
+  champion from `live_state.json`'s own lineage and runs the same held-set
+  correlation measurement against it, printing a cross-genome comparison
+  table. Ran `--also-version 1`: v1's held-only mean correlation is lower
+  than universe-wide in all four windows too (fold 1 +0.443 vs +0.630, fold
+  2 +0.409 vs +0.509, fold 3 +0.407 vs +0.616, holdout +0.452 vs +0.572),
+  same shape as v3's own numbers despite v1 and v3 differing by 13+
+  generations of unrelated parametric tuning (entry/exit thresholds, sizing,
+  stop-loss/trailing-stop, regime gating — none of it correlation-aware,
+  `correlation_penalty` at the default `0.0` in both). Three independent
+  measurements (universe-wide structure, v3's portfolio-realized structure,
+  now v1's portfolio-realized structure) now all point the same way: no
+  visible concentration problem for a correlation-aware sizing rule to have
+  caught, and not an artefact of one champion's specific tuning. This
+  answers the open gap the prior run's "Next" line named — not v2 yet (the
+  account's only other real champion, could be added the same way in one
+  line), but three consistent reads across two genuinely different genomes
+  is a reasonable place to treat "drop `correlation_penalty`,
+  `correlation_lookback`, `_correlation_scale`" as the supported conclusion,
+  if this item is ever revisited to actually make the change (still not
+  done this run — diagnostic-only). Verified safe: purely additive (new
+  optional flag, default behavior unchanged), full suite still 104 passed
+  (no new tests), `live_state.json` md5 identical before/after
+  (`09c35b692da1d694c5a3cace5d488f40`), `git status` clean of anything but
+  the `evotrader_bundle.py` diff, `constitution verified dfae6a697f51fb49`
+  unchanged throughout, `tick` still correctly reports `already traded`
+  (today's 2026-08-18 bar was already processed by the 00:20 UTC daily run,
+  tick 5, before this 3-hourly check started; no double-trade). Next: if
+  item 3 is ever revisited with a decision to actually make, the remaining
+  honest caveat is that both measured genomes are real accidental champions,
+  not a genome deliberately designed to concentrate exposure — that would be
+  a different, adversarial-style check, not another pass over the same two
+  data points. v2 is also available as a third real data point in one line
+  (`--also-version 2`) if wanted before acting.
 - **Resolved 2026-08-19 (3-hourly check): the portfolio-realized follow-up
   to the 2026-08-18 correlation-universe finding is in, and it strengthens
   the "drop the line" lean rather than reversing it.** New
@@ -1143,6 +1185,22 @@ every `evolve` call.
    another read of the same one) before treating this as settled enough to
    actually delete `correlation_penalty`/`correlation_lookback`/
    `_correlation_scale`.
+
+   **Resolved 2026-08-19 (3-hourly check): checked against a genuinely
+   different genome (v1, the seed), not just another read of v3.** (see
+   "Current state" above and
+   `runs/2026-08-19-0350-correlation-realized-second-genome.md`) New
+   `correlation-universe --realized --also-version N` reuses
+   `_reconstruct_champion_genome` (already verified for `fold-scheme
+   --also-version`) to run the same held-set measurement against any past
+   champion. v1's held-only correlation is lower than universe-wide in every
+   window too, same shape as v3 despite 13+ generations of unrelated tuning
+   between them. Three independent measurements (universe-wide, v3
+   portfolio-realized, v1 portfolio-realized) now agree — this is the
+   "different genome" check the prior run asked for. Still open: v2 as a
+   third real data point (one line, `--also-version 2`, not run yet), and
+   whether a genome deliberately designed to concentrate would show a
+   different picture (an adversarial-style check, not attempted).
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a

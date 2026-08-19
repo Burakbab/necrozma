@@ -852,18 +852,40 @@ def main():
             # portfolio-realized question instead -- of the symbols the
             # champion actually held *together*, how correlated were they,
             # not the whole universe. Runs one real full-history backtest
-            # (same cost class as anatomy/consults/costs -- a few minutes,
-            # not the ~80s the table above costs) and reconstructs the held
-            # set per bar from its own closed_trades/open_positions, purely
-            # read-only, no genome or live_state.json touched.
+            # per genome (same cost class as anatomy/consults/costs -- a few
+            # minutes each, not the ~80s the table above costs) and
+            # reconstructs the held set per bar from its own
+            # closed_trades/open_positions, purely read-only, no genome or
+            # live_state.json touched.
+            #
+            # --also-version N (reusing fold-scheme's
+            # _reconstruct_champion_genome) runs the same measurement
+            # against a genuinely different, independently-arrived-at
+            # genome, not just a different correlation_penalty value on the
+            # same one -- the exact gap the 2026-08-19 run of this command
+            # flagged as the honest next step before treating "drop the
+            # line" as settled: two prior reads (universe-wide, and v3's own
+            # portfolio-realized) both leaned that way, but both were one
+            # champion's one set of entry/exit rules.
             from loop.engine import run_backtest, holding_mask
-            print()
-            print("[--realized] running one full-history backtest to recover "
-                  "actual concurrent holdings...", flush=True)
-            result = run_backtest(g0, data)
-            if result.get("error"):
-                print(f"  (skipping --realized: {result['error']})")
-            else:
+            genomes = [(f"v{g0.version} (live)", g0)]
+            if "--also-version" in sys.argv:
+                also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+                try:
+                    g_other = _reconstruct_champion_genome(also_version, acct.lineage)
+                except ValueError as e:
+                    print(f"[correlation-universe --realized] {e}")
+                    sys.exit(1)
+                genomes.append((f"v{also_version} (reconstructed)", g_other))
+            all_held_means: dict[str, dict[str, list[float]]] = {}
+            for glabel, genome in genomes:
+                print()
+                print(f"[--realized] running one full-history backtest against {glabel} "
+                      f"to recover actual concurrent holdings...", flush=True)
+                result = run_backtest(genome, data)
+                if result.get("error"):
+                    print(f"  (skipping {glabel}: {result['error']})")
+                    continue
                 ts_index = {str(replay.index[i]): i for i in range(n)}
                 mask = holding_mask(result.get("closed_trades", []),
                                     result.get("open_positions", []), ts_index, n)
@@ -871,7 +893,7 @@ def main():
                 for arr in mask.values():
                     held_count += arr.astype(int)
                 print()
-                print(f"HELD-ONLY PAIRWISE CORRELATION (champion v{g0.version}'s actual "
+                print(f"HELD-ONLY PAIRWISE CORRELATION ({glabel}'s actual "
                       f"concurrent holdings) BY FOLD/HOLDOUT")
                 print("=" * 100)
                 print(f"  {'window':<10s} {'bars>=2held':>11s} {'samples':>7s} "
@@ -918,6 +940,19 @@ def main():
                         um = float(np.mean(window_means[label]))
                         print(f"  {label:<10s} held-only {hm:+.3f} vs universe-wide {um:+.3f} "
                               f"({'higher' if hm > um else 'lower'} by {abs(hm - um):.3f})")
+                all_held_means[glabel] = held_window_means
+            if len(all_held_means) > 1:
+                print()
+                print("CROSS-GENOME COMPARISON — held-only mean correlation per window "
+                      "(does a genuinely different genome change the picture?)")
+                print("=" * 100)
+                labels = list(all_held_means.keys())
+                for label, _, _ in windows:
+                    vals = [(gl, float(np.mean(all_held_means[gl][label])))
+                            for gl in labels if label in all_held_means[gl]]
+                    if len(vals) == len(labels):
+                        print(f"  {label:<10s} " +
+                              "  ".join(f"{gl}: {v:+.3f}" for gl, v in vals))
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)
