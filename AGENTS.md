@@ -190,6 +190,43 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): the last open piece of item 3's
+  evidence base — does real unconstrained blind search, not a hand-built
+  genome, ever wander toward the concentration region on its own — is
+  answered, and it doesn't.** (see "Next steps" item 3 and
+  `runs/2026-08-19-2218-correlation-real-search-concentration.md`) Ran the
+  real `loop.evolve.EvolutionRun` (same code path a live `evolve` call takes)
+  for 10 generations against the real live champion v3, in an isolated
+  scratch copy (isolation asserted at runtime, not just described). 128 fresh
+  proposals, cumulative tested count 140→282, no promotion (champion held at
+  fitness 1.737 throughout, continuing the real account's own existing
+  stagnation streak). Of the ~30 candidates that touched a concentration gene
+  (`max_positions`, `max_position_pct`, `cash_floor_pct`), every one scored
+  below champion, and not narrowly — the single best concentration-touching
+  candidate anywhere in the run (`max_positions: 10`, fitness 1.4082) was
+  actually the *de-concentrating* direction; every candidate that shrank
+  `max_positions` toward the adversarial constructions' 2-3 range scored
+  0.4-0.8, far off the pace. One earlier single-generation smoke test (used
+  only to validate the harness) had drawn a `max_positions: 2` candidate at
+  1.988, above champion — flagged explicitly in the run note as a
+  non-reproducing lucky draw (`Researcher(seed=None)`, proposals randomized
+  per invocation) once the fuller 10-generation run's ~30 concentration
+  candidates all scored well below champion instead. Item 3's evidence base
+  is now real champions (4) + hand-built adversarial constructions (2) + real
+  unconstrained search (this run), all consistent. Verified safe: purely
+  read-only against a scratch copy, driver script never committed, `git
+  status --short` clean, `live_state.json` md5 identical before/after
+  (`09c35b692da1d694c5a3cace5d488f40`), `evotrader.manifest` md5 identical
+  (`6a4434574ff424f74ff300ebdb50d194`), today's 2026-08-19 bar confirmed
+  already processed by the 00:20 UTC daily run before this check started (no
+  double-trade, `tick` not run this session). Next: if item 3 is ever picked
+  up to actually act on the now-complete evidence base, the removal itself
+  (genome defaults, mutation gene ranges, `Researcher.structural()`'s
+  proposal grid, `RiskJudge._correlation_scale`, `Briefing.rets_by_symbol`/
+  Analyst plumbing, several tests, and the diagnostic CLI code built to
+  measure this question) touches enough interdependent places that it
+  deserves its own dedicated session, not a tail-end addition to a
+  diagnostic-focused one.
 - **Resolved 2026-08-19 (3-hourly check): a fresh 15-generation x6-scaled-seed
   4h shadow run found three promotions, not two, all inside the first 6
   generations, then held through 9 straight stagnant generations at boldness
@@ -1461,6 +1498,26 @@ every `evolve` call.
    to actually act, this is enough to decide on, not another read. The one
    remaining gap: a concentration-forcing genome has never been run through
    real `evolve` search, only hand-built.
+
+   **Resolved 2026-08-19 (3-hourly check): closed that one remaining gap —
+   ran real unconstrained blind search against the real champion, and it
+   never wanders into the concentration region either.** (see "Current
+   state" above and
+   `runs/2026-08-19-2218-correlation-real-search-concentration.md`) 10
+   generations of the real `EvolutionRun` search (same code path a live
+   `evolve` call takes) against v3, in an isolated scratch copy: 128 fresh
+   proposals, no promotion, and every one of the ~30 candidates that touched
+   `max_positions`/`max_position_pct`/`cash_floor_pct` scored well below
+   champion — the best concentration-touching candidate anywhere in the run
+   was actually the de-concentrating direction (`max_positions: 10`). Item
+   3's evidence base is now complete on all three axes: real champions (4),
+   hand-built adversarial constructions (2), and real unconstrained search
+   (this run). Not attempted this run, and flagged as its own future task:
+   the removal itself (genome defaults, mutation gene ranges, the
+   Researcher's structural proposal grid, `RiskJudge._correlation_scale`,
+   `Briefing.rets_by_symbol`, several tests, and the diagnostic CLI code
+   built to measure this question) is a multi-file surgery that deserves a
+   dedicated session, not a tail-end addition to a diagnostic one.
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
