@@ -190,6 +190,33 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): closed the "third real champion"
+  gap the prior run flagged — v2's portfolio-realized held-set correlation
+  checked, same pattern as v3 and v1.** (see
+  `runs/2026-08-19-0648-correlation-realized-third-genome.md`) One-line run
+  of the already-shipped `correlation-universe --realized --also-version 2`
+  (no code change — `_reconstruct_champion_genome` already handles v2).
+  Result: v2's held-only mean correlation is lower than universe-wide in all
+  four windows (fold 1 +0.424 vs +0.630, fold 2 +0.442 vs +0.509, fold 3
+  +0.411 vs +0.616, holdout +0.404 vs +0.572), same shape as v3 and v1.
+  **All three real champions this account has ever had now show the
+  identical pattern** — four independent measurements total (universe-wide
+  structure, plus portfolio-realized for v3/v1/v2) all lean the same way:
+  no visible concentration problem for a correlation-aware sizing rule to
+  have caught, and not an artefact of any one champion's specific tuning.
+  This exhausts the "check another real champion" data source — there is no
+  fourth real genome until a new promotion happens. Verified safe:
+  read-only, no code changed (`git status --short` empty), `live_state.json`
+  md5 identical before/after (`09c35b692da1d694c5a3cace5d488f40`),
+  `constitution verified dfae6a697f51fb49` unchanged, full suite still 104
+  passed, today's 2026-08-19 bar confirmed already processed by the 00:20
+  UTC daily run before this check started (no double-trade). Next: if item
+  3 is ever revisited with a decision to actually make, this is now the
+  strongest evidentiary base yet (n=4 measurements, 3 genuinely different
+  genomes) — either treat it as sufficient and drop `correlation_penalty`/
+  `correlation_lookback`/`_correlation_scale`, or run the one remaining
+  honest check first: an adversarial genome deliberately built/mutated to
+  concentrate exposure, not another read of an organically-found one.
 - **Resolved 2026-08-19 (3-hourly check): the "genuinely different genome"
   follow-up the previous run flagged is done — a second, unrelated champion
   (v1, the seed) shows the same held-set-less-correlated-than-universe
@@ -1201,6 +1228,18 @@ every `evolve` call.
    third real data point (one line, `--also-version 2`, not run yet), and
    whether a genome deliberately designed to concentrate would show a
    different picture (an adversarial-style check, not attempted).
+
+   **Resolved 2026-08-19 (3-hourly check): v2 checked too — all three real
+   champions now agree, this data source is exhausted.** (see "Current
+   state" above and
+   `runs/2026-08-19-0648-correlation-realized-third-genome.md`) Same
+   one-line `--also-version 2` re-run, no code change. v2's held-only
+   correlation is lower than universe-wide in every window too. Four
+   independent measurements (universe-wide, v3/v1/v2 portfolio-realized) all
+   lean the same way; there is no fourth real champion to check until a new
+   promotion happens. Still open: the adversarial-genome check (deliberately
+   built/mutated to concentrate exposure) is the only remaining way to add a
+   genuinely new data point to this question.
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
