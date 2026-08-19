@@ -96,6 +96,53 @@ def _reconstruct_champion_genome(version, lineage):
     return versions[version]
 
 
+def _adversarial_concentration_genome(base):
+    """Build a genome deliberately mutated to concentrate exposure -- the
+    last open check on AGENTS.md item 3's correlation question. Every real
+    champion measured so far (v1, v2, v3, via `correlation-universe
+    --realized --also-version N`) landed on a held-set that's *less*
+    correlated than the universe average, purely as a side effect of normal
+    entry/exit tuning -- nothing in the genome rewards diversification.
+    This asks the sharper question `--also-version` can't: can a genome
+    that still never rewards diversification (correlation_penalty stays at
+    0.0, same as every real champion) look concentrated anyway, once it
+    stops being selective at all? Every entry gate across all three
+    consults is loosened to near pass-through -- the rank/trend/RSI/vol
+    filters that normally stagger entries across symbols and time are
+    disabled -- and every position-count/cash-floor limit is raised so the
+    council can act on all of that permissiveness inside a single bar
+    instead of trickling positions in one at a time. Built from `base` (the
+    live champion) via the same `Genome.child()` patch mechanism every real
+    promotion uses, but never run through evolution, never scored against a
+    holdout, never promoted -- a single hand-built genome, used only to
+    measure its own held-set correlation. Never touches live_state.json."""
+    patches = [
+        ("agents.consult_risky.genes.min_rank_mom", 0.0),
+        ("agents.consult_risky.genes.min_breakout", -0.30),
+        ("agents.consult_risky.genes.min_slope", -1.0),
+        ("agents.consult_risky.genes.rsi_max", 100.0),
+        ("agents.consult_moderate.genes.min_trend", -0.10),
+        ("agents.consult_moderate.genes.rsi_lo", 5.0),
+        ("agents.consult_moderate.genes.rsi_hi", 95.0),
+        ("agents.consult_moderate.genes.min_rank_mom", 0.0),
+        ("agents.consult_moderate.genes.max_vol", 10.0),
+        ("agents.consult_conservative.genes.rsi_buy_below", 90.0),
+        ("agents.consult_conservative.genes.z_buy_below", 5.0),
+        ("agents.consult_conservative.genes.require_uptrend", False),
+        ("agents.consult_conservative.genes.min_trend", -1.0),
+        ("agents.consult_conservative.genes.max_vol", 10.0),
+        ("agents.risk_judge.genes.min_conviction", 0.0),
+        ("agents.risk_judge.genes.max_positions", 20),
+        ("agents.risk_judge.genes.cash_floor_pct", 0.0),
+        ("agents.risk_judge.genes.correlation_penalty", 0.0),
+        ("agents.superior_judge.genes.hard_max_positions", 20),
+        ("agents.superior_judge.genes.max_new_positions_per_bar", 15),
+        ("agents.superior_judge.genes.hard_cash_floor_pct", 0.0),
+        ("risk.max_bars_held", 90),
+    ]
+    return base.child(patches, note="adversarial-concentration (diagnostic only, never promoted)")
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "tick"
     import constitution
@@ -877,6 +924,9 @@ def main():
                     print(f"[correlation-universe --realized] {e}")
                     sys.exit(1)
                 genomes.append((f"v{also_version} (reconstructed)", g_other))
+            if "--adversarial" in sys.argv:
+                g_adv = _adversarial_concentration_genome(g0)
+                genomes.append(("adversarial-concentration", g_adv))
             all_held_means: dict[str, dict[str, list[float]]] = {}
             for glabel, genome in genomes:
                 print()

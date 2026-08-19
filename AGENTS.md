@@ -190,6 +190,48 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): the last remaining honest check on
+  item 3's correlation question — an adversarial genome deliberately built
+  to concentrate exposure, not another read of an organically-found one —
+  is done, and it's the first genome (real or constructed) whose held-set
+  correlation approaches universe-wide instead of sitting clearly below
+  it.** (see `runs/2026-08-19-0951-correlation-adversarial-genome.md`) New
+  `evotrader_bundle._adversarial_concentration_genome(base)` builds a genome
+  via the same `Genome.child()` patch mechanism every real promotion uses,
+  starting from live champion v3 and loosening every entry gate across all
+  three consults to near pass-through plus raising every
+  position-count/cash-floor limit, while leaving `correlation_penalty` at
+  its default `0.0` (same as every real champion) — the question is whether
+  losing selectivity alone concentrates exposure, not whether the
+  already-proven-inert penalty gene would catch it. Wired into
+  `correlation-universe --realized` as a new `--adversarial` flag, same
+  measurement machinery as `--also-version N`. Result against a real
+  full-history backtest: in fold 3 and the holdout, the adversarial genome's
+  held-only correlation gap below universe-wide shrinks 6-9x versus v3's own
+  gap in the same windows (fold 3: v3 −0.189 → adversarial −0.013; holdout:
+  v3 −0.135 → adversarial −0.030) — fold 1/2 barely move, so the effect
+  isn't uniform across regimes. Reading against the drop-vs-build decision:
+  sharper, not reversed — no real champion this account has produced needs
+  `correlation_penalty` (that conclusion is unchanged), but the reason is
+  that ordinary fitness-driven selectivity happens to keep held sets less
+  correlated as an incidental byproduct, not that concentration is
+  structurally impossible here. Leans toward keeping the gene available as
+  an unused safety valve rather than deleting it outright, even though
+  dropping it from active use against the current champion lineage remains
+  supported. Verified safe: purely additive (`core.genome`/CLI glue only,
+  neither checksummed), `py_compile` clean, full suite still 104 passed (no
+  new tests needed, same bar `--also-version` was held to), `live_state.json`
+  md5 identical before/after (`09c35b692da1d694c5a3cace5d488f40`),
+  `git status` clean of anything but the `evotrader_bundle.py` diff,
+  `constitution verified dfae6a697f51fb49` unchanged throughout, today's
+  2026-08-18 bar (tick 5) confirmed already processed by the 00:20 UTC daily
+  run before this check started (no double-trade, `tick` not run this
+  session). Next: not tried — a narrower adversarial genome aimed at one
+  sector/theme instead of blanket-loosened selectivity (might concentrate
+  harder than this blunt construction did), or checking whether this
+  genome's measured concentration actually costs it fitness/drawdown (this
+  run only measured correlation structure, never evaluated it as a trading
+  candidate).
 - **Resolved 2026-08-19 (3-hourly check): closed the "third real champion"
   gap the prior run flagged — v2's portfolio-realized held-set correlation
   checked, same pattern as v3 and v1.** (see
@@ -1240,6 +1282,22 @@ every `evolve` call.
    promotion happens. Still open: the adversarial-genome check (deliberately
    built/mutated to concentrate exposure) is the only remaining way to add a
    genuinely new data point to this question.
+
+   **Resolved 2026-08-19 (3-hourly check): the adversarial-genome check is
+   done, and it's the first result that doesn't just re-confirm "no
+   concentration."** (see "Current state" above and
+   `runs/2026-08-19-0951-correlation-adversarial-genome.md`) New
+   `_adversarial_concentration_genome(base)` + `correlation-universe
+   --realized --adversarial` builds a genome from v3 with every consult's
+   selectivity gate loosened to near pass-through and every position
+   limit raised, `correlation_penalty` left at its inert default `0.0`.
+   In fold 3/holdout its held-set correlation gap below universe-wide
+   shrinks 6-9x versus v3's own gap in those windows; fold 1/2 barely move.
+   This closes the "genuinely different genome" question for item 3 — the
+   remaining open questions are narrower (a sector-targeted adversarial
+   genome instead of blanket-loosened selectivity, and whether this
+   genome's concentration actually costs it fitness) rather than "has an
+   adversarial genome been tried at all."
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
