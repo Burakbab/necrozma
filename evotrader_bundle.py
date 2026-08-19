@@ -936,6 +936,13 @@ def main():
                 if result.get("error"):
                     print(f"  (skipping {glabel}: {result['error']})")
                     continue
+                st = result.get("stats", {})
+                edge = result.get("edge", {})
+                print(f"  full-history: return {st.get('total_return', 0):+.1%}  "
+                      f"sortino {st.get('sortino', 0):+.2f}  maxDD {st.get('max_dd', 0):+.1%}  "
+                      f"trades {st.get('trades', 0)}  fitness {result.get('fitness', 0):+.3f}  "
+                      f"vs b&h {edge.get('excess_return', 0):+.1%} "
+                      f"({'beats' if edge.get('beat_benchmark') else 'trails'} benchmark)")
                 ts_index = {str(replay.index[i]): i for i in range(n)}
                 mask = holding_mask(result.get("closed_trades", []),
                                     result.get("open_positions", []), ts_index, n)

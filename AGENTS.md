@@ -190,6 +190,37 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): the adversarial-concentration
+  genome's measured correlation increase is not free — it costs a hard-fail
+  on drawdown, sharpening why item 3's "drop the line" lean holds.** (see
+  `runs/2026-08-19-1258-correlation-adversarial-fitness-cost.md`) The 09:51
+  run's `--realized --adversarial` already runs a full-history
+  `run_backtest()` per genome to reconstruct `holding_mask` — `stats`/
+  `fitness`/`edge` were already in the return value, just never printed.
+  Added one print line per genome, no new backtest. Result: v3 (live)
+  full-history maxDD -34.1%, fitness +0.744; the adversarial genome
+  (same construction as the 09:51 run — loosened entry gates, raised
+  position limits) maxDD **-52.6%**, crossing the constitution's
+  `MAX_DD_HARD_FAIL` (40%), fitness **-inf**, trades nearly doubled
+  (1165 → 2339) for roughly half the Sortino (2.15 → 0.94). Reading against
+  item 3: the genome that concentrates held-set correlation also blows
+  through the hard drawdown gate — concentration and poor risk control
+  travel together in this system's actual candidate space, so the existing
+  `MAX_DD_HARD_FAIL`/Sortino-shaped fitness gates already select against
+  concentrated trading as a side effect, not coincidentally. Strengthens
+  "drop `correlation_penalty`/`correlation_lookback`/`_correlation_scale`"
+  from "no real champion needed it" to "the gates already in place catch
+  what it would catch." Caveat: still one adversarial construction
+  (blanket-loosened selectivity) — a genome that concentrates *without*
+  failing other gates (e.g. tight per-symbol selectivity, no diversification
+  requirement) hasn't been tried and would be the first real case *for*
+  keeping the gene. Verified safe: purely additive print statements only,
+  `py_compile` clean, full suite still 104 passed, `live_state.json` md5
+  identical before/after (`09c35b692da1d694c5a3cace5d488f40`), `git status`
+  clean of anything but the `evotrader_bundle.py` diff, `constitution
+  verified dfae6a697f51fb49` unchanged throughout, today's 2026-08-18 bar
+  (tick 5) confirmed already processed by the 00:20 UTC daily run before
+  this check started (no double-trade, `tick` not run this session).
 - **Resolved 2026-08-19 (3-hourly check): the last remaining honest check on
   item 3's correlation question — an adversarial genome deliberately built
   to concentrate exposure, not another read of an organically-found one —
@@ -1298,6 +1329,19 @@ every `evolve` call.
    genome instead of blanket-loosened selectivity, and whether this
    genome's concentration actually costs it fitness) rather than "has an
    adversarial genome been tried at all."
+
+   **Resolved 2026-08-19 (3-hourly check): yes, the concentration costs
+   fitness — a lot.** (see "Current state" above and
+   `runs/2026-08-19-1258-correlation-adversarial-fitness-cost.md`) The
+   adversarial genome's full-history maxDD is -52.6% (v3: -34.1%), crossing
+   `MAX_DD_HARD_FAIL` and giving it `fitness = -inf` — it would never clear
+   a real search's acceptance gate. Sharpens "drop the line" from "no real
+   champion needed it" to "the drawdown/fitness gates already in place would
+   catch this kind of concentration on their own." Still open: whether a
+   genome can concentrate *without* failing those other gates (tight
+   per-symbol selectivity, no diversification requirement) — not tried, and
+   would be the first case for keeping `correlation_penalty` rather than
+   dropping it.
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
