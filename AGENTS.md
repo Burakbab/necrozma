@@ -190,6 +190,48 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): a fresh 15-generation x6-scaled-seed
+  4h shadow run found three promotions, not two, all inside the first 6
+  generations, then held through 9 straight stagnant generations at boldness
+  climbing to 8 with no fourth — the deepest stagnation probe yet on this
+  question, and it stayed flat.** (see
+  `runs/2026-08-19-2137-4h-shadow-third-plateau.md`) Follow-up to item 2's
+  open "does a third plateau exist past generation 10" question. Same
+  isolation discipline as every prior 4h shadow run (isolated scratch dir,
+  standalone script bypassing the CLI's hardcoded `n_blind=14`), this time
+  with the isolation asserted at runtime (`GENOME_DIR`/`LINEAGE_PATH` checked
+  to resolve under the scratch dir, would raise otherwise) rather than only
+  described. Result: v1→v2 via `correlation_penalty` 0.0→**0.9** (a *fourth*
+  distinct magnitude of this gene fixing a differently-broken scaled seed on
+  the first try, after 0.1/0.75/0.9 seen before — still reads as "shrinks
+  concentration generically against overtrading," not a validated value),
+  v2→v3 via disabling `consult_conservative` as an entry source entirely (the
+  researcher's own diagnostic named the reason: -943 P&L over 75 trades),
+  v3→v4 via a combined 3-gene patch (`cash_floor_pct`, `trailing_stop`,
+  `lone_voice_scale`). All three holdout-passed convincingly (+21.5%/+23.7%/
+  +27.2% excess return). Then generations 7-15: 65 cumulative candidates
+  tried against v4, boldness to 8, nothing cleared the bar. Reading against
+  the 2026-08-17-0510 run (2 promotions across 10 generations, held only 1
+  generation before that run ended): the *shape* replicates (quick early
+  fixes, then a hard wall) but the *count* doesn't (2 vs 3 promotions,
+  plateau at generation 6 vs 9) — consistent with different RNG draws
+  finding different numbers of easy fixes for a differently-broken seed
+  before hitting the same kind of wall, not a fixed number this recipe
+  always produces. Still not proven either way whether a run reaching, say,
+  30 generations would eventually break the wall — this run's contribution
+  is raising the "held flat with no promotion" bar from 1 stagnant
+  generation to 9. Verified safe: `live_state.json` md5 identical before/after
+  (`09c35b692da1d694c5a3cace5d488f40`), `git status` clean of anything but
+  the new run note (no code changed — script lived entirely in `/tmp`), full
+  suite still 104 passed, today's 2026-08-19 bar confirmed already processed
+  by the 00:20 UTC daily run before this check started (no double-trade,
+  `tick` not run this session). Next: whether stagnation this deep ever
+  breaks in a longer run is still open, but each further generation costs
+  the same ~6-7 min this run's did and the marginal evidence value of "still
+  flat" keeps dropping — a judgment call for whoever next has spare capacity
+  and wants to spend it here, not an obviously higher-value use of a
+  3-hourly slot than item 3's remaining gap or item 4's still-pending first
+  real hard-call review.
 - **Resolved 2026-08-19 (3-hourly check): a second, independent adversarial
   construction — selectivity fully untouched, concentration forced only
   through fewer/larger position slots — also fails the drawdown gate, and
@@ -1103,6 +1145,21 @@ every `evolve` call.
    aligned) outcome than blind search alone gets to from the raw seed in a
    workable generation budget. Still open: whether more generations past 10
    let the unscaled seed's fold fitness eventually turn positive too.
+
+   **Resolved 2026-08-19 (3-hourly check): checked whether a third plateau
+   exists past generation 10 on a fresh x6-scaled-seed run — no fourth
+   promotion surfaced, but the count of promotions before the wall (3, not
+   2) didn't replicate either, and 9 stagnant generations is the deepest
+   probe of this question yet.** (see "Current state" above and
+   `runs/2026-08-19-2137-4h-shadow-third-plateau.md`) 15 generations at
+   `n_blind=6`: three promotions all inside generations 1-6, then 9 straight
+   stagnant generations (boldness to 8, 65 cumulative candidates) with
+   nothing clearing the bar. Shape replicates the 2026-08-17-0510 run
+   (quick fixes then a wall); exact promotion count and plateau generation
+   don't. Still open whether a much longer run (30+ generations) ever breaks
+   the wall — flagged as a judgment call given the ~6-7 min/generation cost
+   and the falling marginal value of "still flat" as more generations are
+   spent confirming it.
 
    **Resolved 2026-08-18 (3-hourly check): no, 16 generations still doesn't
    get there, and now there's a mechanism, not just a data point.** (see
