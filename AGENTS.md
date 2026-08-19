@@ -128,6 +128,21 @@ buy candidate against symbols already *held*, never the wider universe. See
 "Current state" for the first result and what it means for AGENTS.md item 3's
 open drop-vs-build decision.
 
+`correlation-universe --realized` adds the portfolio-realized half of that
+same question: not "how correlated is the universe" but "how correlated are
+the symbols the champion actually holds *together*". Runs one real
+full-history backtest (same cost class as `anatomy`/`consults`/`costs` — a
+few minutes, heavier than the ~80s base command) and reconstructs the held
+set per bar via the new `loop.engine.holding_mask` (a pure function built
+from `run_backtest`'s own `closed_trades`/`open_positions` records — no
+genome, broker, or replay access, just timestamp bookkeeping; tested,
+`tests/test_holding_mask.py`, 10 new tests, full suite 104 passed up from
+94), then feeds each bar's held subset through the same
+`pairwise_correlation_stats` used above and prints a directly-comparable
+held-only-vs-universe-wide table per fold/holdout window. Still read-only:
+never touches `live_state.json` or the champion. See "Current state" for the
+first result.
+
 `fold-scheme` re-evaluates the live champion under alternative `n_folds`
 counts (via `loop.evolve.Evaluator`, which already accepted `n_folds` as a
 constructor argument — no engine or constitution change) and reports how
@@ -175,6 +190,46 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): the portfolio-realized follow-up
+  to the 2026-08-18 correlation-universe finding is in, and it strengthens
+  the "drop the line" lean rather than reversing it.** New
+  `evotrader_bundle.py correlation-universe --realized` (see
+  `runs/2026-08-19-0052-portfolio-realized-correlation.md`) adds
+  `loop.engine.holding_mask`, a pure function that reconstructs which
+  symbols champion v3 actually held *together*, per bar, purely from one
+  real full-history backtest's own `closed_trades`/`open_positions` records
+  (tested, `tests/test_holding_mask.py`, 10 new tests, full suite 104 passed
+  up from 94), then measures pairwise correlation restricted to each bar's
+  actual held set instead of the whole universe. Result: held-only mean
+  correlation is **lower** than universe-wide in all four windows — fold 1
+  +0.523 vs +0.630 (−0.108), fold 2 +0.470 vs +0.509 (−0.039), fold 3 +0.427
+  vs +0.616 (−0.189), holdout +0.437 vs +0.572 (−0.135). Reading this against
+  item 3's open decision: the previous run's universe-wide read already
+  leaned toward "drop `correlation_penalty`" because the wider universe
+  wasn't hiding a differently-structured opportunity; this adds that the
+  champion's own position selection (max 6 slots out of 27 symbols, no
+  correlation awareness active at the default `0.0` penalty) already lands
+  on a *less* correlated subset than a random universe draw would, in every
+  single window measured — there is no concentration problem for a
+  correlation-aware sizing rule to have caught here, empirically, not just
+  in theory. Still not fully conclusive (6-8 samples per window, and this is
+  one champion's one set of entry/exit rules — a differently-tuned genome
+  could plausibly cluster harder), but two independent measurements (raw
+  universe structure, and now realized portfolio structure) now both point
+  the same direction. Verified safe: purely additive (`loop.engine` isn't in
+  the checksummed set), `live_state.json` md5 identical before/after
+  (`09c35b692da1d694c5a3cace5d488f40`), `git status` clean of anything but
+  the new test file and the `evotrader_bundle.py` diff, `constitution
+  verified dfae6a697f51fb49` unchanged throughout, `tick` still correctly
+  reports `already traded` (checked before touching anything — today's
+  2026-08-18 bar was already processed by the 00:20 UTC daily run, tick 5,
+  before this 3-hourly check started; no double-trade). Next: if item 3 is
+  ever revisited with a decision to actually make, this is now two
+  consistent independent reads (universe-wide and portfolio-realized) both
+  favoring drop over build — the honest next step before dropping the gene
+  outright would be checking whether a genuinely different (not just
+  differently-penalized) genome changes the held-set correlation picture,
+  not another correlation measurement on the same champion.
 - **Resolved 2026-08-18 (3-hourly check): first evidence for item 3's
   open "drop the correlation_penalty line, or build the fuller
   cross-universe factor-model version" decision — the universe is broadly
@@ -1067,6 +1122,27 @@ every `evolve` call.
    together) — see "Current state" for the exact caveat and what a
    follow-up measurement would need to check before actually dropping the
    gene.
+
+   **Resolved 2026-08-19 (3-hourly check): the portfolio-realized follow-up
+   the run above flagged is done, and it strengthens rather than reverses
+   the drop-vs-build lean.** (see "Current state" above and
+   `runs/2026-08-19-0052-portfolio-realized-correlation.md`) New
+   `correlation-universe --realized` measures correlation restricted to the
+   symbols champion v3 actually held together (via new
+   `loop.engine.holding_mask`, reconstructed from one real backtest's own
+   trade records), directly comparable to the universe-wide table above.
+   Result: held-only correlation is lower than universe-wide in all four
+   windows (by 0.04 to 0.19), meaning the champion's own position selection
+   already lands on a less-correlated subset than the universe average —
+   there is no concentration problem visible for a correlation-aware sizing
+   rule to have caught, on this champion's actual trading history. Two
+   independent measurements (universe structure, portfolio-realized
+   structure) now both favor drop over build. Not fully closed: this is
+   still one champion's one set of entry/exit rules — see "Current state"
+   for exactly what a next check would need (a differently-tuned genome, not
+   another read of the same one) before treating this as settled enough to
+   actually delete `correlation_penalty`/`correlation_lookback`/
+   `_correlation_scale`.
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
