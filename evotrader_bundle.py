@@ -143,6 +143,41 @@ def _adversarial_concentration_genome(base):
     return base.child(patches, note="adversarial-concentration (diagnostic only, never promoted)")
 
 
+def _adversarial_concentration_genome_tight(base):
+    """The narrower adversarial construction AGENTS.md item 3 still flagged
+    as open after `_adversarial_concentration_genome` above: that genome
+    concentrated by *losing selectivity* (near-pass-through entry gates) --
+    and it also crossed `MAX_DD_HARD_FAIL`, so it never would have cleared a
+    real search's acceptance gate. That leaves untested whether a genome can
+    concentrate *without* failing the other gates: selectivity untouched
+    (every consult entry gate stays exactly as evolution tuned it -- nothing
+    here is patched), no diversification requirement (`correlation_penalty`
+    stays at its inert `0.0`, same as every real champion), but forced into
+    fewer, larger simultaneous positions instead of the champion's normal 6
+    slots. If concentration only ever showed up when the drawdown gate was
+    already about to fail, this would be the first case for keeping
+    `correlation_penalty` as a live safety valve rather than dropping it.
+    3 slots, not fewer: `loop.engine.pairwise_correlation_stats` needs at
+    least 3 simultaneously-held symbols to report anything at all, so a
+    2-slot cap (tried first) produced maxDD/fitness numbers but zero
+    held-only correlation rows -- unmeasurable by construction, not a
+    result. Built the same way as `_adversarial_concentration_genome` --
+    `Genome.child()` patches over `base` (the live champion), never run
+    through evolution, never scored against a holdout, never promoted, used
+    only to measure its own held-set correlation. Never touches
+    live_state.json."""
+    patches = [
+        ("agents.risk_judge.genes.max_positions", 3),
+        ("agents.risk_judge.genes.max_position_pct", 0.9),
+        ("agents.risk_judge.genes.cash_floor_pct", 0.05),
+        ("agents.risk_judge.genes.correlation_penalty", 0.0),
+        ("agents.superior_judge.genes.hard_max_positions", 3),
+        ("agents.superior_judge.genes.hard_max_position_pct", 0.9),
+        ("agents.superior_judge.genes.hard_cash_floor_pct", 0.02),
+    ]
+    return base.child(patches, note="adversarial-concentration-tight (diagnostic only, never promoted)")
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "tick"
     import constitution
@@ -927,6 +962,9 @@ def main():
             if "--adversarial" in sys.argv:
                 g_adv = _adversarial_concentration_genome(g0)
                 genomes.append(("adversarial-concentration", g_adv))
+            if "--adversarial-tight" in sys.argv:
+                g_adv_tight = _adversarial_concentration_genome_tight(g0)
+                genomes.append(("adversarial-concentration-tight", g_adv_tight))
             all_held_means: dict[str, dict[str, list[float]]] = {}
             for glabel, genome in genomes:
                 print()

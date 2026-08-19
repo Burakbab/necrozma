@@ -190,6 +190,49 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-19 (3-hourly check): a second, independent adversarial
+  construction — selectivity fully untouched, concentration forced only
+  through fewer/larger position slots — also fails the drawdown gate, and
+  it's the first genome of any construction whose held-set correlation
+  exceeds universe-wide in a real window.** (see
+  `runs/2026-08-19-1552-correlation-adversarial-tight-concentration.md`) New
+  `evotrader_bundle._adversarial_concentration_genome_tight(base)` +
+  `correlation-universe --realized --adversarial-tight` answers the question
+  the 12:58 run left open: does concentration require losing selectivity to
+  show up? No consult entry gate is patched at all — only
+  `risk_judge.max_positions` (6→3), `max_position_pct` (0.25→0.9),
+  `cash_floor_pct` (0.35→0.05) and the matching `superior_judge` ceilings,
+  plus `correlation_penalty` held at its inert `0.0`. Result: held-only
+  correlation is higher than v3's own in every window (fold 1 +0.536 vs
+  +0.523, fold 2 **+0.561 vs +0.509 universe-wide** — the first time any
+  genome's held-set correlation has exceeded universe-wide, not just
+  approached it — fold 3 +0.527 vs +0.427, holdout +0.514 vs +0.437), but
+  full-history maxDD is **-57.5%** (v3: -34.1%), worse than the
+  loosened-gates adversarial genome's -52.6%, still crossing
+  `MAX_DD_HARD_FAIL`, fitness -inf. Two structurally different routes to
+  concentration (lose selectivity, or keep it but force fewer/larger
+  positions) both blow the same drawdown gate — stronger evidence the
+  existing gates catch concentrated trading as a side effect, not an
+  artefact of one adversarial recipe. Caveat: still a hand-built genome,
+  never run through real `evolve` search — whether search itself would ever
+  wander here before the gate kills it is untested. False start caught
+  before the real run: `max_positions=2` compiles and runs but produces zero
+  held-only correlation rows (`pairwise_correlation_stats` needs >=3
+  simultaneously-held symbols); bumped to 3. Verified safe: purely additive
+  (one new function + one new CLI flag), `py_compile` clean, full suite
+  still 104 passed (no new tests, same bar the existing `--adversarial` flag
+  was held to), `live_state.json` md5 identical before/after
+  (`09c35b692da1d694c5a3cace5d488f40`), `evotrader.manifest` md5 identical
+  (`6a4434574ff424f74ff300ebdb50d194`), `git status` clean of anything but
+  the `evotrader_bundle.py` diff, `constitution verified dfae6a697f51fb49`
+  unchanged throughout, today's 2026-08-18 bar (tick 5) confirmed already
+  processed by the 00:20 UTC daily run before this check started (no
+  double-trade, `tick` correctly reported "already traded"). Next: item 3's
+  decision now has its strongest evidence base yet (4 real champions + 2
+  independent adversarial constructions, all consistent) — if ever revisited
+  to actually act, this is enough to decide on. The one remaining gap is
+  running a concentration-forcing genome through real search rather than
+  hand-building it, to see if search itself would ever approach this region.
 - **Resolved 2026-08-19 (3-hourly check): the adversarial-concentration
   genome's measured correlation increase is not free — it costs a hard-fail
   on drawdown, sharpening why item 3's "drop the line" lean holds.** (see
@@ -1342,6 +1385,25 @@ every `evolve` call.
    per-symbol selectivity, no diversification requirement) — not tried, and
    would be the first case for keeping `correlation_penalty` rather than
    dropping it.
+
+   **Resolved 2026-08-19 (3-hourly check): tried the narrower construction,
+   and it fails the same gate anyway, more severely.** (see "Current state"
+   above and
+   `runs/2026-08-19-1552-correlation-adversarial-tight-concentration.md`) New
+   `_adversarial_concentration_genome_tight` leaves every consult entry gate
+   untouched and forces concentration purely through
+   `risk_judge.max_positions`/`max_position_pct`/`cash_floor_pct` (6 slots
+   → 3, larger each). Result: held-set correlation is the highest measured
+   yet — fold 2 (+0.561) is the first window where held-only correlation has
+   ever exceeded universe-wide (+0.509) — but full-history maxDD is -57.5%,
+   worse than the loosened-gates genome's -52.6%, still hard-fails, fitness
+   -inf. Both known routes to concentration (lose selectivity, or keep it
+   and force fewer/larger positions) blow the drawdown gate. Item 3's
+   evidence base is now 4 real champions + 2 independent adversarial
+   constructions, all pointing the same way — if this item is ever revisited
+   to actually act, this is enough to decide on, not another read. The one
+   remaining gap: a concentration-forcing genome has never been run through
+   real `evolve` search, only hand-built.
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
