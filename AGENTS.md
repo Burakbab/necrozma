@@ -203,6 +203,36 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-20 (3-hourly check): checked the holdout-noise finding
+  against the third and final real champion (v1), closing the "is this
+  v3-specific" question.** (see
+  `runs/2026-08-20-0948-holdout-noise-third-champion.md`) One-line
+  `holdout-noise --also-version 1` (no code change — existing CLI flag).
+  Result: v1's bootstrap sigma is **18.90x** `MULTIPLE_TESTING_SIGMA`,
+  between v3's 23.83x and v2's already-recorded 14.3x. All three real
+  champions this account has ever had now show `boot_fitness_std` in the
+  14-24x range — none anywhere near the 1x the margin formula assumes, and
+  the spread across genomes is narrower than the gap from any of them to the
+  assumed constant. Exhausts the "check another real champion" data source
+  (same shape as every other cross-champion sweep in this file) — no fourth
+  real genome exists until a new promotion happens. Verified safe: purely
+  read-only, `live_state.json` md5 identical before/after
+  (`cca58deb976cef403c5010f2e2b9528b`), `evotrader.manifest` md5 identical
+  (`6a4434574ff424f74ff300ebdb50d194`), `constitution verified
+  dfae6a697f51fb49` unchanged, `git status --short` empty before this run's
+  own commit, today's 2026-08-20 bar confirmed already processed by the
+  00:20 UTC daily run before this check started (no double-trade, `tick` not
+  run this session). Also noted: this session's cloud clone started with
+  local `main` detached and two commits behind a stale pre-restart ref;
+  reset to `origin/main` per the run protocol's "origin/main is
+  authoritative" rule (no work lost — the two divergent local commits were
+  already-superseded Aug 15-16 initial-import commits). Next: the
+  recalibration decision (bump `MULTIPLE_TESTING_SIGMA` or add a separate
+  holdout-specific constant) is still an unstarted constitution change —
+  checksummed, needs its own `AMENDMENTS.md` row, and reads best combined
+  with the fold-scheme outlier-fold finding as one regime-stratified/rolling
+  redesign, not a number to bump alone. No further cheap data points remain
+  on the noise-magnitude question itself.
 - **Measured 2026-08-20 (3-hourly check): the sealed-holdout margin's own
   docstring names an unanswered question — "measure the sigma before
   trusting the number" — and now it's measured: the real noise is ~24-25x
@@ -252,10 +282,11 @@ is no brokerage account in this design and there does not need to be one.
   together with the existing fold-scheme findings (fold 2's permanent
   +200% outlier, non-monotonic `aggregate_fitness` across fold counts) as
   one combined case for a regime-stratified/rolling fold-and-holdout
-  redesign, not a number to just bump in isolation. Cheaper follow-ups
-  available without touching the constitution: `--also-version 1` for a
-  third data point, or a much higher `--n-boot` to check the ~24x estimate
-  has converged.
+  redesign, not a number to just bump in isolation. **`--also-version 1` run
+  2026-08-20 (see the entry above this one) — 18.90x, closing the
+  third-data-point follow-up.** The remaining cheap option without touching
+  the constitution is a much higher `--n-boot` to check the ~24x estimate
+  has converged (not attempted).
 - **Shipped 2026-08-20 (3-hourly check): the bundle-editing tool the
   correlation-penalty-removal run flagged as needed for the next session is
   now committed.** (see `runs/2026-08-20-0348-bundle-edit-tool.md`) New
