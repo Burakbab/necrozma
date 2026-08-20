@@ -235,6 +235,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-20 (3-hourly check): shipped `regime-scan`, and it puts a
+  number on the regime-stratification question — the fold-2 melt-up is
+  concentrated at ~2.5x its even share at every resolution, and at the fold
+  resolution evolution actually uses one of three folds carries 92% of the
+  region's compounded growth.** (see
+  `runs/2026-08-20-1855-regime-scan-melt-up-concentration.md`) Also ran the
+  flagged one-liner `fitness-decomp --also-version 2`: the third champion (v2)
+  confirms the mean term drives the aggregate swing (mean range 2.173 vs penalty
+  0.370) — now a 3-of-3 property, not a v3/v1 quirk. New pure helper
+  `loop.evolve.regime_concentration(window_returns)` (`|log(1+r)|` shares, HHI,
+  `concentration_ratio = top_share * n`; tested,
+  `tests/test_regime_concentration.py`, 8 new tests, full suite 151 passed up
+  from 143) + read-only CLI `regime-scan [--n-windows K] [--interval X]`.
+  Genome-independent (buy-and-hold only, no backtest), so `--also-version` would
+  change nothing and isn't offered; same guarantees as `regime`. It answers the
+  question fitness-decomp left open — is the mean-swinging melt-up *isolated*
+  (regime-stratification helps) or *diffuse* (it won't)? Answer: concentrated.
+  Concentration ratio is 2.75x at n=3 (fold 2 = +257% b&h, 92% of |log-growth|),
+  2.57x at n=6, 2.45x at n=12 — the raw share falls as finer bins split the bull
+  runs but the ratio-over-even holds ~2.5x, so it's real, not a coarse-binning
+  artefact. Sharper mechanism the n=12 scan exposes: fold 2 isn't one atomic
+  melt-up, it's **two separated bull runs** (2023-10→2024-01 +92.5%,
+  2024-08→2024-11 +102.1%, a −19% stretch between them) that both land in
+  calendar-fold-2 — exactly the separable case regime-stratification is built
+  for. Verified safe: `loop.evolve` isn't checksummed, `tools/edit_bundle_module.py
+  verify` round-trip clean before and after, `py_compile` clean, `live_state.json`
+  md5 identical throughout (`cca58deb976cef403c5010f2e2b9528b`),
+  `evotrader.manifest` md5 identical (`6a4434574ff424f74ff300ebdb50d194`),
+  `constitution verified dfae6a697f51fb49` unchanged (not touched, no amendment),
+  today's 2026-08-19 bar confirmed already processed by the 00:20 UTC daily run
+  (no double-trade, `tick` not run this session), genome version unchanged (no
+  promotion, no README Status change needed). Next: the regime-stratified fold
+  scheme is now motivated *and* measured, but building it is a constitution
+  change (`Evaluator` accepting a fold as a *set* of windows, `run_backtest`
+  replaying a non-contiguous union of bars) needing a design pass + `AMENDMENTS.md`
+  row — flagged, not started; `regime-scan`'s per-window b&h return is the
+  genome-independent regime label a stratifier would group on. Cheap follow-up not
+  run: `regime-scan --interval 4h`.
 - **Measured 2026-08-20 (3-hourly check): shipped `fitness-decomp`, which
   splits `aggregate_fitness` into its mean term and its consistency-penalty
   term — and the result partly corrects the previous run's inference: the
@@ -1643,6 +1681,30 @@ every `evolve` call.
    penalty-weight tweak the rolling-folds entry floated as one option.
    `fitness-decomp --also-version 2` (third champion) is a one-line follow-up
    not yet run.
+
+   **Resolved 2026-08-20 (3-hourly check): ran that one-liner AND put a number
+   on whether regime-stratification is worth the engine work — the melt-up is
+   concentrated (~2.5x its even share at every resolution), so the answer is
+   yes.** (see "Current state" above and
+   `runs/2026-08-20-1855-regime-scan-melt-up-concentration.md`)
+   `fitness-decomp --also-version 2` confirms the mean term (not the penalty)
+   drives the aggregate swing in all three champions (v2 mean range 2.173 vs
+   penalty 0.370). New `regime-scan` diagnostic
+   (`loop.evolve.regime_concentration`, pure, tested, 8 tests, suite 151 up from
+   143; read-only, genome-independent) measures how concentrated the searchable
+   region's compounded growth is: `concentration_ratio` 2.75x at n=3 (one of
+   three folds = 92% of |log-growth|), 2.57x at n=6, 2.45x at n=12 — the ratio
+   holds ~2.5x as resolution rises, so the concentration is real, not a binning
+   artefact. The n=12 scan exposes the mechanism: fold 2 is **two separated bull
+   runs** (2023-10 +92.5%, 2024-08 +102.1%) colliding in one calendar fold —
+   separable, i.e. exactly what a stratified scheme can split across folds
+   without inventing or dropping data. This resolves the "is it worth the engine
+   work" question in favour of yes, and hands the next builder the regime label
+   to group on (`regime-scan`'s per-window b&h return). Still not started (it's a
+   constitution change): `Evaluator` accepting a fold as a *set* of windows and
+   `run_backtest` replaying a non-contiguous union of bars — needs a design pass
+   + `AMENDMENTS.md` row. Cheap follow-up not run: `regime-scan --interval 4h` to
+   check the 4h track shows the same concentration before any 4h fold redesign.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
