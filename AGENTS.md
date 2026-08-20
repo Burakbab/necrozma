@@ -83,6 +83,7 @@ python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged
 python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the sealed holdout has rejected
 python3 evotrader_bundle.py fold-scheme       # fold-count sensitivity of fold-aggregate fitness
 python3 evotrader_bundle.py rolling-folds     # overlapping fixed-width windows vs the disjoint fold split
+python3 evotrader_bundle.py fitness-decomp    # split aggregate_fitness into its mean term vs consistency-penalty term across fold schemes
 python3 evotrader_bundle.py drawdown          # which date range actually drives maxDD, ranked by depth
 python3 evotrader_bundle.py correlation-universe  # full-universe pairwise return correlation by fold/holdout
 python3 evotrader_bundle.py holdout-noise         # block-bootstrap sigma of a sealed-holdout fitness score
@@ -190,6 +191,19 @@ same cost class as `fold-scheme`. First result (2026-08-20): shrinks the raw
 outlier gap but does **not** stabilize `aggregate_fitness` — see "Current
 state" for why this is real negative evidence, not a null result.
 
+`fitness-decomp` follows `rolling-folds` directly: it splits
+`aggregate_fitness` into the two terms `Evaluator.evaluate` builds it from —
+`mean(fold_fits)` and the `FOLD_CONSISTENCY_WEIGHT * std(fold_fits)`
+consistency penalty (`loop.evolve.fitness_decomposition`, a pure identity:
+`mean_term - penalty_term` reconstructs `aggregate_fitness` exactly, tested).
+`rolling-folds` could only see the aggregate swing, not *which term* drove it;
+this evaluates the live champion (and `--also-version N`) under five schemes
+(disjoint `n_folds` 3/5, rolling overlap 0.5/0.7/0.85) and prints the
+mean/penalty split plus each term's across-scheme range. Read-only, same cost
+class as `fold-scheme`/`rolling-folds` (one backtest per window per scheme).
+First result (2026-08-20): the **mean term** varies more than the penalty term
+across schemes, for both v3 and v1 — see "Current state".
+
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
 
@@ -221,6 +235,49 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-20 (3-hourly check): shipped `fitness-decomp`, which
+  splits `aggregate_fitness` into its mean term and its consistency-penalty
+  term — and the result partly corrects the previous run's inference: the
+  *mean term*, not the penalty term, drives the across-scheme swing.** (see
+  `runs/2026-08-20-1556-fitness-decomposition-diagnostic.md`) The 2026-08-20
+  rolling-folds run *guessed* the `FOLD_CONSISTENCY_WEIGHT * std` penalty term
+  was the culprit behind the aggregate swinging as windowing changed. New pure
+  function `loop.evolve.fitness_decomposition(fold_fits)` (`mean_term -
+  penalty_term` reconstructs `aggregate_fitness` exactly — an identity, tested,
+  `tests/test_fitness_decomposition.py`, 7 new tests, full suite 143 passed up
+  from 136) plus new read-only CLI `fitness-decomp [--also-version N]` (evaluate
+  the champion under disjoint `n_folds` 3/5 and rolling overlap 0.5/0.7/0.85,
+  print the split) measures it directly instead. Result against v3 (live):
+  aggregate ranges 2.100 across the five schemes, of which the **mean term
+  ranges 1.500** and the penalty term only **0.610**. Cross-checked against v1
+  (reconstructed): same shape, mean term range 0.609 vs penalty 0.183. Both
+  terms swing, but the mean of the fold fitnesses varies more than twice as
+  much as the penalty in both champions — the aggregate is unstable mostly
+  because *which windows capture the permanent fold-2 melt-up* moves the
+  average, not because the std penalty over-reacts to how many correlated
+  windows feed it. (The extreme overlap=0.85 case is where both terms move the
+  aggregate-lowering way at once — mean 1.234 *and* penalty −0.928 → aggregate
+  0.306 — so overlap does amplify the penalty, consistent with rolling-folds'
+  "worse, not better" observation; but the raw driver across the scheme set is
+  the mean term.) Sharpens item 2's redesign direction: retuning
+  `FOLD_CONSISTENCY_WEIGHT` alone would not stabilize the aggregate, because the
+  dominant instability isn't in the term it controls — it's the mean being
+  dominated by one outlier window, which points more firmly at genuine
+  regime-stratification (no single window is a permanent +200% outlier) over a
+  penalty-weight tweak or a denser calendar slide. Verified safe: `loop.evolve`
+  isn't checksummed, `tools/edit_bundle_module.py verify` round-trip clean
+  before the edit, `py_compile` clean, `live_state.json` md5 identical
+  throughout (`cca58deb976cef403c5010f2e2b9528b`), `evotrader.manifest` md5
+  identical (`6a4434574ff424f74ff300ebdb50d194`), `constitution verified
+  dfae6a697f51fb49` unchanged, today's 2026-08-20 bar confirmed already
+  processed by the 00:20 UTC daily run before this check started (no
+  double-trade, `tick` not run this session). Session started detached two
+  stale seed-import commits behind a force-updated `origin/main`; reset to
+  `origin/main` per the protocol (no work lost). Next: `fitness-decomp
+  --also-version 2` is a one-line third-champion follow-up not yet run; the
+  regime-stratified fold scheme itself is still unstarted design work, now with
+  sharper motivation (design around the mean term's outlier sensitivity, not
+  the penalty term).
 - **Measured 2026-08-20 (3-hourly check): shipped `rolling-folds`, the rolling
   half of item 2's untried "regime-stratified/rolling fold scheme" idea, and
   it's a negative result — smoothing the calendar split does not stabilize
@@ -1567,6 +1624,25 @@ every `evolve` call.
    independent of the window under test (candidate: `regime`'s own per-
    window buy-and-hold characterization), and is real design work, not a
    tail-end addition.
+
+   **Measured 2026-08-20 (3-hourly check): decomposed the aggregate swing,
+   and it's the mean term, not the penalty term.** (see "Current state" above
+   and `runs/2026-08-20-1556-fitness-decomposition-diagnostic.md`) The
+   rolling-folds entry just above *inferred* the `FOLD_CONSISTENCY_WEIGHT *
+   std` penalty term was driving the aggregate instability. New `fitness-decomp`
+   diagnostic (`loop.evolve.fitness_decomposition`, `mean_term - penalty_term`
+   reconstructs `aggregate_fitness` exactly, tested) measures the split
+   directly across five schemes (disjoint `n_folds` 3/5, rolling overlap
+   0.5/0.7/0.85): for v3 the aggregate ranges 2.100, mean term 1.500, penalty
+   term only 0.610; for v1, aggregate 0.426, mean 0.609, penalty 0.183. Both
+   champions: the mean of the fold fitnesses varies more than twice as much as
+   the penalty. So retuning `FOLD_CONSISTENCY_WEIGHT` alone would *not*
+   stabilize the aggregate — the dominant instability is the mean being
+   dominated by one outlier window, which points more firmly at genuine
+   regime-stratification (kill the permanent +200% outlier window) over the
+   penalty-weight tweak the rolling-folds entry floated as one option.
+   `fitness-decomp --also-version 2` (third champion) is a one-line follow-up
+   not yet run.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
