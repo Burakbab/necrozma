@@ -175,6 +175,7 @@ and check `AMENDMENTS.md` first.
 | `live_state.json` | **the account**: cash, positions, trade ledger, NAV history, current genome, evolution lineage, researcher memory |
 | `AMENDMENTS.md` | the constitution amendment log — every gate change, argued in writing |
 | `runs/` | one dated note per scheduled run |
+| `tools/edit_bundle_module.py` | extract/reinsert a module's source from `evotrader_bundle.py`'s embedded `_SRC` dict for editing without hand-touching its giant single-line strings — see item 7 and `runs/2026-08-20-0348-bundle-edit-tool.md` |
 | `index.html` | generated public dashboard, served by GitHub Pages — rebuilt each run, never hand-edited |
 | `README.md` | hand-written, renders on the GitHub repo page — its `## Status` section names the current genome version and must be updated on every promotion (see Run protocol step 7) |
 
@@ -190,6 +191,36 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-20 (3-hourly check): the bundle-editing tool the
+  correlation-penalty-removal run flagged as needed for the next session is
+  now committed.** (see `runs/2026-08-20-0348-bundle-edit-tool.md`) New
+  `tools/edit_bundle_module.py` extracts a named module's source out of
+  `evotrader_bundle.py`'s giant single-line `_SRC['dotted.name'] = '...'`
+  entries into a real `.py` file for normal editing, and folds an edited
+  file back in via `repr()`, replacing only that one line — the same
+  extract/reinsert approach the prior run built ad hoc in `/tmp` (and lost,
+  since `/tmp` doesn't survive the container) rather than a new mechanism.
+  `verify` round-trips every module in the real bundle unmodified and
+  asserts byte-identical output; `tests/test_edit_bundle_module.py` (7 new
+  tests, full suite 111 passed up from 104) checks this on every `pytest`
+  run against synthetic cases plus the real current bundle, not just
+  manually before a real edit. Verified safe: full manual extract-edit-
+  reinsert workflow tested on a scratch copy in `/tmp` (not this repo, no
+  risk to the real bundle), `py_compile` clean, `live_state.json` md5
+  identical (`cca58deb976cef403c5010f2e2b9528b`), `evotrader.manifest` md5
+  identical (`6a4434574ff424f74ff300ebdb50d194`), `git status` clean of
+  anything but the two new tool files and the new test, `constitution
+  verified dfae6a697f51fb49` unchanged, today's 2026-08-20 bar confirmed
+  already processed by the 00:20 UTC daily run before this check started (no
+  double-trade, `tick` not run this session). One bug caught before
+  committing: the test suite's first draft hand-wrote a sample module's
+  source using a quoting style that didn't match `repr()`'s own canonical
+  output, making the round-trip assertion meaningless — fixed by building
+  the synthetic sample with `repr()` itself. Next: not used for a real edit
+  yet — the next session that needs to touch `evotrader_bundle.py`
+  internals (a future item-3-style removal, or item 7's eventual unflatten)
+  should use this instead of hand-editing `_SRC` lines or rebuilding an ad
+  hoc version.
 - **Resolved 2026-08-20 (3-hourly check): item 3 acted on, not just measured
   — `correlation_penalty`/`correlation_lookback`/`_correlation_scale` are
   removed.** (see `runs/2026-08-20-0055-correlation-penalty-removal.md`)
@@ -1706,6 +1737,14 @@ every `evolve` call.
    the unflattened version is proven equivalent (same checksum, same
    tick/summary output against the same `live_state.json`), and don't switch the
    live trading path until confident. Explicitly optional and explicitly last.
+
+   **Tool shipped 2026-08-20 (3-hourly check), not the unflatten itself:**
+   `tools/edit_bundle_module.py` extracts any one `_SRC` module to a real
+   `.py` file and reinserts it, with a `verify` round-trip check — see
+   "Current state" above and `runs/2026-08-20-0348-bundle-edit-tool.md`. This
+   doesn't do the unflatten (still a bigger, separate, isolated-commit task
+   as described above), but it's the safer way to touch bundle internals for
+   any smaller edit in the meantime, including a future attempt at this item.
 
 ---
 
