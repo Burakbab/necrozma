@@ -82,6 +82,7 @@ python3 evotrader_bundle.py hard-calls  # how often would agents.judges.flag_har
 python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
 python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the sealed holdout has rejected
 python3 evotrader_bundle.py fold-scheme       # fold-count sensitivity of fold-aggregate fitness
+python3 evotrader_bundle.py rolling-folds     # overlapping fixed-width windows vs the disjoint fold split
 python3 evotrader_bundle.py drawdown          # which date range actually drives maxDD, ranked by depth
 python3 evotrader_bundle.py correlation-universe  # full-universe pairwise return correlation by fold/holdout
 python3 evotrader_bundle.py holdout-noise         # block-bootstrap sigma of a sealed-holdout fitness score
@@ -171,6 +172,23 @@ of the resulting `fitness()` distribution next to
 `constitution.MULTIPLE_TESTING_SIGMA`, the constant `required_margin()`
 assumes. First result (2026-08-20): ~24-25x, not 1x — see "Current state".
 `--also-version N` works the same way as `fold-scheme`/`correlation-universe`.
+Convergence checked 2026-08-20 at `--n-boot` up to 50000: stable by ~5000
+draws at refined per-champion estimates v3 ≈25.5x / v1 ≈18.5x / v2 ≈15.1x —
+see "Current state".
+
+`rolling-folds` is the untried alternative `fold-scheme`'s own notes have
+flagged since 2026-08-18: instead of raising `Evaluator`'s `n_folds` (which
+shrinks every window as count rises), `loop.evolve.rolling_folds(search_end,
+base_n_folds, overlap)` keeps window width fixed at whatever
+`Evaluator.folds()` uses for `base_n_folds` and slides that fixed-size window
+across the searchable region by `(1 - overlap) * width` per step, feeding the
+result into `Evaluator.evaluate(g, folds=...)` (already accepted a custom
+fold list, no `Evaluator`/constitution change needed). `--overlap` (default
+`0.5`), `--base-n-folds` (default `N_FOLDS`) and `--also-version N` (same
+convention as `fold-scheme`/`correlation-universe`) control it. Read-only,
+same cost class as `fold-scheme`. First result (2026-08-20): shrinks the raw
+outlier gap but does **not** stabilize `aggregate_fitness` — see "Current
+state" for why this is real negative evidence, not a null result.
 
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
@@ -203,6 +221,62 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-20 (3-hourly check): shipped `rolling-folds`, the rolling
+  half of item 2's untried "regime-stratified/rolling fold scheme" idea, and
+  it's a negative result — smoothing the calendar split does not stabilize
+  `aggregate_fitness`.** (see
+  `runs/2026-08-20-1254-rolling-folds-and-holdout-noise-convergence.md`) New
+  `loop.evolve.rolling_folds(search_end, base_n_folds, overlap)` (pure
+  function, tested, `tests/test_rolling_folds.py`, 9 new tests, full suite
+  136 passed up from 127) keeps window width fixed at whatever
+  `Evaluator.folds()` uses for `base_n_folds` and slides that fixed-size
+  window across the searchable region instead of subdividing it, so more
+  (overlapping, correlated) reads of the same span never shrink any window
+  below its `base_n_folds` size — the failure mode `fold-scheme` found at
+  `n_folds=8` (one window near the 120-bar hard minimum, another hard-gate
+  failing outright). New CLI `rolling-folds [--overlap] [--base-n-folds]
+  [--also-version N]`, same structure as `fold-scheme`. Against live
+  champion v3 at the default `overlap=0.5`: `aggregate_fitness` 1.399 vs the
+  disjoint baseline's 1.480 (close), outlier gap shrinks modestly (+252.4% →
+  +222.9%, the fold-2 melt-up is still inside one window at this overlap).
+  Swept `--overlap 0.7`/`0.85`: `aggregate_fitness` swings 0.306 → 2.003 →
+  1.399 → 1.480 across overlap 0.85/0.7/0.5/baseline — a *wider* swing than
+  `fold-scheme`'s own n_folds sweep (−1.224 → +1.633 → −0.500), even though
+  the raw outlier gap does shrink monotonically with overlap. Reading: naive
+  overlap dilutes the one-big-fold problem but doesn't fix
+  `aggregate_fitness` instability, because `FOLD_CONSISTENCY_WEIGHT`'s
+  cross-fold std penalty is itself sensitive to how many correlated windows
+  feed it — adding more overlapping reads adds variance to that penalty term
+  at least as fast as it dilutes the outlier's share of the mean.
+  Cross-checked against `--also-version 1`: outlier gap identical to v3's at
+  every overlap (genome-independent by construction, same shape as
+  `fold-scheme`'s finding), `aggregate_fitness` ranks v1 below v3 as
+  everywhere else. Verified safe: `loop.evolve` isn't checksummed
+  (`constitution` + `core.portfolio` only), `tools/edit_bundle_module.py
+  verify` round-trip clean before editing, `py_compile` clean,
+  `live_state.json` md5 identical throughout
+  (`cca58deb976cef403c5010f2e2b9528b`), `evotrader.manifest` md5 identical
+  (`6a4434574ff424f74ff300ebdb50d194`), `constitution verified
+  dfae6a697f51fb49` unchanged, today's 2026-08-19 bar (the last closed daily
+  bar) confirmed already processed by the 00:20 UTC daily run before this
+  check started (no double-trade, `tick` re-checked after all diagnostic
+  runs and still correctly reports "already traded"). Also ran the flagged
+  cheap follow-up on `holdout-noise`: swept `--n-boot` 1000→50000 across 3
+  seeds against v3, plus one 20000-boot pass each on `--also-version 1`/`2`.
+  Converges cleanly by ~5000 draws to refined per-champion estimates v3
+  ≈25.5x / v1 ≈18.5x / v2 ≈15.1x `MULTIPLE_TESTING_SIGMA` (consistent with,
+  slightly above, the earlier 1000-boot reads) — closes the "has the ~24x
+  estimate converged" question, diagnostic-only, no code changed for this
+  half. Next: this run's finding means the `MULTIPLE_TESTING_SIGMA`
+  recalibration + fold-scheme redesign combination flagged since 2026-08-18
+  is now sharper, not simpler — a rolling window alone isn't the fix, so
+  whoever picks this up next should look at either changing
+  `FOLD_CONSISTENCY_WEIGHT` alongside any windowing change, or a genuinely
+  regime-stratified split (grouping by market character via something like
+  `regime`'s own per-window buy-and-hold characterization, not calendar
+  position) — neither attempted yet, both bigger design work than fits this
+  session's scope. `rolling-folds --also-version 2` is a one-line follow-up
+  not yet run.
 - **Measured 2026-08-20 (3-hourly check): checked the holdout-noise finding
   against the third and final real champion (v1), closing the "is this
   v3-specific" question.** (see
@@ -1474,6 +1548,25 @@ every `evolve` call.
    regime-stratified/rolling fold-scheme redesign should treat
    non-monotonicity as a property worth designing around, not a
    champion-specific artefact.
+
+   **Tried 2026-08-20 (3-hourly check): the rolling half of the
+   regime-stratified/rolling idea, and it doesn't fix the instability by
+   itself.** (see "Current state" above and
+   `runs/2026-08-20-1254-rolling-folds-and-holdout-noise-convergence.md`) New
+   `rolling-folds` diagnostic (`loop.evolve.rolling_folds`, fixed-width
+   overlapping windows instead of shrinking disjoint ones) shrinks the raw
+   outlier gap as overlap rises but makes `aggregate_fitness` swing *more*
+   than `fold-scheme`'s own n_folds sweep did, not less — `overlap`
+   0.85/0.7/0.5/baseline gives 0.306/2.003/1.399/1.480. Reading: the cross-
+   fold consistency penalty itself is sensitive to how many correlated
+   windows feed it, so windowing changes alone (rolling or otherwise) likely
+   need to come paired with a `FOLD_CONSISTENCY_WEIGHT` change, or the fix
+   needs genuine regime-stratification (grouping by market character, not
+   calendar position) instead of a denser calendar slide. Regime-
+   stratification itself remains untried — would need a regime definition
+   independent of the window under test (candidate: `regime`'s own per-
+   window buy-and-hold characterization), and is real design work, not a
+   tail-end addition.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
