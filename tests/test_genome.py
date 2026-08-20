@@ -25,7 +25,6 @@ def test_seed_genome_defaults():
     assert g.bar_interval == "1d"
     assert g.data["parent"] is None
     assert g.enabled("consult_risky")
-    assert g.gene("risk_judge", "correlation_penalty") == 0.0
 
 
 def test_child_bumps_version_and_does_not_mutate_parent():
@@ -41,8 +40,8 @@ def test_child_bumps_version_and_does_not_mutate_parent():
 
 def test_child_applies_nested_dotted_path():
     g = Genome()
-    child = g.child([("agents.risk_judge.genes.correlation_penalty", 0.5)])
-    assert child.gene("risk_judge", "correlation_penalty") == 0.5
+    child = g.child([("agents.risk_judge.genes.max_position_pct", 0.5)])
+    assert child.gene("risk_judge", "max_position_pct") == 0.5
     # sibling genes under the same agent are untouched
     assert child.gene("risk_judge", "base_size_pct") == g.gene("risk_judge", "base_size_pct")
 

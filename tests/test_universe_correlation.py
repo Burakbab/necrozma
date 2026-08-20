@@ -1,9 +1,11 @@
 """loop.engine.pairwise_correlation_stats -- full-universe pairwise return
-correlation, summarised. Exists to gather evidence for the open decision in
-AGENTS.md item 3 (drop the fixed-value correlation_penalty gene, or build a
-fuller cross-universe factor-model version): the live mechanism
-(agents.judges.RiskJudge._correlation_scale) only ever compares a buy
-candidate against symbols already *held*, never the rest of the universe.
+correlation, summarised. Built to gather evidence for AGENTS.md item 3's
+drop-vs-build decision on cross-asset correlation awareness; the evidence
+settled on "drop" and the fixed-value correlation_penalty gene (along with
+RiskJudge._correlation_scale and Briefing.rets_by_symbol) was removed
+2026-08-20. This diagnostic itself stays -- it measures raw and
+portfolio-realized universe correlation independent of any genome, and
+remains useful for any future concentration/diversification question.
 Read-only: takes already-built return arrays, never a genome or replay."""
 import numpy as np
 

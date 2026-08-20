@@ -190,6 +190,53 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-20 (3-hourly check): item 3 acted on, not just measured
+  — `correlation_penalty`/`correlation_lookback`/`_correlation_scale` are
+  removed.** (see `runs/2026-08-20-0055-correlation-penalty-removal.md`)
+  After 4 real champions + 2 adversarial constructions + real unconstrained
+  search all agreed the gene was dead weight (see the 2026-08-19 entries
+  below), this was the "dedicated session" the last of those entries said
+  the removal deserved. Deleted: the two genes from `SEED_GENOME`'s
+  `risk_judge` block (`core.genome`), `RiskJudge._correlation_scale` and its
+  helper `_pairwise_corr` (`agents.judges`) plus its call site in `rule()`
+  (the `corr_scale` multiplier and its veto branch), the `correlation_penalty`
+  structural proposal block and both `GENE_SPACE` entries in
+  `agents.researcher`, and `Briefing.rets_by_symbol` (`core.types`) plus the
+  per-bar computation that fed it in `Analyst.brief` (`agents.analyst`) — that
+  last piece was a real, if small, live performance cost (one extra
+  `np.diff` per symbol per bar, on every tick and every backtest, purely to
+  feed a gene now gone). Left alone: `loop.engine.pairwise_correlation_stats`
+  and `holding_mask` (the `correlation-universe` diagnostic) — they compute
+  correlation directly from raw closes, never depended on
+  `Briefing.rets_by_symbol`, and remain useful for any future
+  concentration/diversification question; the diagnostic's own docstrings
+  and the `--adversarial`/`--adversarial-tight` genome builders were updated
+  to stop referencing the now-deleted mechanism (and their patch lists no
+  longer set `correlation_penalty`, since there's nothing left to set).
+  Constitution package untouched (`correlation_penalty` lived in
+  `agents.judges`/`core.genome`, neither checksummed) — no `AMENDMENTS.md`
+  row needed, `constitution verified dfae6a697f51fb49` unchanged throughout.
+  Verified safe: full suite still 104 passed (two assertions in
+  `tests/test_genome.py` updated to stop referencing the deleted gene, one
+  swapped to `max_position_pct` to keep testing the same dotted-path
+  mechanism), `py_compile` clean, `live_state.json` md5 identical
+  before/after (`cca58deb976cef403c5010f2e2b9528b`), and a real full-history
+  backtest of champion v3 (the live genome, which never touched this gene —
+  it defaulted to `0.0`, a proven no-op) reproduces the previously-recorded
+  -34.1% maxDD to 5 significant figures (-0.34088... here), the same shape
+  of confirmation every other diagnostic-only run in this log has used —
+  proof this was a true no-op removal, not a behavior change. Editing
+  mechanism note for future sessions: `evotrader_bundle.py`'s `_SRC` dict
+  entries are single giant escaped-string lines (one per module, generated
+  historically by a `bundle.py` that no longer exists in this repo — item 7
+  is still not done); editing them directly with string-match tools is
+  impractical. Used a small extract/reinsert script instead (`ast.literal_eval`
+  the line's RHS out to a real `.py` file, edit normally, `repr()` it back
+  into the `_SRC[...] = ` line) — round-trip verified byte-identical on an
+  unmodified extract before trusting it on real edits. Not saved to the repo
+  (lived in `/tmp`, gone with the container), so the next session that needs
+  to touch bundle internals will want to rebuild the same two-function
+  tool rather than hand-edit the giant lines.
 - **Resolved 2026-08-19 (3-hourly check): the last open piece of item 3's
   evidence base — does real unconstrained blind search, not a hand-built
   genome, ever wander toward the concentration region on its own — is
@@ -1301,8 +1348,12 @@ every `evolve` call.
    non-monotonicity as a property worth designing around, not a
    champion-specific artefact.
 
-3. **Cross-asset correlation awareness for the Risk Judge** — the first genuinely
-   structural proposal, not a retune. Infrastructure shipped 2026-08-15 after
+3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
+   see the last entry in this item's history below: the gene was measured
+   exhaustively, found to be dead weight, and removed. Kept in full for the
+   history (how the evidence was built matters for the next structural
+   proposal), but there is nothing left to act on here. Infrastructure
+   shipped 2026-08-15 after
    parametric search plateaued at fitness 0.889 for 13+ generations:
    `Briefing.rets_by_symbol` (Analyst computes per-symbol recent return series
    alongside existing features, default empty dict), plus two new `risk_judge`
@@ -1518,6 +1569,24 @@ every `evolve` call.
    `Briefing.rets_by_symbol`, several tests, and the diagnostic CLI code
    built to measure this question) is a multi-file surgery that deserves a
    dedicated session, not a tail-end addition to a diagnostic one.
+
+   **Done 2026-08-20 (3-hourly check): the removal itself.** (see "Current
+   state" above and `runs/2026-08-20-0055-correlation-penalty-removal.md`)
+   `correlation_penalty`, `correlation_lookback`, `RiskJudge._correlation_scale`,
+   its `_pairwise_corr` helper, the structural proposal grid, both
+   `GENE_SPACE` mutation entries, and `Briefing.rets_by_symbol` (plus the
+   Analyst computation feeding it) are all gone. The `correlation-universe`
+   diagnostic (`loop.engine.pairwise_correlation_stats`/`holding_mask`)
+   stays — it never depended on the removed plumbing, computes correlation
+   directly from raw closes, and is still useful for future
+   concentration/diversification questions. Verified a true no-op: full
+   suite 104 passed, constitution checksum unchanged (nothing removed was
+   checksummed), `live_state.json` byte-identical, and a fresh full-history
+   backtest of live champion v3 reproduces its previously-recorded -34.1%
+   maxDD to 5 significant figures. **Item 3 is now closed** — nothing left
+   to measure or remove on this question unless a future structural
+   cross-universe factor-model version is proposed from scratch, which
+   would be new work, not a continuation of this one.
 
 3a. **Resolved 2026-08-16 (weekend all-hands): the live champion caught up
    on its own.** This item used to flag that v2 was measurably behind a
