@@ -84,6 +84,7 @@ python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the 
 python3 evotrader_bundle.py fold-scheme       # fold-count sensitivity of fold-aggregate fitness
 python3 evotrader_bundle.py drawdown          # which date range actually drives maxDD, ranked by depth
 python3 evotrader_bundle.py correlation-universe  # full-universe pairwise return correlation by fold/holdout
+python3 evotrader_bundle.py holdout-noise         # block-bootstrap sigma of a sealed-holdout fitness score
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -160,6 +161,17 @@ why the outlier-gap column is guaranteed identical across any champion
 (it's buy-and-hold-only) while `aggregate_fitness` is the column that
 actually differs.
 
+`holdout-noise` answers `constitution.holdout_accepts()`'s own docstring —
+"measure the sigma before trusting the number" — for real: one real backtest
+over the sealed holdout window (same cost class as `costs --holdout`), then
+pure-numpy block-bootstrap resampling of that backtest's own `nav_history`
+(`--n-boot` draws, default 1000, no market reload or genome re-evaluation per
+draw, so this step itself is fast). Reports the empirical standard deviation
+of the resulting `fitness()` distribution next to
+`constitution.MULTIPLE_TESTING_SIGMA`, the constant `required_margin()`
+assumes. First result (2026-08-20): ~24-25x, not 1x — see "Current state".
+`--also-version N` works the same way as `fold-scheme`/`correlation-universe`.
+
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
 
@@ -191,6 +203,59 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-20 (3-hourly check): the sealed-holdout margin's own
+  docstring names an unanswered question — "measure the sigma before
+  trusting the number" — and now it's measured: the real noise is ~24-25x
+  larger than the constant the margin formula assumes.** (see
+  `runs/2026-08-20-0654-holdout-noise-bootstrap.md`) New
+  `loop.engine.block_bootstrap_resample`/`stats_from_returns`/
+  `bootstrap_fitness_distribution` block-bootstrap a real backtest's observed
+  sealed-holdout return path (preserving short-range autocorrelation an
+  i.i.d. per-bar shuffle would destroy) and recompute
+  `constitution.fitness()` per resample, holding trades/turnover fixed at
+  the real backtest's values (a resampled return order can't regenerate
+  which trades would have fired). New read-only CLI `holdout-noise
+  [--n-boot N] [--block-size B] [--seed S] [--also-version N]`. Result
+  against champion v3: empirical `boot_fitness_std` ≈ 1.9-2.0 across three
+  block sizes (5/15/30) and two seeds, a consistent **~24-25x**
+  `constitution.MULTIPLE_TESTING_SIGMA` (0.08) — the constant
+  `required_margin()` uses to size the sealed-holdout gate. Checked against
+  a second champion (v2, reconstructed): ratio 14.3x — different magnitude,
+  same order-of-magnitude-off conclusion, not a v3-specific artifact. This
+  puts a real number behind every "lucky holdout draw" observation already
+  in this file (`holdout-pressure`'s 9/9 real challengers that cleared the
+  fold gate and lost the sealed holdout; the 4h-shadow work's repeated
+  champion-entrenchment finding) — under-margining this large means a
+  "beats the champion" holdout verdict is far less trustworthy than the
+  current gate implies. Caveats: bootstraps the *realized return path* of
+  one backtest (order/selection noise), not a genuinely different holdout
+  slice of history (would need re-running the full council against
+  resampled prices, not just resampled returns — a harder, costlier
+  question); block-bootstrap standard error of a Sortino-like ratio is a
+  standard technique but still an approximation, so the exact multiplier
+  shouldn't be over-read, only the order of magnitude. Verified safe:
+  purely additive (`loop.engine` isn't checksummed), `tools/
+  edit_bundle_module.py verify` round-trip clean, `py_compile` clean,
+  tested (`tests/test_bootstrap_holdout_noise.py`, 16 new tests — includes
+  a bit-for-bit cross-check of `stats_from_returns` against
+  `PaperBroker.stats()` on the same path, and a constant-return degenerate
+  case asserting exactly-zero bootstrap sigma as a sanity check on the
+  mechanism itself — full suite 127 passed up from 111), `live_state.json`
+  md5 identical throughout (`cca58deb976cef403c5010f2e2b9528b`),
+  `evotrader.manifest` md5 identical (`6a4434574ff424f74ff300ebdb50d194`),
+  `constitution verified dfae6a697f51fb49` unchanged, today's 2026-08-19 bar
+  (tick 6) confirmed already processed by the 00:20 UTC daily run before
+  this check started (no double-trade, `tick` not run this session). Next:
+  whether to actually recalibrate `MULTIPLE_TESTING_SIGMA` (or add a
+  separate, larger holdout-specific sigma constant) is a constitution
+  change — checksummed, needs its own `AMENDMENTS.md` row — and reads best
+  together with the existing fold-scheme findings (fold 2's permanent
+  +200% outlier, non-monotonic `aggregate_fitness` across fold counts) as
+  one combined case for a regime-stratified/rolling fold-and-holdout
+  redesign, not a number to just bump in isolation. Cheaper follow-ups
+  available without touching the constitution: `--also-version 1` for a
+  third data point, or a much higher `--n-boot` to check the ~24x estimate
+  has converged.
 - **Shipped 2026-08-20 (3-hourly check): the bundle-editing tool the
   correlation-penalty-removal run flagged as needed for the next session is
   now committed.** (see `runs/2026-08-20-0348-bundle-edit-tool.md`) New
