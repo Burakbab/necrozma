@@ -99,10 +99,13 @@ holdout window, merged fitness 0.805 → 1.591. The live paper account opened
 2026-08-15 with $10,000 imaginary and trades on a daily schedule against real
 historical and current market data.
 
-Cross-asset correlation awareness (for the Risk Judge) and 4h-bar infrastructure
-have both shipped but are **dormant/opt-in** — built, tested, and verified
-end-to-end, but deliberately left switched off rather than turned on by default.
-See `AGENTS.md` for why, and for the current roadmap.
+4h-bar infrastructure has shipped but is **dormant/opt-in** — built, tested, and
+verified end-to-end, but deliberately left switched off rather than turned on by
+default. Cross-asset correlation awareness for the Risk Judge was also built and
+tested, but was removed on 2026-08-20 after exhaustive measurement (real
+champions, adversarial constructions, and real search) found it never caught a
+concentration problem the existing drawdown/fitness gates weren't already
+catching. See `AGENTS.md` for why, and for the current roadmap.
 
 Real money is gated behind six months of positive walk-forward, a live paper run
 that matches its own backtest within tolerance, and explicit sign-off. The system

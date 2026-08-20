@@ -235,6 +235,42 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-20 (3-hourly check): ran the flagged `regime-scan --interval
+  4h` follow-up — the concentration finding holds at 4h resolution too, so it
+  isn't a 1d-track artefact.** (see `runs/2026-08-20-2200-regime-scan-4h.md`)
+  12 non-overlapping 4h windows across the same searchable region (8,766 total
+  4h bars): concentration ratio **2.47x** its even share (richest window w8,
+  2024-08-14→2024-11-25, +92.7% b&h return, 20.6% of |log-growth| vs 8.3% even
+  share; HHI 0.129 vs 0.083 even). Directly comparable to the 1d track's n=12
+  scan (2.45x) — same order of magnitude, same richest-window shape (a
+  2024-08→2024-11 melt-up, matching one of the two bull runs the 1d n=12 scan
+  found colliding in calendar-fold-2). Answers the question the 2026-08-20
+  18:55 entry left open: this isn't a 1d-specific binning quirk, so any future
+  regime-stratified fold redesign for the 4h shadow track can reuse the same
+  motivation and the same regime label (per-window b&h return) without
+  re-deriving it. No code changed — existing CLI, no new flag needed
+  (`--interval` already existed). Also fixed a stale factual claim in
+  `README.md`'s `## Status` section: it still said cross-asset correlation
+  awareness had "shipped" as a dormant/opt-in feature, but that gene was fully
+  removed on 2026-08-20 (item 3, closed) — updated to describe the removal and
+  why, so the public-facing landing page doesn't contradict `AGENTS.md`'s own
+  record. Verified safe: purely read-only diagnostic (no genome, no backtest,
+  no state write) plus one docs-only edit, `live_state.json` md5 identical
+  (`cca58deb976cef403c5010f2e2b9528b`), `evotrader.manifest` md5 identical
+  (`6a4434574ff424f74ff300ebdb50d194`), `constitution verified
+  dfae6a697f51fb49` unchanged, full suite still 151 passed, today's 2026-08-19
+  bar (the last closed daily bar) confirmed already processed by the 00:20 UTC
+  daily run before this check started (`tick` correctly reported "already
+  traded", no double-trade), `pip3 install -r requirements.txt` needed a
+  retry this session (first attempt hit a `files.pythonhosted.org` read
+  timeout, second attempt with `--timeout 180 --retries 5` succeeded) — a
+  transient network issue, not a repo problem. Next: the regime-stratified
+  fold scheme itself is still the real unstarted work (a constitution change —
+  `Evaluator` accepting a fold as a *set* of windows, `run_backtest` replaying
+  a non-contiguous union of bars — needs a design pass + `AMENDMENTS.md` row),
+  now motivated and measured on both bar sizes. No further cheap
+  regime-scan follow-up is queued; the next step here is the design work
+  itself, which needs a session with more runway than a 3-hourly slot.
 - **Measured 2026-08-20 (3-hourly check): shipped `regime-scan`, and it puts a
   number on the regime-stratification question — the fold-2 melt-up is
   concentrated at ~2.5x its even share at every resolution, and at the fold
@@ -1703,8 +1739,17 @@ every `evolve` call.
    to group on (`regime-scan`'s per-window b&h return). Still not started (it's a
    constitution change): `Evaluator` accepting a fold as a *set* of windows and
    `run_backtest` replaying a non-contiguous union of bars — needs a design pass
-   + `AMENDMENTS.md` row. Cheap follow-up not run: `regime-scan --interval 4h` to
-   check the 4h track shows the same concentration before any 4h fold redesign.
+   + `AMENDMENTS.md` row.
+
+   **Checked 2026-08-20 (3-hourly check): the 4h track shows the same
+   concentration.** (see "Current state" above and
+   `runs/2026-08-20-2200-regime-scan-4h.md`) `regime-scan --interval 4h`
+   (12 windows, 8,766 4h bars): concentration ratio 2.47x, same order of
+   magnitude as the 1d track's 2.45x, richest window's melt-up overlapping the
+   same 2024-08 to 2024-11 bull run the 1d n=12 scan found. Closes the cheap
+   follow-up the entry above flagged — no further regime-scan data is queued.
+   The remaining work is the fold-scheme redesign itself, unstarted, needs a
+   design pass + `AMENDMENTS.md` row, and is bigger than a 3-hourly slot.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
