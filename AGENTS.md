@@ -235,6 +235,46 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-21 (3-hourly check): `fold-cap`, the mean-term-capping fix
+  the previous run flagged as the sharper remaining option — and it's the
+  fourth independent windowing/capping mechanism to show the same
+  champion-dependent, non-generalizing shape.** (see
+  `runs/2026-08-21-0653-fold-cap-mean-winsorize.md`) New
+  `loop.evolve.capped_fitness_decomposition(fold_fits, cap_z)` winsorizes
+  each fold fitness to a ceiling of `mean + cap_z*std` before averaging
+  (penalty term left computed from the original uncapped values, so this
+  isolates whether capping the mean term *alone* helps); new read-only CLI
+  `fold-cap [--cap-z Z] [--also-version N]` sweeps `cap_z` `[0.5, 1.0, 1.5,
+  2.0]` under the same 5 fold schemes `fitness-decomp` already uses. Tested:
+  `tests/test_capped_fitness_decomposition.py`, 9 new tests, full suite 176
+  passed up from 167. Result: against v3 (live), capping makes the
+  cross-scheme `aggregate_fitness` range **wider at every cap_z tested**
+  (0.657 baseline → 0.977/0.835/0.659/0.657 as cap_z tightens 0.5→2.0) —
+  never better than the uncapped baseline. Against v1 (the seed), it's the
+  opposite: capping **tightens** the range at the two more aggressive
+  settings (0.663 baseline → 0.446/0.493 at cap_z 0.5/1.0). Mechanism: the
+  schemes that produce v3's highest aggregate are exactly the ones with the
+  fattest single-scheme outlier fold, so capping pulls those schemes down and
+  widens the spread; for v1 the correlation runs the other way, so the same
+  mechanism narrows it. Not a parameter-free fix waiting for the right
+  `cap_z` — the sign of the effect is champion-specific, the same shape
+  `fold-scheme`'s n_folds sweep, `rolling-folds`, and `regime-folds`'s
+  n_folds/n_subwindows sweep all independently found. Four consistent
+  negative results now on this line. Verified safe: `loop.evolve` isn't
+  checksummed, `tools/edit_bundle_module.py verify` round-trip clean, full
+  suite 176 passed, `live_state.json` md5 identical throughout
+  (`8b3dc413c9a85fda04bdeb0ad4c63733`), `evotrader.manifest` md5 identical
+  (`6a4434574ff424f74ff300ebdb50d194`), `constitution verified
+  dfae6a697f51fb49` unchanged, today's 2026-08-21 bar confirmed already
+  processed by the 00:20 UTC daily run before this check started (`tick` not
+  run this session, no double-trade), `review-hard-calls` checked (0
+  pending). Next: recommend treating the fold-windowing/capping line as
+  exhausted rather than trying a fifth variant — redirect effort on the
+  walk-forward-honesty thread to the already-quantified, still-unstarted
+  `MULTIPLE_TESTING_SIGMA` recalibration from `holdout-noise` (14-25x too
+  small across all three real champions), which is a constitution change
+  (checksummed, `AMENDMENTS.md` row) deserving its own design pass.
+
 - **Swept 2026-08-21 (3-hourly check): `regime-folds --n-subwindows`/`--n-folds`
   sweep answers the previous run's open question — isolating the dominant
   window only helps net `aggregate_fitness` while fold count stays low; raise
@@ -1891,6 +1931,32 @@ every `evolve` call.
    since any change to how promotion decisions are made should be argued in
    writing the same way constitution changes are. A genuine non-contiguous
    single-replay engine change remains a separate, unbuilt, bigger question.
+
+   **Measured 2026-08-21 (3-hourly check): tried the mean-capping fix as a
+   diagnostic, and it's the fourth independent windowing/capping mechanism to
+   show the same champion-dependent, non-generalizing shape — recommend
+   treating this whole line as exhausted.** (see "Current state" above and
+   `runs/2026-08-21-0653-fold-cap-mean-winsorize.md`) New
+   `loop.evolve.capped_fitness_decomposition(fold_fits, cap_z)` winsorizes
+   each fold fitness to `mean + cap_z*std` before averaging (penalty term
+   left uncapped, to isolate the mean-only effect), swept under the same 5
+   fold schemes `fitness-decomp` uses. Against v3, capping made the
+   cross-scheme range wider at every `cap_z` tested (0.657 → up to 0.977);
+   against v1, the same mechanism tightened it (0.663 → down to 0.446).
+   Mechanism: capping pulls down whichever scheme currently has the fattest
+   single within-scheme outlier fold, and which scheme that is (relative to
+   the other schemes' own aggregate) differs by champion, so the direction of
+   the effect on the cross-scheme range isn't controlled by `cap_z` alone.
+   This is the fourth mechanism in this thread (`fold-scheme`'s n_folds
+   sweep, `rolling-folds`, `regime-folds`'s n_folds/n_subwindows sweep, now
+   this) to independently land on the same shape: plausible per-champion, not
+   general. Next: stop trying further windowing/capping variants on this
+   line — the sharper, already-quantified, still-unstarted next step on the
+   walk-forward-honesty question is `MULTIPLE_TESTING_SIGMA` recalibration
+   (`holdout-noise` found the real sealed-holdout noise is 14-25x the
+   constant `required_margin()` assumes, across all three real champions) —
+   a constitution change needing its own design pass and `AMENDMENTS.md` row,
+   not a fold-scheme tweak.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
