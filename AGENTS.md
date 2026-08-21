@@ -235,6 +235,58 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-21 (3-hourly check): the `MULTIPLE_TESTING_SIGMA` recalibration
+  the last two runs (fold-cap, daily-discussion) both pointed at is done — new
+  `HOLDOUT_SIGMA = 2.0` constant, `holdout_accepts()`'s margin now uses it
+  instead of the fold-aggregate sigma.** (see
+  `runs/2026-08-21-0951-holdout-sigma-recalibration.md`) `holdout_accepts()`'s
+  own docstring has said since 2026-08-16 that its margin is "a floor, not a
+  calibration... measure the sigma before trusting the number" — `holdout-noise`
+  measured it 2026-08-20/21, converged across all three real champions this
+  account has had: empirical sealed-holdout `boot_fitness_std` 1.48/1.21/2.04 in
+  fitness units (v1/v2/v3) against the 0.08 the old margin assumed (15-25x too
+  small). New `constitution.required_margin(n_candidates, complexity_delta,
+  sigma=MULTIPLE_TESTING_SIGMA)` gained an optional `sigma` parameter (default
+  unchanged, so `accepts()`'s fold-aggregate margin is byte-for-byte
+  unaffected); `holdout_accepts()` now passes `sigma=HOLDOUT_SIGMA`. Set at the
+  highest of the three champions' readings, not their average — a safety floor,
+  future champions unmeasured. A fresh `holdout-noise --n-boot 300` run against
+  live champion v3 after the change measured empirical sigma at 0.91x
+  `HOLDOUT_SIGMA` — close to 1x, so the new constant isn't drastically over- or
+  under-loose for the actual live champion today. Net effect: strictly stricter
+  — the `n_draws=1` holdout margin goes from ~0.094 to ~2.35, ~25x tighter, and
+  every future promotion attempt now needs to clear that. Kept
+  `MULTIPLE_TESTING_SIGMA` itself untouched (it's a separately-measured,
+  structurally-different quantity — fold-aggregate noise averaged over
+  `N_FOLDS` windows with its own dedicated cross-fold-variance defense; nothing
+  in `holdout-noise` bears on it). Caveat carried into both docstrings: this
+  measures realized-return-path resampling noise only, not the second named
+  source of extra noise (a candidate arrives at this gate pre-selected by folds
+  that correlate with it) — `HOLDOUT_SIGMA` is a real, measured floor on one
+  known source of under-margining, not a claim the gate is now fully honest.
+  Verified safe: full suite 179 passed (up from 176, 3 new/updated tests in
+  `tests/test_constitution.py`), `tools/edit_bundle_module.py verify`
+  round-trip clean after reinserting the edited `constitution` module,
+  `py_compile` clean, `evotrader_bundle.py summary` correctly reported
+  `CONSTITUTION MODIFIED` against the stale manifest before the deliberate
+  reseal (proves the checksum mechanism is live), `evotrader.manifest` updated
+  to the new checksum `8b74865634b1db07` in this commit (was
+  `dfae6a697f51fb49`), `AMENDMENTS.md` row added in the same commit (mandatory
+  for a constitution change — this repo's own standing rule), `live_state.json`
+  md5 identical throughout (`8b3dc413c9a85fda04bdeb0ad4c63733`), today's
+  2026-08-21 bar confirmed already processed by the 00:20 UTC daily run before
+  this check started (`updated` timestamp `2026-08-21T00:27:21+00:00`, genome
+  version still 3, `tick` not run this session, no double-trade),
+  `review-hard-calls` checked (0 pending), no genome promotion (no README
+  `## Status` staleness risk). Next: no immediate follow-up required — the
+  constant is live for every future promotion attempt. Worth a one-line note
+  the next time a real promotion is evaluated, on whether the tighter margin
+  changed the outcome vs. what the old 0.08-based margin would have said. The
+  windowing/capping line (item 2, see the entries below) stays set aside per
+  the last two runs' shared read — four independent mechanisms all showed the
+  same champion-specific, non-generalizing shape, and this recalibration was
+  the sharper alternative they all pointed at instead.
+
 - **Measured 2026-08-21 (3-hourly check): `fold-cap`, the mean-term-capping fix
   the previous run flagged as the sharper remaining option — and it's the
   fourth independent windowing/capping mechanism to show the same
@@ -1957,6 +2009,21 @@ every `evolve` call.
    constant `required_margin()` assumes, across all three real champions) —
    a constitution change needing its own design pass and `AMENDMENTS.md` row,
    not a fold-scheme tweak.
+
+   **Shipped 2026-08-21 (3-hourly check): done — see "Current state" above and
+   `runs/2026-08-21-0951-holdout-sigma-recalibration.md`.** New `HOLDOUT_SIGMA
+   = 2.0` constant, used only by `holdout_accepts()`'s margin (via
+   `required_margin()`'s new optional `sigma` parameter); `MULTIPLE_TESTING_SIGMA`
+   and the fold-aggregate margin it protects are untouched. `AMENDMENTS.md` row
+   added, full suite 179 passed, `evotrader.manifest` resealed at
+   `8b74865634b1db07`. This closes the walk-forward-honesty thread's second
+   half (the first half — the windowing/capping line above — is set aside as
+   exhausted across four independent mechanisms, not closed, just not worth
+   further variants for now). Remaining open question, carried into the new
+   constant's own docstring: `HOLDOUT_SIGMA` measures realized-return-path
+   resampling noise only, not the added noise from a candidate arriving
+   pre-selected by correlated folds — a harder, unquantified question, not
+   picked up this run.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured

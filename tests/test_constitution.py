@@ -122,11 +122,38 @@ def test_holdout_accepts_true_when_champion_has_no_finite_score():
 def test_holdout_accepts_margin_scales_with_cumulative_draws():
     # a fixed edge that clears the margin at 1 draw may not clear it after
     # many cumulative draws against the same holdout
-    edge = 0.15
+    edge = c.required_margin(1, 0, sigma=c.HOLDOUT_SIGMA) + 0.01
     ok_early, _ = c.holdout_accepts(0.0, edge, n_draws=1)
     ok_late, _ = c.holdout_accepts(0.0, edge, n_draws=100)
     assert ok_early
     assert not ok_late
+
+
+def test_required_margin_defaults_to_multiple_testing_sigma():
+    assert c.required_margin(10, 0) == pytest.approx(
+        c.MULTIPLE_TESTING_SIGMA * math.sqrt(2.0 * math.log(10)))
+
+
+def test_required_margin_accepts_a_sigma_override():
+    default = c.required_margin(10, 0)
+    overridden = c.required_margin(10, 0, sigma=c.HOLDOUT_SIGMA)
+    assert overridden == pytest.approx(
+        c.HOLDOUT_SIGMA * math.sqrt(2.0 * math.log(10)))
+    assert overridden > default  # HOLDOUT_SIGMA > MULTIPLE_TESTING_SIGMA
+
+
+def test_holdout_accepts_uses_holdout_sigma_not_multiple_testing_sigma():
+    # an edge that would clear the fold-aggregate margin (MULTIPLE_TESTING_SIGMA)
+    # must not automatically clear the sealed-holdout margin (HOLDOUT_SIGMA),
+    # since the two are now different constants.
+    fold_margin = c.required_margin(20, 0)  # uses MULTIPLE_TESTING_SIGMA
+    holdout_margin = c.required_margin(20, 0, sigma=c.HOLDOUT_SIGMA)
+    assert holdout_margin > fold_margin
+    edge_between = fold_margin + 0.01
+    assert edge_between < holdout_margin
+    ok, why = c.holdout_accepts(0.0, edge_between, n_draws=20)
+    assert not ok
+    assert f"margin {holdout_margin:.3f}" in why
 
 
 def test_checksum_seals_on_first_call_and_detects_tamper(tmp_path):
