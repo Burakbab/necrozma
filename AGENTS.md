@@ -235,6 +235,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-21 (3-hourly check): new `margin-curve` diagnostic puts real
+  numbers on the "gets harder to clear as n rises" claim the previous run made,
+  and the two acceptance gates turn out to behave very differently.** (see
+  `runs/2026-08-21-1553-margin-curve-diagnostic.md`) Pure arithmetic on
+  `constitution.required_margin` (`sigma * sqrt(2*ln(n))`, unchanged, already
+  tested) — no market data, no backtest, no state write. At the real live
+  counts (182 candidates tested against champion v3, 13 cumulative
+  sealed-holdout draws): the **fold-aggregate margin is nearly saturated**
+  already (0.258 now; +200x candidates only reaches 0.367; +0.10 more needs
+  ~123x more candidates, ~22,425; +0.25 more needs ~574 million) — so the
+  13:07 run's "mechanically harder to clear as n_candidates rises" framing is
+  directionally right but overstates the effect: a near-miss fold-aggregate
+  candidate (that run's best was +0.245 above champion, just short of the
+  ~0.258-0.270 margin across its 182→294 candidate range) is not meaningfully
+  pushed further out of reach by more shadow candidates. The **sealed-holdout
+  margin is NOT saturated** at today's much smaller draw count — only 4 more
+  draws (13→17) raise it a further +0.25, 10x more draws (13→130) raises it
+  +1.71 — the same sqrt(log n) shape evaluated much earlier on its curve.
+  Reading: if there's a real rising-bar effect on promotion difficulty right
+  now, it's on the holdout side (every real promotion attempt that reaches
+  the sealed-holdout check permanently raises the bar for the next one, per
+  `holdout_accepts()`'s own "never reset by a promotion" design), not the
+  fold-aggregate side, which is already close to flat. Verified safe: new
+  code is CLI-only (plain script section of `evotrader_bundle.py`, `import
+  math` added to the top-level import line, no `_SRC` module touched, nothing
+  checksummed changed), `py_compile` clean, full suite still 179 passed (no
+  new pure functions — reuses the already-tested `required_margin`),
+  `live_state.json` md5 identical throughout (`8b3dc413c9a85fda04bdeb0ad4c63733`),
+  `evotrader.manifest` md5 identical (`0bf3a7d9411ee692d0a9f152a7533803`),
+  `constitution verified 8b74865634b1db07` unchanged, today's 2026-08-21 bar
+  confirmed already processed by the 00:20 UTC daily run before this check
+  started (`tick` not run this session, no double-trade), `review-hard-calls`
+  checked (0 pending), no genome promotion (no README Status change needed).
+  Next: whoever next gets a real candidate to the sealed-holdout check should
+  note both the `HOLDOUT_SIGMA` outcome and the cumulative-draw count at that
+  moment — this run shows that count is not a fixed backdrop, it visibly
+  moves the bar at today's scale. Doesn't change the fold-windowing-line or
+  `HOLDOUT_SIGMA` "no immediate follow-up" reads already in this file.
+
 - **Measured 2026-08-21 (3-hourly check): 8 more shadow-evolve generations past
   the live account's own researcher_memory, and the finding is which gate is
   actually binding right now — not the sealed holdout this morning's
@@ -2062,6 +2101,27 @@ every `evolve` call.
    resampling noise only, not the added noise from a candidate arriving
    pre-selected by correlated folds — a harder, unquantified question, not
    picked up this run.
+
+   **Measured 2026-08-21 (3-hourly check): new `margin-curve` diagnostic puts
+   real numbers on "gets harder to clear as n rises" instead of leaving it a
+   qualitative claim, and it turns out the two gates are not in the same
+   place on that curve.** (see "Current state" above and
+   `runs/2026-08-21-1553-margin-curve-diagnostic.md`) Pure arithmetic on
+   `constitution.required_margin` (`sigma * sqrt(2*ln(n))`, unchanged), no
+   market data or backtest. At the real live counts (182 fold-aggregate
+   candidates, 13 sealed-holdout draws): the fold-aggregate margin is nearly
+   saturated (0.258 now, +0.10 more needs ~123x more candidates, +0.25 more
+   needs ~574 million) — so a near-miss fold-aggregate candidate is not
+   meaningfully pushed further out of reach by more search volume, live or
+   shadow. The sealed-holdout margin is NOT saturated at its much smaller
+   real draw count — only 4 more draws raise it +0.25. Reading: the rising-bar
+   stagnation mechanism the 13:07 run named applies for real to the holdout
+   gate (which never resets its cumulative count on a promotion) far more
+   than to the fold-aggregate gate, which is already close to flat. Next:
+   whoever next gets a real candidate to the sealed-holdout check should note
+   the cumulative-draw count at that moment alongside the `HOLDOUT_SIGMA`
+   outcome — it visibly moves at today's scale, unlike the fold-aggregate
+   count.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
