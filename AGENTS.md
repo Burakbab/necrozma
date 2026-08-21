@@ -235,6 +235,49 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Swept 2026-08-21 (3-hourly check): `regime-folds --n-subwindows`/`--n-folds`
+  sweep answers the previous run's open question — isolating the dominant
+  window only helps net `aggregate_fitness` while fold count stays low; raise
+  it and the same mechanism isolates a bad window too, and that costs more
+  than the good isolate gains.** (see
+  `runs/2026-08-21-0351-regime-folds-nfolds-sweep.md`) No code changed —
+  existing CLI flags, purely read-only. At fixed 6 sub-windows, sweeping
+  `n_folds` 3→4→5 against champion v3 gives a clean monotonic trend:
+  aggregate delta **+0.723 → +0.126 → −0.249**. Mechanism: LPT balance
+  isolates only the single dominant sub-window (w3, +156.8% b&h, fold
+  fitness 5.696) at low fold counts, but at `n_folds=5` it also isolates a
+  *weak* sub-window (w5, −27.9% b&h) alone into its own fold, dropping that
+  fold's fitness to −0.544 — the cross-fold consistency penalty reacts to
+  that wide isolated-fold spread more than it reacts to the calendar
+  baseline's narrower, already-merged range, so the benefit from isolating
+  the good outlier gets eaten by the cost of isolating a bad one too.
+  Cross-checked at `n_folds=5` against the other two real champions: v1 also
+  lowers (−0.160), v2 is a near-zero wash (+0.035) — 2 of 3 lower, none
+  strongly positive, a more consistent read than the previous run's mixed
+  `n_folds=3` result (v3 +0.723, v1 +0.057, v2 −0.065), suggesting that
+  mixed reading was partly a fold-count artefact rather than a clean
+  per-genome property. Separately swept `n_subwindows` 4/6/8 at fixed
+  `n_folds=3`: still positive at every resolution (+0.714/+0.723/+0.410) but
+  weakening at n=8 as finer sub-windows fragment the dominant window's
+  concentrated weight. Reading: this is evidence *against* "isolate the
+  dominant window" as a general-purpose fix — it's a double-edged mechanism
+  that depends on a fold-count parameter with no principled correct value
+  identified yet, not a one-directional improvement. Sharpens the case (from
+  `fitness-decomp`) that a fix should target the mean term's outlier
+  sensitivity directly (e.g. capping one fold's contribution before
+  averaging) rather than any windowing/isolation scheme. Verified safe:
+  no code touched, `git status --short` clean throughout, `live_state.json`
+  md5 identical (`8b3dc413c9a85fda04bdeb0ad4c63733`), `evotrader.manifest`
+  md5 identical (`6a4434574ff424f74ff300ebdb50d194`), constitution verified
+  `dfae6a697f51fb49` unchanged on every invocation, today's 2026-08-21 bar
+  confirmed already processed by the 00:20 UTC daily run before this check
+  started (`tick` not run this session, no double-trade). Next: either try
+  `n_folds=3` with sub-windows above 8 to see how far the positive effect
+  degrades, or — more likely the better use of the next design session —
+  shift attention entirely to a fix that caps/down-weights a single
+  outlier fold's pull on the mean term, since this sweep shows windowing
+  changes alone don't have an obviously correct operating point.
+
 - **Shipped 2026-08-21 (3-hourly check): `regime-folds`, the first real test of
   the regime-stratified fold scheme item 2 has been circling since
   2026-08-20 — and it doesn't need the engine/constitution change AGENTS.md
@@ -1826,6 +1869,28 @@ every `evolve` call.
    either way. A genuine non-contiguous *single-replay* engine change (shared
    positions/compounding across a fold's sub-windows) is still unbuilt and
    would be a different, bigger question from what this diagnostic answers.
+
+   **Swept 2026-08-21 (3-hourly check): the sweep is done, and it answers the
+   isolating-vs-objective question — isolating is a double-edged mechanism,
+   not a clean fix.** (see "Current state" above and
+   `runs/2026-08-21-0351-regime-folds-nfolds-sweep.md`) At fixed 6
+   sub-windows, raising `n_folds` 3→4→5 against v3 gives a clean monotonic
+   trend +0.723 → +0.126 → −0.249: LPT balance isolates only the good
+   outlier at low fold counts, but at higher counts it starts isolating a
+   *bad* sub-window too, and the consistency penalty punishes that wide
+   isolated-fold spread more than it rewards the good isolate. Cross-checked
+   at `n_folds=5` against v1/v2: 2 of 3 champions lower, the third a wash —
+   more consistent than the earlier `n_folds=3` mixed reading, suggesting
+   that mixed result was itself a fold-count artefact. Reading: "isolate the
+   dominant window" is not a general-purpose fix — it has no obviously
+   correct fold-count operating point. Next: this points design attention
+   away from windowing schemes entirely and toward a fix that targets the
+   mean term's outlier sensitivity directly (e.g. capping/down-weighting one
+   fold's contribution before averaging) — untried, real design work, still
+   bigger than a 3-hourly slot, and would need its own `AMENDMENTS.md` row
+   since any change to how promotion decisions are made should be argued in
+   writing the same way constitution changes are. A genuine non-contiguous
+   single-replay engine change remains a separate, unbuilt, bigger question.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
