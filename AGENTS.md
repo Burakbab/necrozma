@@ -235,6 +235,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-21 (3-hourly check): 8 more shadow-evolve generations past
+  the live account's own researcher_memory, and the finding is which gate is
+  actually binding right now — not the sealed holdout this morning's
+  `HOLDOUT_SIGMA` recalibration touched, but the earlier fold-aggregate
+  multiple-testing gate.** (see
+  `runs/2026-08-21-1307-shadow-evolve-post-sigma-recalibration.md`) Isolated
+  scratch copy of `live_state.json` (champion v3, real accumulated
+  `researcher_memory`, 182 candidates already tried), `evolve 8` against it —
+  same real data/gates, nothing written to the real file (md5 identical
+  before/after). Champion held throughout at fitness 1.396, boldness climbed
+  12→19, cumulative candidates tried in this branch rose 182→294. Two
+  generations' best raw fold-aggregate fitness (1.641, 1.462) numerically beat
+  champion's 1.396 but neither cleared the multiple-testing-adjusted
+  `required_margin()` (which scales with `n_candidates`, now 224+), so **no
+  candidate this run ever reached the sealed-holdout check** — meaning this
+  morning's `HOLDOUT_SIGMA` change was never exercised by any of these 294
+  candidates. Answers the open "worth a one-line note next promotion
+  evaluation" flag from this morning's entry with: still open, this run didn't
+  produce the candidate needed to close it, because the fold-aggregate gate
+  rejected everything first. New-ish mechanism worth naming for whoever next
+  looks at the stagnation question: `required_margin()`'s multiple-testing
+  correction gets mechanically harder to clear as `n_candidates` keeps rising
+  with every generation, live or shadow — a partial, non-regime explanation
+  for continued stagnation that doesn't require any of the already-set-aside
+  fold-windowing hypotheses. Verified safe: no code changed, `live_state.json`
+  md5 identical throughout (`8b3dc413c9a85fda04bdeb0ad4c63733`), `git status
+  --short` clean throughout, `constitution verified 8b74865634b1db07`
+  unchanged on every invocation, today's 2026-08-21 bar confirmed already
+  processed by the 00:20 UTC daily run before this check started (`tick` not
+  run this session, no double-trade), `review-hard-calls` checked (0 pending),
+  no genome promotion (no README Status change needed). Next: whoever next has
+  a real candidate that clears the fold-aggregate gate should note whether the
+  new `HOLDOUT_SIGMA` changes the promotion outcome — still unclosed. The
+  fold-aggregate-gate-hardness-with-n_candidates observation is flagged, not
+  chased further this run (would need either much deeper search or a
+  researcher_memory reset that would throw away real history, neither
+  attempted).
+
 - **Shipped 2026-08-21 (3-hourly check): the `MULTIPLE_TESTING_SIGMA` recalibration
   the last two runs (fold-cap, daily-discussion) both pointed at is done — new
   `HOLDOUT_SIGMA = 2.0` constant, `holdout_accepts()`'s margin now uses it
