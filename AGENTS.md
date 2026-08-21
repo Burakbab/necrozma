@@ -235,6 +235,63 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-21 (3-hourly check): `regime-folds`, the first real test of
+  the regime-stratified fold scheme item 2 has been circling since
+  2026-08-20 — and it doesn't need the engine/constitution change AGENTS.md
+  assumed.** (see `runs/2026-08-21-0056-regime-folds-and-holdout-pressure.md`)
+  Every entry since fitness-decomp settled that aggregate_fitness's
+  instability rides the mean term (one dominant fold), and `regime-scan`'s own
+  CLI comment says fixing it "needs engine work `run_backtest` can't do yet
+  (non-contiguous folds)". That's not true for a first honest test: a fold
+  only needs `run_backtest` to change if it must be *one continuous replay*;
+  scoring it as several independently-backtested sub-windows merged together
+  (the same trade-weighted `_merge` the acceptance gates already use to
+  combine folds) needs no engine or constitution change at all. New
+  `loop.evolve.regime_stratified_groups(window_returns, n_folds)` (pure,
+  genome-independent, greedy LPT balance on each sub-window's
+  `|log(1+r)|` weight — the same weight `regime_concentration` uses) plus
+  `Evaluator.evaluate_grouped(g, sub_windows, groups)` (independently
+  backtests each sub-window in a group, merges via the existing `_merge`,
+  scores with the existing `ranking_fitness` and the same
+  `mean - FOLD_CONSISTENCY_WEIGHT * std` aggregate formula `evaluate()` uses,
+  so the two are directly comparable at the same fold count) back a new
+  read-only CLI `regime-folds [--n-subwindows] [--n-folds] [--also-version N]`.
+  Default 6 sub-windows (matches `regime-scan`'s own n=6 reading and stays
+  comfortably clear of `run_backtest`'s 120-bar hard minimum per call — 12
+  sub-windows would not, the same failure mode `fold-scheme`'s n=8 hit).
+  Tested: `tests/test_regime_stratified_groups.py` (9 new) +
+  `tests/test_evaluate_grouped.py` (7 new), full suite 167 passed up from 151.
+  First result, all three real champions: stratification raises
+  `aggregate_fitness` for v3 (1.396 → 2.119, +0.723) and v1 (0.181 → 0.238,
+  +0.057), lowers it slightly for v2 (0.293 → 0.227, −0.065) — mixed, not a
+  clean win, and only one reading. Mechanism worth flagging: the single
+  dominant sub-window (the fold-2 melt-up) ends up alone in its own fold every
+  time under LPT, since nothing else is heavy enough to make pairing with it
+  the balanced choice — so this *isolates* the melt-up into a smaller fold
+  rather than *spreading* it the way item 2's framing assumed, which changes
+  what the other folds average over instead of diluting the melt-up directly.
+  Whether that's the right shape for a fix is still open. Verified safe:
+  `loop.evolve` isn't checksummed, `tools/edit_bundle_module.py verify`
+  round-trip clean before and after, `py_compile` clean, `live_state.json` md5
+  identical throughout (`8b3dc413c9a85fda04bdeb0ad4c63733`),
+  `evotrader.manifest` md5 identical (`6a4434574ff424f74ff300ebdb50d194`),
+  `constitution verified dfae6a697f51fb49` unchanged (nothing touched here is
+  checksummed), today's 2026-08-20 bar (tick 7) confirmed already processed by
+  the 00:20 UTC daily run before this check started (no double-trade, `tick`
+  not run this session). Also re-ran `holdout-pressure` after today's
+  non-promoting daily `evolve 3` per the standing note: 13/13 real challengers
+  that cleared the fold-aggregate gate have now lost their sealed-holdout
+  draw against champion v3, up from 9/9 — same entrenchment pattern, bigger
+  sample, no new interpretation. Session started with local `main` detached,
+  2 commits ahead of an unrelated pre-restart seed history with no
+  merge-base against a force-updated `origin/main` (an old container-seed
+  artifact, not real divergent work); reset to `origin/main` per the run
+  protocol, no work lost. Next: `regime-folds` needs more readings
+  (`--n-subwindows`/`--n-folds` sweep) before item 2's design question is
+  actually settled either way — see the run note for the open design
+  question about whether isolating vs. actually splitting the dominant
+  window is the right objective.
+
 - **Measured 2026-08-20 (3-hourly check): ran the flagged `regime-scan --interval
   4h` follow-up — the concentration finding holds at 4h resolution too, so it
   isn't a 1d-track artefact.** (see `runs/2026-08-20-2200-regime-scan-4h.md`)
@@ -1750,6 +1807,25 @@ every `evolve` call.
    follow-up the entry above flagged — no further regime-scan data is queued.
    The remaining work is the fold-scheme redesign itself, unstarted, needs a
    design pass + `AMENDMENTS.md` row, and is bigger than a 3-hourly slot.
+
+   **Shipped 2026-08-21 (3-hourly check): the "needs engine work" assumption
+   above turned out to be wrong for a first test, and `regime-folds` is that
+   test.** (see "Current state" above and
+   `runs/2026-08-21-0056-regime-folds-and-holdout-pressure.md`) A fold can be
+   scored as several independently-backtested sub-windows merged together
+   (`loop.evolve.regime_stratified_groups` + `Evaluator.evaluate_grouped`,
+   both pure additions, tested, 16 new tests, suite 167 up from 151) without
+   `run_backtest` or the constitution changing at all — no engine work, no
+   `AMENDMENTS.md` row needed for this diagnostic itself. First reading
+   against all three real champions: mixed (v3 +0.723, v1 +0.057, v2
+   −0.065), and the dominant sub-window ends up isolated alone in its own
+   fold rather than diluted across folds, which may not be the fix item 2's
+   framing wanted. Next: sweep `--n-subwindows`/`--n-folds`, and settle
+   whether isolating vs. forcing the dominant window to share a fold is the
+   right objective before treating this as a verdict on regime-stratification
+   either way. A genuine non-contiguous *single-replay* engine change (shared
+   positions/compounding across a fold's sub-windows) is still unbuilt and
+   would be a different, bigger question from what this diagnostic answers.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
