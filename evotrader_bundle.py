@@ -1709,6 +1709,137 @@ def main():
         print("  the holdout gate every promotion attempt adds to; it is not, in")
         print("  practice, why a fold-aggregate winner keeps failing to clear its own")
         print("  bar by very much -- that gate's margin is already close to flat.")
+    elif cmd == "universe-perturb":
+        # Diagnostic: AGENTS.md's 2026-08-16 "read before proposing more genes"
+        # note named "perturbation tests on fees/slippage/universe/start-date"
+        # as the preferred kind of evidence -- `costs` covers fees/slippage,
+        # nothing has yet covered universe composition. The seed genome's own
+        # comment claims "more symbols -> more trades -> a tighter estimate"
+        # and separately claims PAXG is "deliberately included as a
+        # non-crypto-correlated asset" -- both are testable claims, never
+        # actually tested. This drops random symbol subsets (and, by default,
+        # PAXG alone) from the champion's universe and reports the fitness/
+        # edge spread against the full-universe baseline. Universe composition
+        # is a structural constant, never a Researcher-mutable gene (grep
+        # confirms no `agents.researcher` GENE_SPACE entry touches it), so
+        # this is a property of the design, not of any one evolved genome.
+        # Read-only, same cost class as `costs`: one real backtest per
+        # scenario, never touches live_state.json or the champion.
+        import copy
+        import random
+        from constitution import HOLDOUT_FRAC, MAX_DD_HARD_FAIL
+        from core import market
+        from core.genome import Genome
+        from loop.engine import run_backtest
+        drop_frac = 0.2
+        if "--drop-frac" in sys.argv:
+            drop_frac = float(sys.argv[sys.argv.index("--drop-frac") + 1])
+        n_trials = 6
+        if "--n-trials" in sys.argv:
+            n_trials = int(sys.argv[sys.argv.index("--n-trials") + 1])
+        seed = 0
+        if "--seed" in sys.argv:
+            seed = int(sys.argv[sys.argv.index("--seed") + 1])
+        explicit_drop = None
+        if "--drop" in sys.argv:
+            explicit_drop = sys.argv[sys.argv.index("--drop") + 1].split(",")
+        use_holdout = "--holdout" in sys.argv
+        g0 = acct.genome
+        genomes = [(f"v{g0.version} (live)", g0)]
+        if "--also-version" in sys.argv:
+            also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+            try:
+                g_other = _reconstruct_champion_genome(also_version, acct.lineage)
+            except ValueError as e:
+                print(f"[universe-perturb] {e}")
+                sys.exit(1)
+            genomes.append((f"v{also_version} (reconstructed)", g_other))
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        start_frac, end_frac = (1.0 - HOLDOUT_FRAC, 1.0) if use_holdout else (0.0, 1.0)
+        window_desc = (f"sealed holdout (newest {HOLDOUT_FRAC:.0%} of history)"
+                       if use_holdout else "full history")
+        print(f"[universe-perturb] replaying {len(data)}-symbol universe against "
+              f"{len(genomes)} genome(s) over the {window_desc}, {n_trials} random "
+              f"drop-{drop_frac:.0%} trials each (seed={seed}) ...", flush=True)
+        for label, genome in genomes:
+            full = list(genome.universe)
+            base_res = run_backtest(genome, data, start_frac, end_frac, log_detail=False)
+            if base_res.get("error"):
+                print(f"  {label}: baseline backtest failed: {base_res['error']}")
+                continue
+            base_fit = base_res["fitness"]
+            base_edge = base_res.get("edge", {})
+            print()
+            print(f"UNIVERSE SENSITIVITY -- {label} -- {window_desc}")
+            print("=" * 96)
+            base_st = base_res["stats"]
+            print(f"  baseline ({len(full)} symbols): fitness {base_fit:>8.3f}  "
+                  f"maxDD {base_st.get('max_dd', 0):>7.1%}  trades {base_st.get('trades', 0):>4d}  "
+                  f"return {base_st.get('total_return', 0):>8.1%}  "
+                  f"excess_return {base_edge.get('excess_return', 0):>+8.1%}")
+
+            def run_subset(sub_label, kept, dropped):
+                d = copy.deepcopy(genome.data)
+                d["universe"] = kept
+                g = Genome(d)
+                res = run_backtest(g, data, start_frac, end_frac, log_detail=False)
+                if res.get("error"):
+                    print(f"  {sub_label:<20s} backtest failed: {res['error']}")
+                    return None
+                st, edge, fit = res["stats"], res.get("edge", {}), res["fitness"]
+                fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
+                if not math.isfinite(fit):
+                    delta_str = "(HARD FAIL)"
+                elif not math.isfinite(base_fit):
+                    delta_str = "(baseline HARD FAIL)"
+                else:
+                    delta_str = f"({fit - base_fit:>+7.3f})"
+                print(f"  {sub_label:<20s} fitness {fit_str} {delta_str}  "
+                      f"maxDD {st.get('max_dd', 0):>7.1%}  trades {st.get('trades', 0):>4d}  "
+                      f"return {st.get('total_return', 0):>8.1%}  "
+                      f"excess_return {edge.get('excess_return', 0):>+8.1%}  "
+                      f"beat_bench {str(edge.get('beat_benchmark')):>5s}  "
+                      f"dropped={dropped}")
+                return fit
+
+            fits, n_ran, n_hard_fail = [], 0, 0
+            if explicit_drop is not None:
+                kept = [s for s in full if s not in explicit_drop]
+                run_subset("explicit drop:", kept, explicit_drop)
+            else:
+                if "PAXGUSDT" in full:
+                    n_ran += 1
+                    fit = run_subset("drop PAXG only:",
+                                     [s for s in full if s != "PAXGUSDT"], ["PAXGUSDT"])
+                    if fit is None:
+                        pass
+                    elif math.isfinite(fit):
+                        fits.append(fit)
+                    else:
+                        n_hard_fail += 1
+                rng = random.Random(seed)
+                k = max(1, round(len(full) * drop_frac))
+                for t in range(n_trials):
+                    n_ran += 1
+                    dropped = rng.sample(full, k)
+                    kept = [s for s in full if s not in dropped]
+                    fit = run_subset(f"random trial {t}:", kept, dropped)
+                    if fit is None:
+                        pass
+                    elif math.isfinite(fit):
+                        fits.append(fit)
+                    else:
+                        n_hard_fail += 1
+                if fits:
+                    spread = max(fits) - min(fits)
+                    print(f"  -> {len(fits)}/{n_ran} finite-fitness, range "
+                          f"[{min(fits):.3f}, {max(fits):.3f}], spread {spread:.3f} "
+                          f"vs baseline {base_fit:.3f}; {n_hard_fail}/{n_ran} hit a hard "
+                          f"gate (fitness -inf: maxDD over {MAX_DD_HARD_FAIL:.0%}, too few "
+                          f"trades, or too few bars)")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)

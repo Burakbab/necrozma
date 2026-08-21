@@ -235,6 +235,61 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-21 (3-hourly check): new `universe-perturb` diagnostic —
+  the first to test universe composition instead of another fold-windowing
+  variant, and it found a real drawdown cliff the champion sits close to.**
+  (see `runs/2026-08-21-1902-universe-perturb-diagnostic.md`) The last two
+  entries in the fold-windowing/holdout-margin thread both recommended
+  treating that line as exhausted for now, so this picks up a different,
+  previously-untried thread from the 2026-08-16 priorities note instead:
+  "perturbation tests on fees/slippage/universe/start-date" — `costs` already
+  covers fees/slippage, universe composition had never been tested. New
+  read-only CLI `universe-perturb [--drop-frac] [--n-trials] [--seed] [--drop
+  SYM,...] [--holdout] [--also-version N]`, same guarantees as `costs`: real
+  `run_backtest` per scenario (universe loaded once, subsetted per scenario;
+  benchmark buy-and-hold recomputed per scenario over the same subset so
+  excess-return comparisons stay fair), never touches `live_state.json`. No
+  new pure function (composes already-tested `run_backtest`/`Genome`/
+  `edge_vs_benchmark`), so no new test file, same precedent as `costs`/
+  `regime`/`margin-curve`. Result against champion v3 (full history):
+  baseline fitness 0.876 (maxDD -34.1%); dropping PAXG alone costs a real
+  -0.236 (the seed genome's own comment calls it "deliberately included" —
+  this is the first time that claim was actually tested, and it holds, unlike
+  `correlation_penalty`'s measured-dead-weight finding in item 3); **2 of 6
+  random 5-symbol drops hard-failed outright** (-inf fitness) purely on the
+  `MAX_DD_HARD_FAIL` gate (43.7%/44.2% maxDD vs baseline's 34.1%) even though
+  both scenarios still beat benchmark (+51.2%/+119.1% excess return) — the
+  champion's drawdown margin to its own hard-fail gate is thin enough that a
+  random, non-adversarial fifth of the universe going missing can flip a
+  fine-looking scenario into an outright rejection. Cross-checked against v1
+  (reconstructed, `--also-version 1`): a separate, previously-unmeasured
+  finding surfaced as a side effect — v1's own full-continuous-history
+  baseline (unperturbed, all 27 symbols) hard-fails outright (maxDD -54.3%),
+  which does not contradict v1's original promotion (that used the
+  fold-aggregate + sealed-holdout process, a different metric from one
+  continuous 4-year replay) but had genuinely never been checked before
+  (every prior `--also-version 1` diagnostic evaluates v1 through folds or
+  the holdout slice only). Verified safe: `py_compile` clean, full suite 179
+  passed (unchanged), `live_state.json` md5 identical throughout
+  (`8b3dc413c9a85fda04bdeb0ad4c63733`), `evotrader.manifest` md5 identical
+  (`0bf3a7d9411ee692d0a9f152a7533803`), `constitution verified
+  8b74865634b1db07` unchanged, `git diff` confirms zero `_SRC[...]` lines
+  touched (pure addition to the plain-script CLI section, same pattern as
+  `margin-curve`), today's 2026-08-21 bar confirmed already processed by the
+  00:20 UTC daily run before this check started (`updated` timestamp
+  `2026-08-21T00:27:21+00:00`, `tick` not run this session, no double-trade),
+  `review-hard-calls` checked (0 pending), no genome promotion (no README
+  Status change needed). Next: the drawdown-cliff finding is real,
+  previously-unmeasured evidence about the champion's current risk margin —
+  not immediately actionable (this diagnostic characterizes the cliff, it
+  doesn't propose a fix) but worth citing the next time `MAX_DD_HARD_FAIL`'s
+  own margin comes up, the same way `holdout-noise` did for the
+  multiple-testing margins. A `--drop-frac` sweep (down from 20% to find how
+  close to the full universe the cliff sits, or up to find where most trials
+  start hard-failing) would map the cliff's edge more precisely — not
+  attempted this run, 6 trials at one drop-frac was enough to establish the
+  cliff exists.
+
 - **Shipped 2026-08-21 (3-hourly check): new `margin-curve` diagnostic puts real
   numbers on the "gets harder to clear as n rises" claim the previous run made,
   and the two acceptance gates turn out to behave very differently.** (see
