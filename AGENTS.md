@@ -235,6 +235,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Mapped 2026-08-21 (3-hourly check): the `universe-perturb` drawdown cliff
+  the previous 19:02 run found isn't 20%-of-universe away, it's essentially
+  at the doorstep — 14 of 27 symbols (51.9%) hard-fail the champion's own
+  `MAX_DD_HARD_FAIL` gate when dropped ALONE, no other perturbation.** (see
+  `runs/2026-08-21-2210-universe-perturb-single-symbol-cliff.md`) No code
+  changed — used `universe-perturb`'s existing `--drop-frac`/`--drop` flags,
+  not new ones. First, a `--drop-frac` sweep (0.05/0.10/0.15/0.25/0.30,
+  alongside the existing 0.20 baseline) came back noisy at n=6 trials/frac,
+  not cleanly monotonic (hard-fail counts 3/3/4/2/3/5 out of 6 as frac rises
+  0.05→0.30) — expected, since each frac draws an independent RNG sample, so
+  6 trials isn't enough to trust the curve's shape. But every frac, including
+  the smallest (`k=1`, one symbol), already showed a non-trivial hard-fail
+  rate, which motivated the real test: an exhaustive census instead of
+  sampling. `--drop SYM` run once for all 27 universe symbols individually:
+  baseline maxDD is -34.1% against a 40% hard-fail threshold (5.9pp margin),
+  and dropping any ONE of AAVE/ADA/AVAX/BNB/DOGE/DOT/ETH/FIL/INJ/SHIB/SOL/
+  TRX/XLM/ZEC alone pushes maxDD past 40% (ETH alone is the most extreme,
+  -55.6%). The other 13 symbols (ATOM/BCH/BTC/CRV/FET/HBAR/ICP/LINK/LTC/
+  NEAR/PAXG/UNI/XRP) survive removal alone with finite fitness. Verified
+  safe: no code touched, `git status --short` clean throughout, full suite
+  still 179 passed (nothing new to test), `live_state.json` md5 identical
+  throughout (`8b3dc413c9a85fda04bdeb0ad4c63733`), `evotrader.manifest` md5
+  identical (`0bf3a7d9411ee692d0a9f152a7533803`), `constitution verified
+  8b74865634b1db07` unchanged across all 33 invocations, today's 2026-08-21
+  bar confirmed already processed by the 00:20 UTC daily run and the 20:30
+  UTC mechanism check before this session started (`tick` not run this
+  session, no double-trade), `review-hard-calls` checked (0 pending), no
+  genome promotion (no README Status change needed). Session started with
+  local `main` detached, 2 commits ahead of an unrelated pre-restart seed
+  history with no merge-base against a force-updated `origin/main` (the
+  same recurring container-seed artifact prior sessions have logged, not
+  real divergent work) — reset to `origin/main` per the run protocol, no
+  work lost. Next: this sharpens but doesn't fix anything — the honest next
+  step would be a design pass on whether `MAX_DD_HARD_FAIL`'s margin is
+  right given how many single-symbol removals cross it, which is a
+  constitution change deserving its own `AMENDMENTS.md` argument, not
+  attempted this run. Treat the universe-perturb line as answered for now,
+  same as the windowing/capping line was set aside earlier today.
+
 - **Shipped 2026-08-21 (3-hourly check): new `universe-perturb` diagnostic —
   the first to test universe composition instead of another fold-windowing
   variant, and it found a real drawdown cliff the champion sits close to.**
@@ -2177,6 +2216,18 @@ every `evolve` call.
    the cumulative-draw count at that moment alongside the `HOLDOUT_SIGMA`
    outcome — it visibly moves at today's scale, unlike the fold-aggregate
    count.
+
+   **Mapped 2026-08-21 (3-hourly check): the universe-perturb drawdown cliff
+   from the 19:02 run is at the doorstep, not 20% away.** (see "Current
+   state" above and
+   `runs/2026-08-21-2210-universe-perturb-single-symbol-cliff.md`) No new
+   code — a `--drop-frac` sweep (noisy at n=6/frac, not conclusive) plus an
+   exhaustive `--drop SYM` census of all 27 symbols individually. Result:
+   14/27 symbols (51.9%) hard-fail `MAX_DD_HARD_FAIL` when dropped ALONE
+   (baseline maxDD -34.1% vs the 40% threshold, only 5.9pp margin). Next: an
+   honest design pass on whether `MAX_DD_HARD_FAIL`'s margin is right given
+   this — a constitution change needing its own `AMENDMENTS.md` argument —
+   not attempted; this line is otherwise answered for now.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
