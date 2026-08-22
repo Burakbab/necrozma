@@ -88,6 +88,7 @@ python3 evotrader_bundle.py drawdown          # which date range actually drives
 python3 evotrader_bundle.py correlation-universe  # full-universe pairwise return correlation by fold/holdout
 python3 evotrader_bundle.py holdout-noise         # block-bootstrap sigma of a sealed-holdout fitness score
 python3 evotrader_bundle.py fold-dd-blindspot     # does the fold-merged maxDD gate see drawdowns spanning a fold boundary?
+python3 evotrader_bundle.py succession-audit      # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -194,6 +195,17 @@ result (2026-08-22): v3's gate sees -34.1%, one continuous replay of the exact
 same span sees -46.5% — the entire discrepancy the previous two sessions spent
 investigating as a possible data bug. See "Current state".
 
+`succession-audit` extends `fold-dd-blindspot`'s per-champion comparison to
+every real champion this account has had at once, discovered from
+`acct.lineage` (no `--also-version` flag needed), and adds the
+`dd_corrected_stats()`/`fitness()` numbers a real promotion decision would
+actually gate on, not just the raw maxDD figures. Same cost class as
+`fold-dd-blindspot` times the number of known champions (3 as of 2026-08-22:
+~2 minutes). Answers the "what would replace a demoted champion" half of the
+still-open demotion/rollback question with facts, not a decision — see
+"Current state" for the first result (no real champion currently clears the
+gate, v2 for a different reason than v1/v3).
+
 `rolling-folds` is the untried alternative `fold-scheme`'s own notes have
 flagged since 2026-08-18: instead of raising `Evaluator`'s `n_folds` (which
 shrinks every window as count rises), `loop.evolve.rolling_folds(search_end,
@@ -251,6 +263,61 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Built 2026-08-22 (3-hourly check): new `succession-audit` diagnostic
+  answers a fact the demotion/rollback thread had flagged across four
+  sessions today without ever asking — would the *other* two real champions
+  even pass today's dd-corrected drawdown gate if reinstated — and the
+  answer sharpens rather than resolves the open question: no, none of the
+  three do, each for a different reason.** (see
+  `runs/2026-08-22-1854-succession-audit-diagnostic.md`) New read-only CLI
+  reports, for every real champion this account has had (v1/v2/v3,
+  discovered from `acct.lineage`'s own accepted-promotion records via the
+  already-tested `_reconstruct_champion_genome`): fold-aggregate fitness a
+  fresh `Evaluator.evaluate()` would give it today, the dd-corrected
+  fold-merged fitness `accepts()` actually gates a real promotion decision
+  on, and the true continuous full-history maxDD/fitness. v1 and v3 fail
+  outright even on the simple full-history number (-54.4%/-46.5%, both over
+  `MAX_DD_HARD_FAIL`). **v2 is the interesting case**: its true full-history
+  maxDD is -38.1%, under the 40% line — looks like a clean reinstatement
+  candidate by that number alone — but its fold-merged maxDD is -40.1%,
+  driven entirely by fold 2's own independently-backtested local
+  peak-to-trough (each fold's NAV rebases to a fresh peak at its boundary, so
+  a decline that's a modest fraction of a long-accumulated continuous peak
+  becomes a much larger fraction of the lower, freshly-reset local peak).
+  `dd_corrected_stats()` takes `min(fold-merged, continuous)` by design ("can
+  only tighten the gate, never loosen it" — see the weekend all-hands entry
+  below) — so when fold-merged *overstates* the true drawdown (the opposite
+  direction from the original `fold-dd-blindspot` bug, which was fold-merged
+  *understating* a drawdown spanning a fold boundary), the correction has no
+  mechanism to recover the truer, better continuous number; it only ever
+  keeps or worsens a pessimistic fold-local read. Net: v2 also hard-fails the
+  gate a real promotion decision would actually use, for a reason invisible
+  to the full-history number alone. Composes only already-tested
+  `_reconstruct_champion_genome`/`Evaluator.evaluate`/`dd_corrected_stats`/
+  `run_backtest` — no engine or constitution change, no new pure function, no
+  new test file, same precedent as every other diagnostic in this file.
+  Verified safe: `py_compile` clean, `tools/edit_bundle_module.py verify`
+  round-trip clean, `git diff --stat` confirms a pure addition to the
+  plain-script CLI section (73 insertions, 0 deletions besides the one-line
+  help-text addition, zero `_SRC[...]` lines touched), full suite still 192
+  passed (unchanged), `live_state.json` md5 identical throughout
+  (`3f71d6ab111ecd646eda9e0e595a9970`), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), `constitution verified
+  8b74865634b1db07` unchanged on every invocation, today's 2026-08-22 bar
+  confirmed already processed by the 00:20 UTC daily run before this session
+  started (`tick` not run this session, no double-trade), `review-hard-calls`
+  checked (0 pending), no genome promotion (no README Status change needed).
+  No push notification sent — sharpens an already-flagged open question with
+  a concrete new mechanism, doesn't raise new urgency or reveal an incorrect
+  promotion. Next: this is the fact base to start from if the owner opens the
+  demotion/rollback design pass — no real champion currently has a clean
+  pass, and "revert to v2" specifically is not the easy fix it might look
+  like from the full-history number alone. Separately, `dd_corrected_stats()`
+  is now known to have a one-directional blind spot of its own (can't loosen
+  an overstated fold-local number toward a truer continuous one) — not urgent
+  (the overstated direction is conservative, not unsafe) but worth noting if
+  anyone revisits that function.
 
 - **Measured 2026-08-22 (3-hourly check): a third round of the
   vacuous-regression-check tracking, and it reverses the previous entry's
@@ -2664,6 +2731,22 @@ every `evolve` call.
    incorrect promotion in any of the three sessions' samples. Still the
    owner's call whether this sharpens the case for prioritizing the
    demotion/rollback design pass.
+
+   **Built 2026-08-22 (3-hourly check): new `succession-audit` diagnostic
+   answers the one fact this whole demotion/rollback sub-thread had never
+   asked — would v1/v2 actually pass today's dd-corrected gate if
+   reinstated — and no real champion does.** See "Current state" above and
+   `runs/2026-08-22-1854-succession-audit-diagnostic.md`. v1/v3 fail the
+   simple full-history maxDD test outright. v2's full-history number looks
+   clean (-38.1%, under the 40% line) but its fold-merged maxDD (-40.1%,
+   fold 2's own rebased-NAV local peak-to-trough) still hard-fails the
+   dd-corrected gate a real promotion decision actually uses — a new,
+   opposite-direction wrinkle in `dd_corrected_stats()`'s `min()`-only design
+   (it can tighten an understated fold-merged number, per the original
+   blind-spot fix, but can't loosen an overstated one). "Revert to v2" is
+   therefore not the easy fix it looks like from the headline full-history
+   number. If/when the owner opens the demotion/rollback design pass, this
+   is the fact base to start from.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured

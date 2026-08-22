@@ -18,6 +18,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py fold-cap         # does winsorizing the outlier fold's pull on the mean term stabilize aggregate_fitness?
     python evotrader_bundle.py margin-curve     # how much does required_margin() actually grow with n_candidates/n_draws?
     python evotrader_bundle.py fold-dd-blindspot  # does the fold-merged maxDD gate see drawdowns that span a fold boundary?
+    python evotrader_bundle.py succession-audit  # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
 """
 import sys, types, json, os, math
 
@@ -1912,6 +1913,78 @@ def main():
                       f"(what universe-perturb/drawdown/anatomy report): "
                       f"{true_full_dd:>7.1%}{over}")
             print()
+    elif cmd == "succession-audit":
+        # Diagnostic: item 2's still-open demotion/rollback question ("picking
+        # what replaces a demoted champion (revert to v2? a fresh search from
+        # the seed?) is its own design question") has gone unresolved across
+        # four 2026-08-22 sessions without the one fact a real decision would
+        # need: whether v1/v2 would even pass today's dd-corrected drawdown
+        # gate if reinstated, or whether v3's own -46.5% true max_dd is a
+        # champion-specific problem rather than something every past champion
+        # shares. Answers that directly for every real champion this account
+        # has had at once, instead of one --also-version at a time like
+        # fold-dd-blindspot. Composes only already-tested
+        # _reconstruct_champion_genome/Evaluator.evaluate/dd_corrected_stats/
+        # run_backtest -- no engine or constitution change, no new pure
+        # function, same precedent as every other diagnostic in this file.
+        # Read-only: never touches live_state.json, never proposes or applies
+        # a promotion. Does not decide anything -- succession/demotion stays
+        # explicitly the owner's call per AGENTS.md item 2.
+        from loop.evolve import Evaluator, dd_corrected_stats
+        from loop.engine import run_backtest
+        from core import market
+        from constitution import MAX_DD_HARD_FAIL, fitness as _fitness_fn
+
+        g0 = acct.genome
+        current_version = g0.version
+        versions = sorted({1, *(e["accepted"]["new_version"] for e in acct.lineage
+                                if e.get("accepted"))})
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        print(f"[succession-audit] replaying {len(data)} symbols against "
+              f"{len(versions)} known champion(s) {versions} ...", flush=True)
+        print()
+        cols = ["version", "fold-agg fit", "dd-corr fit", "full-hist maxDD",
+                "full-hist fit", "hard-fail?", "excess ret"]
+        widths = [10, 13, 12, 16, 14, 11, 11]
+        print("".join(c.rjust(w) for c, w in zip(cols, widths)))
+        print("-" * sum(widths))
+        for v in versions:
+            g = g0 if v == current_version else _reconstruct_champion_genome(v, acct.lineage)
+            ev = Evaluator(data)
+            res = ev.evaluate(g, log_detail=False)
+            fold_agg = res["aggregate_fitness"]
+            corrected_stats = dd_corrected_stats(ev, g, res["stats"])
+            corrected_fit = _fitness_fn(corrected_stats)
+            full = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+            full_dd = full["stats"].get("max_dd") if not full.get("error") else None
+            full_fit = full.get("fitness")
+            excess = (full.get("edge") or {}).get("excess_return")
+            hard_fail = "n/a" if full_dd is None else ("YES" if abs(full_dd) > MAX_DD_HARD_FAIL else "no")
+            row = [
+                f"v{v}" + (" (live)" if v == current_version else ""),
+                f"{fold_agg:.3f}",
+                f"{corrected_fit:.3f}",
+                "n/a" if full_dd is None else f"{full_dd:.1%}",
+                "n/a" if full_fit is None else f"{full_fit:.3f}",
+                hard_fail,
+                "n/a" if excess is None else f"{excess:+.1%}",
+            ]
+            print("".join(c.rjust(w) for c, w in zip(row, widths)))
+        print()
+        print("fold-agg fit: aggregate_fitness a fresh Evaluator.evaluate() call "
+              "against today's data would give this genome as a brand-new candidate.")
+        print("dd-corr fit: fitness() of that same evaluate() call's merged stats "
+              "after dd_corrected_stats() -- what accepts() actually gates a real "
+              "promotion decision on since the 2026-08-22 weekend all-hands fix.")
+        print("full-hist maxDD/fit: one continuous [0,1] replay, no fold "
+              "boundaries at all -- the real number, what universe-perturb/"
+              "drawdown/anatomy report.")
+        print("Descriptive only -- does not decide whether any version should "
+              "replace the live champion. That stays the owner's call "
+              "(AGENTS.md item 2).")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)
