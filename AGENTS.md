@@ -264,6 +264,46 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-22 (3-hourly check): a fourth round of the
+  vacuous-regression-check tracking, and it pulls the combined rate back
+  down — the second zero-flip session out of four, not a continuation of the
+  previous round's higher count.** (see
+  `runs/2026-08-22-2240-shadow-evolve-vacuous-check-round4.md`) Same
+  scratch-isolation discipline as every prior shadow-evolve session
+  (`live_state.json` md5 unchanged throughout,
+  `3f71d6ab111ecd646eda9e0e595a9970`), same diagnostic-script method as the
+  three prior entries (reimplements `EvolutionRun.generation()`'s real top-3
+  loop verbatim for the NEW dd-corrected path, also computes what OLD raw
+  fold-merged `accepts()` would have decided on the same candidate, not
+  committed — diagnostic-only, composes already-tested
+  `Evaluator.evaluate`/`dd_corrected_stats`/`constitution.accepts`). 20
+  generations run to completion (~49 minutes), champion held throughout, no
+  promotion shadow or otherwise. **60 top-3 candidates reached the gate, 13
+  reached the sealed holdout (all correctly rejected), and zero showed either
+  kind of accept/reject flip** — no vacuous-accept (OLD rejects, NEW accepts)
+  and no intended-tightening (OLD accepts, NEW rejects) this round. Combined
+  across all four of today's sessions: **5/204 real shadow candidates
+  (≈2.5%) have shown the vacuous-accept flip** (session counts 2, 0, 3, 0)
+  and **1/204 (≈0.5%) the intended-tightening flip** — this session's zero
+  pulls the previous entry's 5/144 (≈3.5%) figure back down toward roughly
+  half that, reinforcing "real but noisy background rate" over either "fires
+  every generation" or "was a one-off." No incorrect promotion resulted, same
+  as every prior round. Verified safe: no code changed (diagnostic script
+  only, not committed), `live_state.json` md5 identical throughout,
+  `evotrader.manifest` untouched, `constitution verified 8b74865634b1db07`
+  unchanged on every invocation, today's 2026-08-22 bar confirmed already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run this session, no double-trade), `review-hard-calls` checked (0
+  pending), no genome promotion (no README Status change needed). No push
+  notification sent — this round narrows rather than changes the
+  already-fully-communicated mechanism and severity from the 10:15 session.
+  Next: the combined rate is now 5/204 (≈2.5%), not 16:29's 5/144 — cite the
+  updated figure. The per-session counts (2, 0, 3, 0) are still noisy enough
+  that this isn't a number to anchor on; whoever next runs shadow or real
+  evolution against v3 should keep adding to the cumulative sample. The
+  demotion/rollback design question itself remains unstarted and is still
+  explicitly the owner's call.
+
 - **Built 2026-08-22 (3-hourly check): new `succession-audit` diagnostic
   answers a fact the demotion/rollback thread had flagged across four
   sessions today without ever asking — would the *other* two real champions
