@@ -252,6 +252,56 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-22 (3-hourly check): a third round of the
+  vacuous-regression-check tracking, and it reverses the previous entry's
+  "tempering" read — 20 more shadow generations, 60 more top-3 candidates,
+  3 more vacuous-accept flips (the highest single-session count yet), plus
+  the first-ever case of the intended tightening actually changing an
+  outcome.** (see `runs/2026-08-22-1629-shadow-evolve-vacuous-check-round3.md`)
+  Same scratch-isolation discipline as every prior shadow-evolve session
+  (`live_state.json` md5 unchanged throughout,
+  `3f71d6ab111ecd646eda9e0e595a9970`), same diagnostic-script method as the
+  previous two entries (reimplements `EvolutionRun.generation()`'s real top-3
+  loop verbatim for the NEW dd-corrected path, also computes what OLD raw
+  fold-merged `accepts()` would have decided on the same candidate, not
+  committed — diagnostic-only, composes already-tested
+  `Evaluator.evaluate`/`dd_corrected_stats`/`constitution.accepts`). Champion
+  held all 20 generations, no promotion shadow or otherwise. Of 60 top-3
+  candidates that reached the gate this round: **3 showed the vacuous-accept
+  pattern** (OLD rejects, NEW accepts — `f_champ == -inf` from champion v3's
+  own -46.5% dd-corrected max_dd vacuously passing the merged-fitness-regression
+  check, or loosening the drawdown-regression-tolerance check against the same
+  much-worse baseline; generations 3, 8, 17) and **1 showed the opposite,
+  intended-tightening flip** (OLD accepts, NEW rejects — generation 15's
+  candidate had raw max_dd 31.8%, dd-corrected 41.3%, over
+  `MAX_DD_HARD_FAIL`; this is the first time across 144 candidates sampled
+  today that this direction was the actual reason for a rejection, not a moot
+  side observation next to an independent margin rejection). Combined across
+  all three of today's sessions: **5/144 real shadow candidates (≈3.5%) have
+  now shown the vacuous-accept flip**, session counts 2/30, 0/54, 3/60 — a
+  noisy but non-vanishing per-session rate (2, 0, 3), which reverses the
+  13:22 session's "occasional, not consistent" tempering back toward "real,
+  non-trivial background rate" without settling on an exact number. No
+  incorrect promotion resulted this session either — all candidates that
+  reached the sealed holdout via either accept path were correctly rejected
+  there. No push notification sent — the mechanism and its severity were
+  already fully communicated by the 10:15 session; this sharpens the
+  cumulative rate and adds one favorable data point (intended tightening
+  doing real work) but doesn't raise new urgency. Verified safe: no code
+  changed (diagnostic script only, not committed), `live_state.json` md5
+  identical throughout, `evotrader.manifest` untouched, `constitution
+  verified 8b74865634b1db07` unchanged on every invocation, today's
+  2026-08-22 bar confirmed already processed by the 00:20 UTC daily run
+  before this session started (`tick` not run this session, no
+  double-trade), `review-hard-calls` checked (0 pending), no genome
+  promotion (no README Status change needed). Next: the vacuous-regression-
+  check rate is now measured at 5/144 across three sessions in one day — the
+  per-session variance (2, 0, 3) means the cumulative rate is still worth
+  tracking further rather than treating today's total as final; whoever next
+  runs shadow or real evolution against v3 should keep adding to it. The
+  demotion/rollback design question itself remains unstarted and is still
+  explicitly the owner's call.
+
 - **Measured 2026-08-22 (3-hourly check): a second, larger round of the
   vacuous-regression-check tracking the previous entry asked for — 18 more
   shadow generations, 54 more top-3 candidates, and this round found zero
@@ -2603,6 +2653,17 @@ every `evolve` call.
    never-reset holdout draw the gate wouldn't otherwise have spent. Adds a
    mechanistic reason, not just a magnitude one, to the still-unresolved
    demotion question.
+
+   **Tracked further 2026-08-22 (two more 3-hourly checks): cumulative rate
+   now 5/144 real shadow candidates, session counts 2/30, 0/54, 3/60 — noisy
+   but non-vanishing, and round 3 also produced the first case where the
+   intended-tightening direction was the actual reason for a rejection.**
+   See "Current state" above and
+   `runs/2026-08-22-1322-shadow-evolve-vacuous-check-round2.md` /
+   `runs/2026-08-22-1629-shadow-evolve-vacuous-check-round3.md`. Still no
+   incorrect promotion in any of the three sessions' samples. Still the
+   owner's call whether this sharpens the case for prioritizing the
+   demotion/rollback design pass.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
