@@ -235,6 +235,60 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-22 (3-hourly check): a real silent-truncation bug in the market-data
+  fetch path, discovered because the champion's full-history baseline maxDD suddenly
+  read -46.5% (crossing MAX_DD_HARD_FAIL) instead of the -34.1% every session this
+  week had reported — fixed, but the discrepancy's root cause is only narrowed, not
+  proven.** (see `runs/2026-08-22-0100-maxdd-jump-and-fetch-truncation-bug.md`) The
+  very first `universe-perturb` command this session printed champion v3's own
+  unperturbed 27-symbol full-history baseline at -46.5% maxDD, `fitness = -inf`
+  (hard-fail) — a 12.4pp jump from the -34.1% figure this file's last several
+  entries (2026-08-21 19:02 through 22:10) all independently, consistently
+  reported for the identical computation. Reproduced 3 independent ways this
+  session (`universe-perturb`, `drawdown`, a hand-rolled `nav_history` trace),
+  all agreeing: peak $38,379 on 2024-12-08, trough $20,541 on 2025-06-22, "not
+  recovered" through today. Investigated rather than assumed: verified this
+  isn't a live-tick/state issue (today's bar already processed, no promotion,
+  `live_state.json` untouched); verified the one alarming single-bar move found
+  along the way (`TRXUSDT` +67% in one day, 2024-12-02→03) is real exchange
+  data, not corruption — queried `data-api.binance.vision` directly with `curl`,
+  bypassing this project's own code entirely, got identical numbers with ~13x
+  normal volume; corroborated with `regime` (genome-independent buy-and-hold):
+  fold 3 maxDD -55.9%, and the **sealed holdout itself** now reads -40.3% maxDD
+  / -22.6% return on raw buy-and-hold, materially worse than when `regime` last
+  characterized it (2026-08-17); and checked this session's own fetch for the
+  specific failure mode that would explain a silent understatement elsewhere —
+  found none (all 27 symbols, 1,461 bars each, zero missing calendar days) —
+  but that check also exposed a real, previously-unguarded vulnerability:
+  `core.market.fetch_klines` treated any page under 1,000 rows as unconditional
+  proof a fetch had reached the end of history, which is exactly what a
+  transient partial API response looks like too — silently truncating the
+  frame with no error, no log line, nothing downstream could ever notice.
+  Fixed: a short page that stops before the requested `end_ms` now gets up to
+  3 bounded retries before being accepted as real; new pure
+  `core.market.find_gaps(df, interval)` diffs a symbol's index against its own
+  expected calendar grid, wired into `load_universe` as a loud `[market]
+  WARNING` if anything survives the retry. Tested:
+  `tests/test_market_gaps.py`, 5 new, full suite 184 passed up from 179.
+  `tools/edit_bundle_module.py verify` clean, `py_compile` clean,
+  `evotrader.manifest` unchanged (`core.market` isn't checksummed),
+  `constitution verified 8b74865634b1db07` throughout, `live_state.json` md5
+  constant within this session. **Honest caveat, not resolved**: there's no
+  way to retroactively audit a past, ephemeral container's cache (`state/` is
+  gitignored, fresh empty every session) to confirm this exact bug produced
+  the earlier -34.1% reads — the fix closes the most concrete failure mode
+  found and matches the evidence, but "likely explanation" is not "proven
+  cause." The originally-planned work this session (a design pass on whether
+  `MAX_DD_HARD_FAIL`'s 40% threshold is right, flagged since the 2026-08-21
+  universe-perturb cliff mapping below) was **not attempted** — building it on
+  a number that may itself be wrong would be worse than not building it.
+  Next: re-run `universe-perturb`'s full single-symbol census fresh under the
+  now gap-checked fetch path before trusting either -34.1% or -46.5%, and only
+  then resume the `MAX_DD_HARD_FAIL` design pass. If -46.5% (or similar)
+  reproduces again clean, that's a materially more urgent situation than "cliff
+  nearby" — the champion may currently be failing its own risk gate for real.
+  Push notification sent to the user this session given the severity.
+
 - **Mapped 2026-08-21 (3-hourly check): the `universe-perturb` drawdown cliff
   the previous 19:02 run found isn't 20%-of-universe away, it's essentially
   at the doorstep — 14 of 27 symbols (51.9%) hard-fail the champion's own
@@ -2228,6 +2282,25 @@ every `evolve` call.
    honest design pass on whether `MAX_DD_HARD_FAIL`'s margin is right given
    this — a constitution change needing its own `AMENDMENTS.md` argument —
    not attempted; this line is otherwise answered for now.
+
+   **Superseded 2026-08-22 (3-hourly check): the -34.1% baseline this whole
+   sub-thread rests on may itself be wrong — do not resume the design pass
+   until re-checked.** (see "Current state" above and
+   `runs/2026-08-22-0100-maxdd-jump-and-fetch-truncation-bug.md`) Same
+   computation, this session: -46.5% baseline maxDD, already past
+   `MAX_DD_HARD_FAIL`, no perturbation at all. Traced to (and fixed) a real
+   silent-truncation vulnerability in `core.market.fetch_klines`'s pagination
+   (a short page was treated as unconditional end-of-history, indistinguishable
+   from a transient partial response) plus a new `find_gaps`/`load_universe`
+   warning to catch it going forward — but whether this bug is *why* every
+   prior session this week read -34.1% is a plausible, evidence-fitting
+   explanation, not a proven one; there's no way to audit a past container's
+   gitignored cache after the fact. Next, before anything else on this line:
+   re-run the full 27-symbol single-drop census fresh (now gap-checked) and
+   see which number survives. If -46.5% (or close) holds up clean, that's a
+   bigger deal than a design pass on the gate's margin — it means the live
+   champion's own unperturbed full-history backtest may be failing its own
+   risk gate right now.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
