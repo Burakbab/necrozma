@@ -252,6 +252,63 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-22 (3-hourly check): the weekend all-hands dd-corrected gate
+  doesn't just tighten promotion checks — while champion v3 remains champion,
+  it also permanently disables one of `accepts()`'s two champion-relative
+  safety checks and loosens the other, confirmed firing for real inside live
+  shadow generations, not just as a traced-through hypothetical.** (see
+  `runs/2026-08-22-1015-dd-gate-vacuous-regression-check.md`) Per the weekend
+  all-hands note's own "Next" ask — note whether the new gate changes a real
+  promotion outcome — ran 10 more shadow-evolve generations against an
+  isolated scratch copy of `live_state.json` (same discipline as every prior
+  shadow session, real file md5 unchanged throughout,
+  `3f71d6ab111ecd646eda9e0e595a9970`), then cross-checked all 30 top-3
+  fold-ranked candidates `accepts()` actually ran through this session under
+  both the OLD (fold-merged-only) and NEW (dd-corrected) stats. 0/30 showed
+  the intended tightening effect flip a fold-aggregate decision in this
+  sample. **2/30 (generations 9, 10) showed the opposite**: OLD rejects
+  ("merged fitness regressed"), NEW accepts. Root cause, verified against
+  `constitution.accepts()`'s actual source: `f_champ = fitness(champion)`
+  reads `-inf` because champion v3's own dd-corrected max_dd (-46.5%) is
+  itself over `MAX_DD_HARD_FAIL` — so the `f_chal < f_champ` "merged fitness
+  regressed" check can never fire (no finite value is `< -inf`), and the
+  separate drawdown-regression-tolerance check (`dd_chal > dd_champ * 1.15`)
+  is checked against the same much-worse baseline (~53.5% tolerance instead
+  of ~39.2%). Both generation-9/10 candidates rode this vacuous path to the
+  sealed holdout and were correctly rejected there — **no incorrect
+  promotion resulted** — but each such pass consumes one of the cumulative,
+  never-reset sealed-holdout draws `HOLDOUT_SIGMA`'s design deliberately
+  never gives back, at the same time `margin-curve` (2026-08-21) already
+  showed that margin is nowhere near saturated and every extra draw visibly
+  raises the bar for the next real candidate. Net effect: for as long as v3
+  remains champion, the fold-aggregate gate admits more candidates to the
+  scarce holdout check than a healthy champion's intact regression checks
+  would, the opposite of what tightening was supposed to do to overall
+  promotion difficulty — even though no single challenger evaluation is
+  dishonest. Sharpens, does not reverse, the fold-dd-blindspot fix: the
+  per-challenger hard-fail/drawdown checks are still strictly more honest
+  than before. No code changed this session (diagnostic script only, not
+  committed — composes already-tested `Evaluator.evaluate`/
+  `dd_corrected_stats`/`constitution.accepts`, no new pure function needed).
+  Verified safe: `live_state.json` md5 identical throughout, `evotrader.manifest`
+  untouched, `constitution verified 8b74865634b1db07` unchanged on every
+  invocation, today's 2026-08-22 bar confirmed already processed by the
+  00:20 UTC daily run before this session started (`tick` not run this
+  session, no double-trade), `review-hard-calls` checked (0 pending), no
+  genome promotion (no README Status change needed). Separately: this
+  morning's 09:00 UTC daily-discussion run note flagged the still-open v3
+  demotion question for owner attention but, unlike the two prior sessions
+  covering the same thread, had no "push notification sent" record — this
+  session sent one, since it looked like a real gap rather than a
+  deliberate skip. Next: whoever next runs shadow or real evolution against
+  v3 should keep tracking whether this vacuous-regression-check pattern
+  keeps consuming extra holdout draws generation after generation — if it
+  does so consistently, that sharpens the case for prioritizing the
+  demotion/rollback design pass sooner. The mechanism needs no code fix of
+  its own; it resolves automatically once/if a healthy champion (own
+  corrected max_dd within 40%) is back in place, which is the owner's call
+  per the "no rollback mechanism exists yet" note below.
+
 - **Fixed 2026-08-22 (weekend all-hands): the design pass this file deferred
   twice — how `MAX_DD_HARD_FAIL`'s merged max_dd should actually be computed —
   is done. `EvolutionRun.generation()`'s promotion gate now closes the
@@ -2482,6 +2539,18 @@ every `evolve` call.
    v3's own true drawdown already exceeds the corrected gate, and whether
    that should trigger a demotion/re-evolution is unresolved — see "Current
    state" above.
+
+   **Sharpened 2026-08-22 (3-hourly check): the open remainder above isn't
+   just a paper-loss/optics question — while v3 stays champion, its own
+   `fitness() == -inf` disables one of `accepts()`'s two champion-relative
+   safety checks entirely and loosens the other, confirmed firing in real
+   shadow generations (2/30 candidates checked).** See "Current state" above
+   and `runs/2026-08-22-1015-dd-gate-vacuous-regression-check.md`. No code
+   change, no promotion incorrectly let through (both cases still correctly
+   failed the sealed holdout) — but each such pass burns a scarce,
+   never-reset holdout draw the gate wouldn't otherwise have spent. Adds a
+   mechanistic reason, not just a magnitude one, to the still-unresolved
+   demotion question.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
