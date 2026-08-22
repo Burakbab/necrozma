@@ -252,6 +252,87 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Fixed 2026-08-22 (weekend all-hands): the design pass this file deferred
+  twice — how `MAX_DD_HARD_FAIL`'s merged max_dd should actually be computed —
+  is done. `EvolutionRun.generation()`'s promotion gate now closes the
+  fold-boundary blind spot `fold-dd-blindspot` found the same day.** (see
+  `runs/2026-08-22-0600-weekend-all-hands.md`, `AMENDMENTS.md`) New
+  `Evaluator.continuous_max_dd(g, folds=None)` runs one unbroken `run_backtest`
+  over the full fold-covered span; new `loop.evolve.dd_corrected_stats(evaluator,
+  g, stats, folds=None)` returns a copy of a stats dict with `max_dd` replaced
+  by the worse (more negative) of its own value and that continuous replay —
+  `min()`, so the fix can only tighten the gate, never loosen it, and a failed
+  or empty continuous replay falls back unchanged rather than blocking a
+  promotion on missing data. `EvolutionRun.generation()` applies this to both
+  champion and challenger stats immediately before the `accepts()` call that
+  actually decides promotion — the one place a real drawdown-gate decision gets
+  made — not inside `Evaluator.evaluate()` itself, so the per-candidate
+  search/ranking cost paid every generation (tens of candidates) is
+  completely unchanged; only the up-to-3 candidates per generation that already cleared
+  fold-aggregate ranking and reached the real promotion decision pay for the
+  extra continuous-replay backtest, with the champion's own check cached once
+  per generation. Deliberately does not touch `Evaluator.evaluate()`'s own
+  fold-local max_dd or any of the diagnostics built on it (`fold-scheme`,
+  `rolling-folds`, `regime-folds`, `fold-dd-blindspot` itself, ...) — those
+  measure fold-windowing effects specifically, and folding the continuous
+  number into their own numbers would have confused what they measure, not
+  clarified it. Verified against real data, not just synthetic tests: loaded
+  the live champion's actual market universe and confirmed
+  `dd_corrected_stats` reproduces `fold-dd-blindspot`'s own numbers exactly
+  (v3: fold-merged -34.1% -> dd-corrected -46.5%). A 3-generation shadow
+  `evolve` run against an isolated scratch copy of `live_state.json` (same
+  discipline as every prior shadow-evolve session — never touches the real
+  file, `live_state.json` md5 identical before/after) confirmed the full
+  pipeline runs end-to-end with the new gate wired into the real decision
+  path: generation 3's top candidate (fold-aggregate fitness 1.638) cleared
+  the selection margin (champion 1.126 + 0.263) AND the new dd-corrected
+  `accepts()` check, reaching the sealed holdout, where it was correctly
+  rejected there instead (`-2.237` vs champion `-0.178` + margin `4.595`) —
+  proof the new gate doesn't just block everything, a real candidate can
+  still pass it. Separately, one candidate in generation 1 was rejected with
+  `"challenger failed a hard gate (too few trades, too short, or drawdown >
+  40%)"` — the exact `f_chal == -inf` path the fix touches — confirming the
+  corrected hard-fail check fires for real, not just in the unit tests.
+  Champion held all 3 generations (no promotion, shadow or otherwise).
+  **Practical
+  consequence, observed directly and left as a documented open question, not
+  acted on**: champion v3's own corrected max_dd (-46.5%) already exceeds
+  `MAX_DD_HARD_FAIL`, so `fitness(champion)` now reads -inf inside `accepts()`
+  for as long as v3 remains champion — traced through and confirmed harmless
+  to the mechanics that matter (`f_champ == -inf` only affects the
+  merged-fitness-regression check, which becomes vacuously true since no
+  finite challenger fitness is ever `< -inf`; promotion still correctly
+  requires a challenger to independently clear its own corrected
+  `MAX_DD_HARD_FAIL` and the drawdown-regression tolerance measured against
+  champion's now-honest, worse baseline dd_champ). Whether v3 itself should be
+  demoted or re-evolved now that its true drawdown is visible is explicitly
+  NOT decided by this change — no rollback/demotion mechanism exists in this
+  codebase yet, and picking what replaces a demoted champion (revert to v2? a
+  fresh search from the seed?) is its own design question, not a quick
+  follow-on to a gate fix. README.md's `## Status` section updated with a
+  transparency note about this (not a genome-version-triggered update, since
+  no promotion happened this session, but a real, publicly-relevant fact about
+  the live champion's risk profile). Verified safe: `tests/test_continuous_max_dd.py`
+  (8 new tests, full suite 192 passed up from 184), `py_compile` clean,
+  `tools/edit_bundle_module.py verify` round-trip clean, `git diff --stat`
+  confirms a pure single-line `_SRC['loop.evolve']` change (no other module
+  touched), `live_state.json` md5 unchanged throughout
+  (`3f71d6ab111ecd646eda9e0e595a9970`), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803` — `loop.evolve` isn't part of the
+  checksummed surface, same as every prior fold-scheme/margin-curve/
+  regime-folds diagnostic that touched this module), `constitution verified
+  8b74865634b1db07` unchanged on every invocation, `AMENDMENTS.md` row added
+  in the same commit (mandatory for a constitution-level policy change, even
+  though the touched code lives outside the checksummed surface — this file's
+  own standing rule doesn't distinguish by which file houses the mechanism).
+  Next: whoever next evaluates a real promotion candidate should note in the
+  run record whether the new gate actually rejected anything it wouldn't have
+  before — this session's shadow run is the first real exercise of it but 3
+  generations is a small sample. Separately, and not urgent: the demotion/
+  rollback question flagged above is real unfinished business, worth a
+  dedicated design pass of its own rather than a rushed decision inside a gate
+  fix.
+
 - **Solved 2026-08-22 (3-hourly check): the "-34.1% vs -46.5% maxDD" mystery the
   previous entry left as "narrowed, not proven" is not a data bug at all — it's the
   MAX_DD_HARD_FAIL gate's own arithmetic having a real, structural blind spot for
@@ -2383,6 +2464,24 @@ every `evolve` call.
    bigger deal than a design pass on the gate's margin — it means the live
    champion's own unperturbed full-history backtest may be failing its own
    risk gate right now.
+
+   **Fixed 2026-08-22 (weekend all-hands): -46.5% held up clean
+   (`fold-dd-blindspot`, same day), and the design pass this sub-thread was
+   waiting on is done.** See "Current state" above for the full mechanism
+   and `AMENDMENTS.md` for the constitution-level argument.
+   `EvolutionRun.generation()`'s promotion gate now checks a genome's max_dd
+   as the worse of its fold-merged number and one true continuous replay
+   over the same span, closing the exact blind spot this sub-thread traced
+   from a suspected data bug through to a real structural gate failure.
+   Verified against real data and a live shadow-evolve run, not just unit
+   tests. This closes the `MAX_DD_HARD_FAIL`-margin design pass this
+   sub-thread (and the 2026-08-21 universe-perturb-cliff entry before it)
+   both deferred — not by moving the margin, but by fixing what the gate
+   actually measures, which was the sharper and more honest of the two
+   options. Open remainder, deliberately not decided by this fix: champion
+   v3's own true drawdown already exceeds the corrected gate, and whether
+   that should trigger a demotion/re-evolution is unresolved — see "Current
+   state" above.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured

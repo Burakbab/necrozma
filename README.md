@@ -107,6 +107,17 @@ champions, adversarial constructions, and real search) found it never caught a
 concentration problem the existing drawdown/fitness gates weren't already
 catching. See `AGENTS.md` for why, and for the current roadmap.
 
+**Known issue, being tracked openly:** on 2026-08-22 a structural blind spot was
+found in the drawdown safety gate — it judged risk on each walk-forward fold's
+own independently-backtested drawdown, which cannot see a real drawdown that
+spans a fold boundary. Under an honest, unbroken replay, genome v3's true
+drawdown is worse than the 40% hard-fail threshold the gate is supposed to
+enforce, though the gate itself never saw that at promotion time. The gate has
+since been fixed for every future promotion decision (see `AMENDMENTS.md`,
+2026-08-22 row); whether the current champion should be re-evaluated or replaced
+now that its real drawdown is visible is still an open decision, not yet acted
+on. See `AGENTS.md`'s "Current state" for the full mechanism and reasoning.
+
 Real money is gated behind six months of positive walk-forward, a live paper run
 that matches its own backtest within tolerance, and explicit sign-off. The system
 cannot promote itself.
