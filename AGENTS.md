@@ -252,6 +252,58 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-22 (3-hourly check): a second, larger round of the
+  vacuous-regression-check tracking the previous entry asked for — 18 more
+  shadow generations, 54 more top-3 candidates, and this round found zero
+  further occurrences of the pattern.** (see
+  `runs/2026-08-22-1322-shadow-evolve-vacuous-check-round2.md`) Same
+  scratch-isolation discipline as every prior shadow-evolve session
+  (`live_state.json` md5 unchanged throughout,
+  `3f71d6ab111ecd646eda9e0e595a9970`), same diagnostic-script method as the
+  previous entry (reimplements `EvolutionRun.generation()`'s real top-3 loop
+  verbatim for the NEW dd-corrected path, also computes what OLD raw
+  fold-merged `accepts()` would have decided on the same candidate, not
+  committed — diagnostic-only, composes already-tested
+  `Evaluator.evaluate`/`dd_corrected_stats`/`constitution.accepts`). Champion
+  held all 18 generations (best fold-aggregate fitness seen: 1.886,
+  generation 16, still short of margin at 434 cumulative candidates). Of 54
+  top-3 candidates that reached the gate: **0 showed either kind of
+  accept/reject flip** — no instance of the intended tightening (OLD
+  accepts, NEW rejects) and, unlike the previous session's 2/30, **no further
+  instance of the vacuous-accept bug (OLD rejects, NEW accepts) either**.
+  Combined across both sessions: 2/84 real shadow candidates have shown the
+  vacuous-accept pattern, both from the prior session — one session finding
+  it and a larger follow-up session not finding it is evidence the mechanism
+  is real but occasional, not a fires-every-generation certainty, which
+  tempers (without resolving) the prior entry's "if it does so consistently"
+  escalation condition. Separately, this larger sample surfaced a new,
+  previously-undocumented variant worth naming: **2/54 candidates
+  hard-failed under the NEW dd-corrected max_dd (41.7%/41.3%) while their
+  raw uncorrected max_dd was still under 40% (39.0%/32.5%)** — the first
+  time either session's sample showed the corrected gate catching a real
+  drawdown OLD's number would have missed, though in both cases the
+  fold-aggregate margin check already rejected the candidate independently,
+  so it never became the deciding factor. 8/54 candidates cleared the
+  fold-aggregate gate identically under both OLD and NEW and reached the
+  sealed holdout; all 8 were correctly rejected there (consistent with
+  `holdout-pressure`'s standing finding). No incorrect promotion resulted,
+  same as the prior session. Verified safe: no code changed (diagnostic
+  script only, not committed), `live_state.json` md5 identical throughout,
+  `evotrader.manifest` untouched, `constitution verified 8b74865634b1db07`
+  unchanged on every invocation, today's 2026-08-22 bar confirmed already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run this session, no double-trade), `review-hard-calls` checked (0
+  pending), no genome promotion (no README Status change needed). No push
+  notification sent — this finding sharpens but doesn't change the practical
+  severity/urgency of the already-communicated open v3 demotion question, and
+  no incorrect promotion occurred, same reasoning the prior session used.
+  Next: the vacuous-regression-check rate is now measured at 2/84 across two
+  sessions, not per-generation — whoever next runs shadow or real evolution
+  against v3 should keep adding to this cumulative sample rather than
+  treating either session's count as final; the demotion/rollback design
+  question itself remains unstarted and is still explicitly the owner's
+  call.
+
 - **Found 2026-08-22 (3-hourly check): the weekend all-hands dd-corrected gate
   doesn't just tighten promotion checks — while champion v3 remains champion,
   it also permanently disables one of `accepts()`'s two champion-relative
