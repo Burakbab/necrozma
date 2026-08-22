@@ -17,6 +17,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py regime-folds     # does grouping sub-windows by regime instead of calendar stabilize aggregate_fitness?
     python evotrader_bundle.py fold-cap         # does winsorizing the outlier fold's pull on the mean term stabilize aggregate_fitness?
     python evotrader_bundle.py margin-curve     # how much does required_margin() actually grow with n_candidates/n_draws?
+    python evotrader_bundle.py fold-dd-blindspot  # does the fold-merged maxDD gate see drawdowns that span a fold boundary?
 """
 import sys, types, json, os, math
 
@@ -1840,6 +1841,77 @@ def main():
                           f"vs baseline {base_fit:.3f}; {n_hard_fail}/{n_ran} hit a hard "
                           f"gate (fitness -inf: maxDD over {MAX_DD_HARD_FAIL:.0%}, too few "
                           f"trades, or too few bars)")
+    elif cmd == "fold-dd-blindspot":
+        # Diagnostic: explains the 2026-08-22 "-34.1% vs -46.5% maxDD" mystery
+        # this file's Current state spent a whole session investigating as a
+        # possible data bug. It is not a bug. `Evaluator._merge` (the stats
+        # `accepts()`/`fitness()` actually gate on) sets max_dd to
+        # `np.min([fold.max_dd for fold in folds])` -- the worst of the three
+        # *independently* backtested folds' own local peak-to-trough, each
+        # fold's NAV tracking starting fresh at that fold's own boundary. A
+        # true continuous drawdown that starts near the end of one fold and
+        # bottoms out inside the next is invisible to every individual fold's
+        # own local max_dd, and therefore invisible to the merged number the
+        # MAX_DD_HARD_FAIL gate checks -- it only ever exists in one unbroken
+        # replay across the fold boundary the gate never runs. This confirms
+        # that mechanism directly: run the exact same Evaluator the live
+        # `evolve` path uses (gate-visible number) side by side with one
+        # continuous `run_backtest` over the same span (true number), no
+        # engine or constitution change, composes already-tested
+        # Evaluator.evaluate/run_backtest exactly like fold-scheme/regime/
+        # margin-curve do (no new pure function, no new test file, same
+        # precedent). Read-only: never touches live_state.json or the
+        # champion. See "Current state" for the first result.
+        from loop.evolve import Evaluator
+        from loop.engine import run_backtest
+        from core import market
+        from constitution import MAX_DD_HARD_FAIL
+        g0 = acct.genome
+        genomes = [(f"v{g0.version} (live)", g0)]
+        if "--also-version" in sys.argv:
+            also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+            try:
+                g_other = _reconstruct_champion_genome(also_version, acct.lineage)
+            except ValueError as e:
+                print(f"[fold-dd-blindspot] {e}")
+                sys.exit(1)
+            genomes.append((f"v{also_version} (reconstructed)", g_other))
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        print(f"[fold-dd-blindspot] replaying {len(data)} symbols against "
+              f"{' and '.join(label for label, _ in genomes)} ...", flush=True)
+        print()
+        for label, genome in genomes:
+            ev = Evaluator(data)
+            res = ev.evaluate(genome, log_detail=False)
+            print(f"MAXDD GATE BLIND SPOT -- {label}")
+            print("=" * 96)
+            for i, f in enumerate(res["folds"]):
+                if "error" in f:
+                    print(f"  fold {i + 1}: {f['error']}")
+                    continue
+                print(f"  fold {i + 1} [{f['window'][0]:.3f}, {f['window'][1]:.3f}]: "
+                      f"own local max_dd {f['stats'].get('max_dd', 0):>7.1%}")
+            gate_dd = res["stats"].get("max_dd", 0.0)
+            print(f"  gate-visible max_dd (worst of the folds above, what accepts() "
+                  f"checks): {gate_dd:>7.1%}")
+            search_end = ev.search_end
+            true_search = run_backtest(genome, data, 0.0, search_end, log_detail=False)
+            true_search_dd = true_search["stats"].get("max_dd", 0.0) if not true_search.get("error") else None
+            if true_search_dd is not None:
+                print(f"  true continuous max_dd, same [0, {search_end:.3f}] search span, "
+                      f"one unbroken replay: {true_search_dd:>7.1%}  "
+                      f"(gap {true_search_dd - gate_dd:+.1%} vs gate-visible)")
+            true_full = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+            true_full_dd = true_full["stats"].get("max_dd", 0.0) if not true_full.get("error") else None
+            if true_full_dd is not None:
+                over = " (OVER MAX_DD_HARD_FAIL, gate never sees it)" if abs(true_full_dd) > MAX_DD_HARD_FAIL else ""
+                print(f"  true continuous max_dd, full [0, 1] history incl. holdout "
+                      f"(what universe-perturb/drawdown/anatomy report): "
+                      f"{true_full_dd:>7.1%}{over}")
+            print()
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)

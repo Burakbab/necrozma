@@ -87,6 +87,7 @@ python3 evotrader_bundle.py fitness-decomp    # split aggregate_fitness into its
 python3 evotrader_bundle.py drawdown          # which date range actually drives maxDD, ranked by depth
 python3 evotrader_bundle.py correlation-universe  # full-universe pairwise return correlation by fold/holdout
 python3 evotrader_bundle.py holdout-noise         # block-bootstrap sigma of a sealed-holdout fitness score
+python3 evotrader_bundle.py fold-dd-blindspot     # does the fold-merged maxDD gate see drawdowns spanning a fold boundary?
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -177,6 +178,22 @@ Convergence checked 2026-08-20 at `--n-boot` up to 50000: stable by ~5000
 draws at refined per-champion estimates v3 ≈25.5x / v1 ≈18.5x / v2 ≈15.1x —
 see "Current state".
 
+`fold-dd-blindspot` explains the "-34.1% vs -46.5% maxDD" reproducibility question
+`universe-perturb` and `drawdown` kept raising: `loop.evolve.Evaluator._merge`
+computes the merged max_dd the acceptance gates check as the worst of the 3
+folds' own independently-backtested local peak-to-troughs, never one continuous
+replay across a fold boundary — so a drawdown that straddles two folds is
+structurally invisible to `accepts()`/`fitness()` no matter how real it is.
+Prints each fold's own local max_dd, the gate-visible merged number, and one
+unbroken `run_backtest` over the identical search span next to each other so
+the gap is visible directly, plus the same comparison over the full [0,1]
+history (what `universe-perturb`/`drawdown`/`anatomy` report). Read-only, same
+cost class as `fold-scheme` (one backtest per fold plus two continuous
+replays). `--also-version N` same convention as the other diagnostics. First
+result (2026-08-22): v3's gate sees -34.1%, one continuous replay of the exact
+same span sees -46.5% — the entire discrepancy the previous two sessions spent
+investigating as a possible data bug. See "Current state".
+
 `rolling-folds` is the untried alternative `fold-scheme`'s own notes have
 flagged since 2026-08-18: instead of raising `Evaluator`'s `n_folds` (which
 shrinks every window as count rises), `loop.evolve.rolling_folds(search_end,
@@ -234,6 +251,71 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Solved 2026-08-22 (3-hourly check): the "-34.1% vs -46.5% maxDD" mystery the
+  previous entry left as "narrowed, not proven" is not a data bug at all — it's the
+  MAX_DD_HARD_FAIL gate's own arithmetic having a real, structural blind spot for
+  any drawdown that spans a fold boundary.** (see
+  `runs/2026-08-22-0356-fold-dd-blindspot.md`) Per the previous entry's own
+  instruction, re-ran `universe-perturb`'s full single-symbol census fresh under
+  the now gap-checked fetch path first: it reproduced -46.5%/-inf cleanly again
+  (15/27 single-symbol drops now hard-fail, up from 14/27 on 2026-08-21, with
+  CRVUSDT newly added to the failing set), so the silent-truncation fix does not
+  explain the earlier -34.1% reads — clean reproduction under a verified-gapless
+  fetch path is exactly the "materially more urgent" branch the previous entry
+  flagged. Chased the real explanation instead of stopping at "confirmed, cause
+  unknown": `Evaluator._merge` (`loop.evolve.py`), the function that builds the
+  merged stats `accepts()`/`fitness()` actually gate promotion on, sets
+  `max_dd = np.min([fold.max_dd for fold in folds])` — the worst of the 3
+  *independently* backtested folds' own local peak-to-trough, each fold's NAV
+  starting fresh at that fold's own boundary. A true continuous drawdown that
+  starts near the end of one fold and bottoms out inside the next is invisible to
+  every individual fold's own local max_dd, and therefore invisible to the merged
+  number the gate checks. New read-only CLI `fold-dd-blindspot [--also-version N]`
+  proves it directly: v3's gate-visible max_dd is -34.1% (fold 2's own local
+  number, the worst of the three) while one continuous, unbroken backtest over the
+  *identical* [0, 0.85] search span — no fold boundaries at all — already reads
+  -46.5%, the exact 12.4pp jump the previous entry couldn't explain. The
+  discrepancy lives entirely inside the search region, not the holdout slice (the
+  full [0,1] number is also -46.5%, unchanged). Cross-checked against v1
+  (reconstructed): same mechanism, smaller gap inside the search span (-44.4%
+  gate-visible vs -45.3% true, 0.9pp) but a much larger one once the holdout slice
+  is included (-54.4% true full-history, matching the 2026-08-21 universe-perturb
+  entry's independent -54.3% reading almost exactly) — the blind spot's size is
+  genome/window-specific, not a fixed offset. Composes only already-tested
+  `Evaluator.evaluate`/`run_backtest` (no engine or constitution change, same
+  precedent as `fold-scheme`/`margin-curve`/`regime` — no new pure function, no
+  new test file). Verified safe: `py_compile` clean, `tools/edit_bundle_module.py
+  verify` round-trip clean, full suite still 184 passed (unchanged — no new pure
+  function to test), `live_state.json` md5 identical throughout
+  (`3f71d6ab111ecd646eda9e0e595a9970`), `evotrader.manifest` md5 identical
+  (`0bf3a7d9411ee692d0a9f152a7533803`), `constitution verified 8b74865634b1db07`
+  unchanged on every invocation, `git diff` confirms zero `_SRC[...]` lines
+  touched (pure addition to the plain-script CLI section), today's 2026-08-22 bar
+  already confirmed processed by the 00:20 UTC daily run before this check
+  started (`updated` timestamp `2026-08-22T00:21:18+00:00`, `tick` not run this
+  session, no double-trade). **Practical reading, not yet acted on**: the live
+  champion v3's true full-history drawdown already exceeds the 40% threshold that
+  is supposed to hard-fail it, and the acceptance gate that ran at promotion time
+  structurally could not have seen that, because it never runs one continuous
+  backtest across fold boundaries — this is a real gap in what MAX_DD_HARD_FAIL
+  actually protects against, independent of whether any single champion happens
+  to trip it today. Push notification sent to the user this session given the
+  severity and the fact that this closes out the previous entry's open safety
+  question with a real mechanism, not a shrug. **Fixing it is a genuine
+  constitution change** (either recomputing merged max_dd from one continuous
+  replay across the search span, or accepting the current per-fold semantics
+  explicitly and renaming/documenting it as such) and was deliberately not
+  attempted this run — it needs a real design pass on which of several ways to
+  reconstruct a "true" merged drawdown is right (continuous replay ignores that
+  each fold is supposed to be an independent walk-forward test; some other
+  combination might double-count or under-count), plus an `AMENDMENTS.md` row,
+  more runway than a 3-hour slot should gamble on. Next: the design pass this
+  file has deferred twice now (previous entry deferred it pending this
+  confirmation; the 2026-08-21 universe-perturb-cliff entry deferred it pending a
+  root cause) has no more reason to wait — whoever picks this up next should
+  decide how MAX_DD_HARD_FAIL's merged max_dd should actually be computed and
+  write the `AMENDMENTS.md` case for it.
 
 - **Found 2026-08-22 (3-hourly check): a real silent-truncation bug in the market-data
   fetch path, discovered because the champion's full-history baseline maxDD suddenly
