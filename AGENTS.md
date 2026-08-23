@@ -242,13 +242,14 @@ and check `AMENDMENTS.md` first.
 
 | path | what it is |
 |---|---|
-| `evotrader_bundle.py` | the entire runtime flattened into one file — agents, judges, broker, evolution loop |
+| `evotrader_bundle.py` | **the live path** — the entire runtime flattened into one file (agents, judges, broker, evolution loop). Every scheduled run executes this, not the real files below. |
+| `core/`, `agents/`, `loop/`, `constitution/` | real, normally-importable copies of every module `evotrader_bundle.py` embeds in `_SRC`, added 2026-08-23 (weekend all-hands) as item 7's unflatten — see "Current state" and `runs/2026-08-23-0600-weekend-all-hands.md`. **Not the live path**: nothing imports these except the new equivalence test; `evotrader_bundle.py` is untouched and still what every command actually runs. Kept byte-identical to the bundle's `_SRC` entries by `tests/test_unflattened_files_match_bundle.py` — edit a module with `tools/edit_bundle_module.py`, then hand-sync (or re-extract) the real file, or the test fails. |
 | `evotrader_dashboard.py` | dashboard builder (zero external deps, hand-rolled SVG) |
-| `evotrader.manifest` | constitution checksum (`dfae6a697f51fb49`) — the anti-tampering seal |
+| `evotrader.manifest` | constitution checksum (`8b74865634b1db07` as of 2026-08-21's `HOLDOUT_SIGMA` amendment — rotates on every constitution change, don't hardcode-trust this table over the file itself) — the anti-tampering seal |
 | `live_state.json` | **the account**: cash, positions, trade ledger, NAV history, current genome, evolution lineage, researcher memory |
 | `AMENDMENTS.md` | the constitution amendment log — every gate change, argued in writing |
 | `runs/` | one dated note per scheduled run |
-| `tools/edit_bundle_module.py` | extract/reinsert a module's source from `evotrader_bundle.py`'s embedded `_SRC` dict for editing without hand-touching its giant single-line strings — see item 7 and `runs/2026-08-20-0348-bundle-edit-tool.md` |
+| `tools/edit_bundle_module.py` | extract/reinsert a module's source from `evotrader_bundle.py`'s embedded `_SRC` dict for editing without hand-touching its giant single-line strings — see item 7 and `runs/2026-08-20-0348-bundle-edit-tool.md`. Also now the intended way to keep `core/`/`agents/`/`loop/`/`constitution/` in sync after a bundle edit. |
 | `index.html` | generated public dashboard, served by GitHub Pages — rebuilt each run, never hand-edited |
 | `README.md` | hand-written, renders on the GitHub repo page — its `## Status` section names the current genome version and must be updated on every promotion (see Run protocol step 7) |
 
@@ -263,6 +264,72 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Done 2026-08-23 (weekend all-hands): item 7's unflatten, the piece that's real work — a byte-identical, normally-importable copy of every `evotrader_bundle.py` module now exists on disk as real files, verified equivalent by re-running the entire test suite against them, without ever touching the live path.** (see
+  `runs/2026-08-23-0600-weekend-all-hands.md`) Per item 7's own instructions
+  ("do it as its own isolated commit, keep the bundle working as a fallback
+  until the unflattened version is proven equivalent... don't switch the live
+  trading path until confident"): extracted all 15 `_SRC` modules with the
+  already-built `tools/edit_bundle_module.py extract` and laid them out as
+  four real top-level packages — `core/`, `agents/`, `loop/`,
+  `constitution/` — mirroring exactly the dotted names the bundle already
+  installs at runtime (`core.genome` → `core/genome.py`, the four package
+  names in `_PKGS` → `<pkg>/__init__.py`). This wasn't a guess at a layout:
+  `constitution/__init__.py`'s own `checksum()` function already had a
+  dormant file-based mode (`_PROTECTED = ["__init__.py", "../core/portfolio.py"]`,
+  hashing real files by relative path) sitting next to its bundle-mode path
+  (hashing `EMBEDDED_SOURCES` strings) — nobody had ever exercised the
+  file-based branch because no real files existed yet. Every module's
+  imports are already absolute (`from core.genome import Genome`, etc.) and
+  every `__file__`-dependent path constant (`GENOME_DIR`, `STATE_DIR`,
+  `CACHE_DIR`, `ROOT`) resolves two directories up from the module file,
+  which lands on the repo root under a real `<pkg>/<module>.py` layout the
+  same way it lands on the bundle's faked `"core/genome.py"`-relative-to-cwd
+  path under the bundle — so nothing needed rewriting, only faithful
+  extraction. Verified three independent ways: (1) `constitution.checksum()`
+  in file mode, run against the real files, reproduces `evotrader.manifest`'s
+  recorded `8b74865634b1db07` exactly; (2) the entire existing test suite
+  (192 tests, unmodified, copied to a scratch dir with a conftest that
+  imports the real packages directly instead of `evotrader_bundle` — no
+  meta-path finder involved) passes 192/192 against the real files, matching
+  the bundle-sourced baseline exactly; (3) new
+  `tests/test_unflattened_files_match_bundle.py` (17 new tests, suite 192 →
+  209) asserts every real file is byte-identical to its `_SRC[...]` entry and
+  that the two trees have identical shape (no stray or missing files), so
+  future drift between the two copies fails loud instead of silently, the
+  same tripwire principle as `edit_bundle_module.py verify`. **Deliberately
+  not done this session, and not implied by "done" above**: there is still no
+  bundler to regenerate `evotrader_bundle.py` *from* these real files (the
+  bundle's own docstring says "generated by bundle.py", but no `bundle.py`
+  exists in this repo — that generator, if it ever existed, is gone), no CLI
+  entrypoint that runs the live commands against the real files instead of
+  the bundle, and nothing about the live trading path changed at all —
+  `evotrader_bundle.py` is byte-identical before/after
+  (`3835305b96044055bc17d43358e2bfba`), still what every scheduled command
+  actually executes. This closes the safe half of item 7 (a real, provably
+  equivalent multi-file tree exists) and leaves the risky half (actually
+  switching what runs) explicitly for later, same as item 7's own text
+  said to. Verified safe: `py_compile` clean on all 16 new files plus the
+  bundle plus the new test, `tools/edit_bundle_module.py verify` round-trip
+  clean, `git diff --stat` against every tracked file empty (pure addition —
+  four new untracked directories plus one new test file, zero existing lines
+  touched), `live_state.json` md5 unchanged (`af16ffdc22a57c5d63a83003216a8f99`),
+  `evotrader.manifest` unchanged (`0bf3a7d9411ee692d0a9f152a7533803`),
+  `constitution verified 8b74865634b1db07` unchanged, today's bar already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run this session), `review-hard-calls` checked (0 pending), no genome
+  promotion (no README Status change needed, no AMENDMENTS.md row needed —
+  no constitution content changed, only a second copy of it created and
+  proven identical). No push notification sent — a structural/maintainability
+  improvement with zero effect on live behavior, not a safety finding or a
+  promotion. Next: whoever wants to actually retire the bundle needs (a) a
+  real bundler script (`_SRC` dict generation from the real files, the
+  reverse of what this session did by hand) so the two trees can't drift
+  once someone starts editing the real files directly instead of through
+  `edit_bundle_module.py`, and (b) a CLI entrypoint exercising the real
+  files end-to-end (tick/summary/evolve/etc., not just imports and unit
+  tests) before ever pointing a scheduled run at it instead of the bundle —
+  both bigger, riskier, separate sessions, not a quick follow-on to this one.
 
 - **Tested 2026-08-23 (3-hourly check): the 2026-08-16 "bad buyer, excellent
   seller" `consult_conservative` finding, unactioned for a week, turns out to
@@ -3248,6 +3315,23 @@ every `evolve` call.
    doesn't do the unflatten (still a bigger, separate, isolated-commit task
    as described above), but it's the safer way to touch bundle internals for
    any smaller edit in the meantime, including a future attempt at this item.
+
+   **Done 2026-08-23 (weekend all-hands): the safe half of the unflatten
+   itself — see "Current state" above and
+   `runs/2026-08-23-0600-weekend-all-hands.md`.** Real `core/`/`agents/`/
+   `loop/`/`constitution/` packages now exist on disk, byte-identical to the
+   bundle's own `_SRC` entries, verified by re-running the full test suite
+   against them directly (192/192, matching baseline) plus a new permanent
+   drift guard (`tests/test_unflattened_files_match_bundle.py`, 17 tests).
+   The live path is untouched — `evotrader_bundle.py` is still what every
+   scheduled command runs, byte-identical before/after. Still open, and
+   explicitly the riskier remainder: no bundler exists to regenerate the
+   bundle from the real files (so hand-editing a real file today would drift
+   silently past the new test's byte-for-byte check unless
+   `tools/edit_bundle_module.py reinsert` is also run), and no CLI entrypoint
+   runs the live commands against the real files — both needed before this
+   item can be called fully closed, both bigger and separate from this
+   session's scope.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but
