@@ -264,6 +264,54 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-23 (3-hourly check): a fifth round of the
+  vacuous-regression-check tracking — one more vacuous-accept flip, pulling
+  the combined rate down slightly to 6/279 (≈2.15%), still no incorrect
+  promotion.** (see `runs/2026-08-23-0046-shadow-evolve-vacuous-check-round5.md`)
+  Same scratch-isolation discipline as every prior shadow-evolve session
+  (`live_state.json` md5 unchanged throughout, `af16ffdc22a57c5d63a83003216a8f99`),
+  same diagnostic-script method as the four prior entries (reimplements
+  `EvolutionRun.generation()`'s real top-3 loop verbatim for the NEW
+  dd-corrected path, also computes what OLD raw fold-merged `accepts()`
+  would have decided on the same candidate, not committed — diagnostic-only,
+  composes already-tested `Evaluator.evaluate`/`dd_corrected_stats`/
+  `constitution.accepts`). Smoke-tested at 1 generation before the full run
+  this time (95s, real file md5 unchanged) — first round to do that check
+  explicitly before committing wall-clock to the full run. 25 generations run
+  to completion (~40 minutes, faster per-generation than prior rounds —
+  ~93-99s vs ~142-166s, likely because this session's larger
+  `researcher_memory` seed left `Researcher.propose` less new ground to
+  cover), champion held throughout, no promotion shadow or otherwise. **75
+  top-3 candidates reached the gate, 32 reached the sealed holdout (all
+  correctly rejected), and one showed the vacuous-accept flip** (generation
+  3, a clean textbook case: champion's OLD merged max_dd -38.8% gives a
+  finite fitness that correctly catches the challenger's merged-fitness
+  regression, while NEW's dd-corrected -46.5% makes `fitness(champion) ==
+  -inf` and the same check becomes vacuously true) — no intended-tightening
+  flip this round. Combined across all five sessions on this thread (four on
+  2026-08-22, this one on 2026-08-23): **6/279 real shadow candidates
+  (≈2.15%) have shown the vacuous-accept flip** (session counts 2, 0, 3, 0,
+  1) and **1/279 (≈0.36%) the intended-tightening flip**. Verified safe: no
+  code changed (diagnostic script only, not committed), `live_state.json`
+  md5 identical throughout, `evotrader.manifest` untouched, `constitution
+  verified 8b74865634b1db07` unchanged on every invocation, today's
+  2026-08-23 bar confirmed already processed by the 00:20 UTC daily run
+  before this session started (`tick` not run this session, no
+  double-trade), `review-hard-calls` checked (0 pending), no genome
+  promotion (no README Status change needed). No push notification sent —
+  this round narrows rather than changes the already-fully-communicated
+  mechanism and severity from the 2026-08-22 10:15 session. Next: the
+  combined rate is now 6/279 (≈2.15%), not round 4's 5/204 — cite the
+  updated figure. Given this thread now spans five sessions and 279
+  candidates without the per-session rate (2, 0, 3, 0, 1) settling to
+  something worth anchoring on, and each round costs ~40-90 minutes for one
+  marginal data point, whoever next picks this up should weigh another
+  round of the same measurement against picking up a different open item
+  (the 4h-bar third-plateau question, or item 7's unflatten work) rather
+  than treating another round as automatically the highest-value use of a
+  session. The demotion/rollback design question itself remains unstarted
+  and is still explicitly the owner's call.
+
 - **Measured 2026-08-22 (3-hourly check): a fourth round of the
   vacuous-regression-check tracking, and it pulls the combined rate back
   down — the second zero-flip session out of four, not a continuation of the
