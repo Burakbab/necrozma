@@ -21,16 +21,19 @@ Unlike evotrader_bundle.py's main(), this does not touch
 `constitution.checksum()` takes its file-based branch and hashes the real
 `constitution/__init__.py` and `core/portfolio.py` on disk instead.
 
-Beyond `summary`/`signals`, this also wires up two of the diagnostic
+Beyond `summary`/`signals`, this also wires up three of the diagnostic
 commands AGENTS.md's own command table already documents as never touching
 live_state.json or the champion: `holdout-pressure` (reads acct.lineage
-only, no market data or backtest -- the cheapest diagnostic in the bundle)
-and `regime` (one market load, equal-weight buy-and-hold per fold/holdout
-window, no genome or Council involved). Both are transcribed here verbatim
-from their evotrader_bundle.py implementation, not reimplemented -- see
-tools/edit_bundle_module.py for the module-level equivalent of that
-discipline. The remaining diagnostics (`anatomy`, `consults`, `costs`, ...)
-are heavier (a full backtest or more) and not attempted in this pass.
+only, no market data or backtest -- the cheapest diagnostic in the bundle),
+`regime` (one market load, equal-weight buy-and-hold per fold/holdout
+window, no genome or Council involved), and `fold-dd-blindspot` (one
+Evaluator.evaluate() call plus two continuous run_backtest replays per
+genome -- same cost class as `regime`, ~1-2 minutes). All three are
+transcribed here verbatim from their evotrader_bundle.py implementation,
+not reimplemented -- see tools/edit_bundle_module.py for the module-level
+equivalent of that discipline. The remaining diagnostics (`anatomy`,
+`consults`, `costs`, `succession-audit`, ...) are heavier (a full backtest
+or more, sometimes several) and not attempted in this pass.
 """
 from __future__ import annotations
 
@@ -41,7 +44,39 @@ import sys
 from constitution import verify
 from core.live import LiveAccount
 
-SUPPORTED_COMMANDS = ("summary", "signals", "holdout-pressure", "regime")
+SUPPORTED_COMMANDS = ("summary", "signals", "holdout-pressure", "regime",
+                      "fold-dd-blindspot")
+
+
+def _reconstruct_champion_genome(version, lineage):
+    """Rebuild a historical champion genome purely from live_state.json's own
+    recorded `lineage` (every accepted promotion's patch), by replaying
+    accepted patches from the seed forward. Transcribed verbatim from
+    evotrader_bundle.py's own helper of the same name (not part of any
+    _SRC module -- it's plain CLI-script code, so it has to be duplicated
+    here rather than imported). Used by `fold-dd-blindspot --also-version N`.
+    Raises ValueError if `version` was never an accepted promotion recorded
+    in lineage (version 1, the seed, always succeeds and needs no patches)."""
+    from core.genome import Genome
+
+    patches_by_version = {}
+    for e in lineage:
+        acc = e.get("accepted")
+        if acc:
+            patches_by_version[acc["new_version"]] = acc["patch"]
+
+    g = Genome.champion()
+    versions = {1: g}
+    for v in sorted(patches_by_version):
+        g = g.child(list(patches_by_version[v].items()), note=f"reconstructed-v{v}")
+        versions[v] = g
+
+    if version not in versions:
+        raise ValueError(
+            f"genome version {version} has no accepted promotion recorded in "
+            f"lineage (known versions: {sorted(versions)})"
+        )
+    return versions[version]
 
 
 def _cmd_holdout_pressure(acct) -> None:
@@ -129,6 +164,59 @@ def _cmd_regime(acct) -> None:
               f"{bench['max_dd']:>7.1%}")
 
 
+def _cmd_fold_dd_blindspot(acct) -> None:
+    from loop.evolve import Evaluator
+    from loop.engine import run_backtest
+    from core import market
+    from constitution import MAX_DD_HARD_FAIL
+    g0 = acct.genome
+    genomes = [(f"v{g0.version} (live)", g0)]
+    if "--also-version" in sys.argv:
+        also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+        try:
+            g_other = _reconstruct_champion_genome(also_version, acct.lineage)
+        except ValueError as e:
+            print(f"[fold-dd-blindspot] {e}")
+            sys.exit(1)
+        genomes.append((f"v{also_version} (reconstructed)", g_other))
+    data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+    if not data:
+        print("no market data")
+        sys.exit(1)
+    print(f"[fold-dd-blindspot] replaying {len(data)} symbols against "
+          f"{' and '.join(label for label, _ in genomes)} ...", flush=True)
+    print()
+    for label, genome in genomes:
+        ev = Evaluator(data)
+        res = ev.evaluate(genome, log_detail=False)
+        print(f"MAXDD GATE BLIND SPOT -- {label}")
+        print("=" * 96)
+        for i, f in enumerate(res["folds"]):
+            if "error" in f:
+                print(f"  fold {i + 1}: {f['error']}")
+                continue
+            print(f"  fold {i + 1} [{f['window'][0]:.3f}, {f['window'][1]:.3f}]: "
+                  f"own local max_dd {f['stats'].get('max_dd', 0):>7.1%}")
+        gate_dd = res["stats"].get("max_dd", 0.0)
+        print(f"  gate-visible max_dd (worst of the folds above, what accepts() "
+              f"checks): {gate_dd:>7.1%}")
+        search_end = ev.search_end
+        true_search = run_backtest(genome, data, 0.0, search_end, log_detail=False)
+        true_search_dd = true_search["stats"].get("max_dd", 0.0) if not true_search.get("error") else None
+        if true_search_dd is not None:
+            print(f"  true continuous max_dd, same [0, {search_end:.3f}] search span, "
+                  f"one unbroken replay: {true_search_dd:>7.1%}  "
+                  f"(gap {true_search_dd - gate_dd:+.1%} vs gate-visible)")
+        true_full = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+        true_full_dd = true_full["stats"].get("max_dd", 0.0) if not true_full.get("error") else None
+        if true_full_dd is not None:
+            over = " (OVER MAX_DD_HARD_FAIL, gate never sees it)" if abs(true_full_dd) > MAX_DD_HARD_FAIL else ""
+            print(f"  true continuous max_dd, full [0, 1] history incl. holdout "
+                  f"(what universe-perturb/drawdown/anatomy report): "
+                  f"{true_full_dd:>7.1%}{over}")
+        print()
+
+
 def main() -> None:
     cmd = sys.argv[1] if len(sys.argv) > 1 else "summary"
     if cmd not in SUPPORTED_COMMANDS:
@@ -154,6 +242,8 @@ def main() -> None:
         _cmd_holdout_pressure(acct)
     elif cmd == "regime":
         _cmd_regime(acct)
+    elif cmd == "fold-dd-blindspot":
+        _cmd_fold_dd_blindspot(acct)
 
 
 if __name__ == "__main__":

@@ -13,13 +13,16 @@ packages directly, while every other test in this suite goes through
 evotrader_bundle.py's meta-path finder (installed via tests/conftest.py); the
 two must not be mixed in one interpreter.
 
-`regime` is also wired up in run_from_files.py but deliberately has no
-automated test here: unlike `summary`/`signals`/`holdout-pressure`, it calls
-core.market.load_universe, which hits the network on a cold state/cache
-(gitignored, not committed) and would make this suite's runtime and
-offline-ability depend on market data availability. Verified manually
-instead (both against 1d and `--interval 4h`, output byte-identical,
-live_state.json untouched) -- see runs/2026-08-23-*-run-from-files-diagnostics.md.
+`regime` and `fold-dd-blindspot` are also wired up in run_from_files.py but
+deliberately have no automated test here: unlike `summary`/`signals`/
+`holdout-pressure`, both call core.market.load_universe (directly, or via
+loop.evolve.Evaluator/loop.engine.run_backtest), which hits the network on
+a cold state/cache (gitignored, not committed) and would make this suite's
+runtime and offline-ability depend on market data availability. Verified
+manually instead -- `regime` both against 1d and `--interval 4h`,
+`fold-dd-blindspot` both with no flags and with `--also-version 2` -- output
+byte-identical in every case, live_state.json untouched -- see
+runs/2026-08-23-*-run-from-files-diagnostics.md.
 """
 import os
 import subprocess

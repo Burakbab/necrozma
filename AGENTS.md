@@ -266,6 +266,48 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-23 (3-hourly check, 15:46 UTC): `run_from_files.py` grows a
+  third read-only diagnostic — `fold-dd-blindspot` — verified byte-identical
+  to `evotrader_bundle.py`'s own output, both with no flags and with
+  `--also-version 2`.** (see
+  `runs/2026-08-23-1548-run-from-files-fold-dd-blindspot.md`) Command body
+  transcribed verbatim from the bundle's own `elif cmd ==
+  "fold-dd-blindspot"` block, same discipline as the two prior diagnostics.
+  This command also needed `_reconstruct_champion_genome` (the
+  `--also-version N` reconstruction helper), which lives in
+  `evotrader_bundle.py` as plain CLI-script code, not inside any `_SRC`
+  module — so it's duplicated verbatim into `run_from_files.py` rather than
+  imported; if a future session adds `succession-audit` (the other
+  diagnostic that uses it) here too, that duplication is already in place.
+  No automated test added — same reasoning as `regime`: this command calls
+  `core.market.load_universe` (via `Evaluator`/`run_backtest`), which hits
+  the network on a cold `state/cache` (gitignored), so it stays
+  manually-verified to keep the suite offline-safe; `tests/
+  test_run_from_files_matches_bundle.py`'s docstring updated to name both.
+  Verified safe: `py_compile` clean, full suite still 223 passed (unchanged
+  — no new pure function or automated test, matching `regime`'s precedent),
+  `tools/edit_bundle_module.py verify` round-trip clean, `sync --check`
+  reports no drift, `live_state.json` md5 unchanged throughout both manual
+  runs (`af16ffdc22a57c5d63a83003216a8f99`), `evotrader.manifest` unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), `evotrader_bundle.py` unchanged
+  (`3835305b96044055bc17d43358e2bfba`), `constitution verified
+  8b74865634b1db07` unchanged on every invocation, today's bar already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run this session, no double-trade), `review-hard-calls` checked (0
+  pending), no genome promotion (no README Status change needed). No push
+  notification sent — infrastructure/maintainability work with zero effect
+  on live trading behavior, same reasoning as every prior item-7 session
+  today. Next: `succession-audit` is the next candidate by the bundle's own
+  documented cost class (same helper already duplicated here, just a
+  heavier per-champion loop) — but the actual cutover (`tick`/`evolve`
+  against the real files) remains the separate, bigger, riskier session it
+  has been flagged as all day; today's read-only-surface growth (three
+  sessions: `run_from_files.py` entrypoint, then two more diagnostics, now
+  a third) has reached a point where whoever picks this up next should
+  weigh continuing it against picking up a different open item entirely,
+  same judgment call already made for the vacuous-regression-check thread
+  below.
+
 - **Done 2026-08-23 (3-hourly check): `run_from_files.py` grows two more
   read-only diagnostics — `holdout-pressure` and `regime` — verified
   byte-identical to `evotrader_bundle.py`'s own output for the same
@@ -3501,6 +3543,21 @@ every `evolve` call.
    against the real files, and the decision to ever point a scheduled run
    here instead of at the bundle — a separate, bigger, riskier session, not
    moved forward by this or any prior read-only-surface addition.
+
+   **Grown further 2026-08-23 (3-hourly check, 15:46 UTC): a third
+   diagnostic, `fold-dd-blindspot` — see "Current state" above and
+   `runs/2026-08-23-1548-run-from-files-fold-dd-blindspot.md`.** Same
+   verbatim-transcription discipline, verified byte-identical output with
+   and without `--also-version`. Still open, and still the actual point of
+   this item: `tick`/`evolve` against the real files, and the decision to
+   ever point a scheduled run here instead of the bundle. This makes four
+   sessions today growing this read-only surface (entrypoint, then two more
+   diagnostics, now this one) without touching that actual cutover — the
+   next session picking up item 7 should weigh whether continuing to widen
+   the read-only surface is still the highest-value use of a slot, versus
+   either attempting a scoped piece of the real cutover (e.g. a `signals`-
+   style dry-run of `tick`'s decision logic that stops short of `acct.save()`)
+   or picking up a different open item entirely.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but
