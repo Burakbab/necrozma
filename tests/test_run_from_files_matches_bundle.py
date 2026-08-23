@@ -23,6 +23,20 @@ manually instead -- `regime` both against 1d and `--interval 4h`,
 `fold-dd-blindspot` both with no flags and with `--also-version 2` -- output
 byte-identical in every case, live_state.json untouched -- see
 runs/2026-08-23-*-run-from-files-diagnostics.md.
+
+`tick-dry-run` (added 2026-08-23, first slice of item 7's actual `tick`
+cutover -- see AGENTS.md "Current state") has the same network dependency
+(`LiveAccount.tick()` calls `core.market.load_universe(..., refresh=True)`)
+and so gets the same treatment: no automated test here, verified manually
+instead against the real live_state.json -- output's bar/tick number match
+`evotrader_bundle.py tick`'s own skip-path message exactly, and
+live_state.json's md5 is identical before and after both commands. Unlike
+`regime`/`fold-dd-blindspot`, `tick-dry-run`'s stdout is deliberately NOT
+byte-identical to the bundle's `tick` (it prefixes every line with
+`[tick-dry-run]` and adds an explicit "will NOT call acct.save()" banner,
+specifically so its output can never be mistaken for a real trade
+confirmation) -- the parity that matters here is the decision itself (same
+bar, same tick number, same skip-or-trade outcome), not the exact text.
 """
 import os
 import subprocess

@@ -266,6 +266,66 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-23 (3-hourly check, 18:45 UTC): `run_from_files.py` gets its
+  first slice of item 7's actual `tick` cutover — new `tick-dry-run` command
+  runs the real `LiveAccount.tick()` decision pipeline (market data, Council,
+  both judges, hard-call flagging) against the real files, but never calls
+  `acct.save()`, so `live_state.json` is provably untouched no matter what
+  the decision turns out to be.** (see module docstring in `run_from_files.py`
+  and this entry) This is different in kind from the four prior read-only
+  diagnostics added today (`holdout-pressure`/`regime`/`fold-dd-blindspot`
+  plus the original `summary`/`signals` entrypoint): those never call
+  anything that mutates broker/journal state at all; this one calls the
+  exact same state-mutating method the bundle's live `tick` command calls,
+  and the safety guarantee is narrower and more load-bearing — "the one line
+  that writes to disk (`acct.save()`) is simply never reached" — rather than
+  "nothing in the call graph writes to disk." Verified against real data:
+  ran both `python3 run_from_files.py tick-dry-run` and
+  `python3 evotrader_bundle.py tick` back-to-back against the live
+  `live_state.json` — both correctly hit the idempotency skip path (today's
+  bar was already traded by the 00:20 UTC run), both report the identical
+  bar (`2026-08-22`) and tick number (`9`), and `live_state.json`'s md5
+  (`af16ffdc22a57c5d63a83003216a8f99`) was unchanged after either command.
+  No automated test added for `tick-dry-run` — same reasoning as
+  `regime`/`fold-dd-blindspot`: `LiveAccount.tick()` calls
+  `core.market.load_universe(..., refresh=True)`, which hits the network on
+  a cold `state/cache`, so it stays manually-verified to keep the suite
+  offline-safe; `tests/test_run_from_files_matches_bundle.py`'s docstring
+  extended to explain both the network-dependency reasoning and why this
+  command's stdout is deliberately NOT byte-identical to the bundle's `tick`
+  (every line is prefixed `[tick-dry-run]` with an explicit "will NOT call
+  acct.save()" banner, so its output can never be mistaken for a real trade
+  confirmation — the parity that matters is the decision itself, not the
+  exact text). `--force` deliberately not wired up here (unlike the
+  bundle's `tick --force`) — forcing a repeat decision on an already-traded
+  bar is a question for a human, not something this file should make easy
+  under a 3-hourly schedule. Verified safe: `py_compile` clean, full suite
+  still 223 passed (unchanged, matching the no-new-automated-test
+  precedent), `tools/edit_bundle_module.py verify` round-trip clean, `sync
+  --check` reports no drift, `live_state.json`/`evotrader.manifest`/
+  `evotrader_bundle.py` md5s all unchanged from the prior entry's recorded
+  values, `constitution verified 8b74865634b1db07` unchanged on every
+  invocation, today's bar already processed by the 00:20 UTC daily run
+  before this session started (`tick` not run for real this session, only
+  the two idempotent no-op skip-path invocations above — no double-trade
+  possible either way since both hit the skip guard before any mutation),
+  `review-hard-calls` checked (0 pending), no genome promotion (no README
+  Status change needed). No push notification sent — infrastructure work
+  building toward item 7's cutover, zero effect on live trading behavior
+  (nothing was saved, nothing could have been). Next: `tick-dry-run` proves
+  the decision pipeline runs correctly against the real files on a skip-path
+  bar; it has NOT yet been exercised on an actual untraded bar (the
+  non-skip branch, which builds and prints a real would-be order list) —
+  whoever next has a 3-hourly slot that starts shortly after a genuinely new
+  bar closes (before the 00:20 UTC daily run has processed it) could run
+  `tick-dry-run` first as an extra safety check before the real `tick`, and
+  should confirm the non-skip branch's output looks sane before ever
+  relying on it. The actual cutover — pointing a scheduled run at
+  `run_from_files.py tick` (real, saving) instead of
+  `evotrader_bundle.py tick` — remains a separate, bigger, riskier decision,
+  not moved forward by this session; `evotrader_bundle.py` is still what
+  every scheduled command actually executes.
+
 - **Done 2026-08-23 (3-hourly check, 15:46 UTC): `run_from_files.py` grows a
   third read-only diagnostic — `fold-dd-blindspot` — verified byte-identical
   to `evotrader_bundle.py`'s own output, both with no flags and with
@@ -3558,6 +3618,25 @@ every `evolve` call.
    either attempting a scoped piece of the real cutover (e.g. a `signals`-
    style dry-run of `tick`'s decision logic that stops short of `acct.save()`)
    or picking up a different open item entirely.
+
+   **Done 2026-08-23 (3-hourly check, 18:45 UTC): took the scoped piece the
+   entry above floated — see "Current state" above.** New `tick-dry-run`
+   command runs the real `LiveAccount.tick()` end-to-end (market data,
+   Council, both judges) against the real files but never calls
+   `acct.save()`, verified against the live state (matches
+   `evotrader_bundle.py tick`'s own bar/tick number on the skip path,
+   `live_state.json` md5 unchanged). This is the first command in
+   `run_from_files.py` to touch the state-mutating method at all — a
+   meaningfully different, narrower kind of safety guarantee than the five
+   purely-read-only commands before it. **Still open, and now the sharper
+   remaining piece**: `tick-dry-run` has only been exercised on an
+   already-traded bar (the skip path) — its non-skip branch (a genuine new
+   decision, built from a real would-be order list) is untested against
+   live data because no bar has been open-and-untraded at the moment a
+   session ran it yet; and the actual cutover — a *saving* `tick` (and
+   `evolve`) against the real files, plus the decision to ever point a
+   scheduled run at `run_from_files.py` instead of the bundle — remains
+   separate, bigger, and riskier, not attempted here.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but

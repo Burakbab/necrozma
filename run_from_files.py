@@ -34,6 +34,31 @@ not reimplemented -- see tools/edit_bundle_module.py for the module-level
 equivalent of that discipline. The remaining diagnostics (`anatomy`,
 `consults`, `costs`, `succession-audit`, ...) are heavier (a full backtest
 or more, sometimes several) and not attempted in this pass.
+
+`tick-dry-run` is the first piece of the actual `tick`/`evolve` cutover
+AGENTS.md item 7 has flagged as the riskier remainder across five prior
+sessions -- but scoped to stay exactly as safe as everything else here: it
+calls the real `LiveAccount.tick()` (the same method the bundle's `tick`
+command calls) to exercise the full decision pipeline -- market data,
+Council, both judges, hard-call flagging -- against the real files, and
+prints the resulting decision, but it NEVER calls `acct.save()`. Whatever
+`tick()` mutates (self.journal, self.broker, self.ticks) lives only in this
+process's own `acct` object and is discarded when the process exits;
+`live_state.json` on disk is never opened for writing. This is not a
+special dry-run code path inside `tick()` itself -- `LiveAccount.tick()`
+has no such mode and this file adds none -- the guarantee is entirely
+"the only line that writes state is never called", verified by
+`tests/test_run_from_files_matches_bundle.py`'s dry-run test asserting the
+state file's content is byte-identical before and after. On any bar
+already traded (the common case -- the daily 00:20 UTC run normally beats
+every later 3-hourly check to it) `tick()`'s own idempotency guard returns
+its `skipped` dict before mutating `self.journal` or `self.broker` at all,
+so this is doubly inert on a day's second-or-later invocation, same as
+calling the bundle's own `tick` command a second time is already safe by
+design. `--force` is intentionally NOT wired here (unlike the bundle's
+`tick`): forcing a repeat decision on an already-traded bar is an explored
+question for a human, not something a 3-hourly script should ever need,
+and leaving it out removes any temptation to add it under time pressure.
 """
 from __future__ import annotations
 
@@ -45,7 +70,7 @@ from constitution import verify
 from core.live import LiveAccount
 
 SUPPORTED_COMMANDS = ("summary", "signals", "holdout-pressure", "regime",
-                      "fold-dd-blindspot")
+                      "fold-dd-blindspot", "tick-dry-run")
 
 
 def _reconstruct_champion_genome(version, lineage):
@@ -217,6 +242,35 @@ def _cmd_fold_dd_blindspot(acct) -> None:
         print()
 
 
+def _cmd_tick_dry_run(acct) -> None:
+    """Run the real decision pipeline (LiveAccount.tick) against the real
+    files and print what it decided, but never persist anything -- see the
+    module docstring for the exact safety argument. `acct.save()` is not
+    called anywhere in this function, on any code path."""
+    print("[tick-dry-run] DRY RUN -- deciding against the real files, "
+          "will NOT call acct.save() no matter what happens below", flush=True)
+    entry = acct.tick(force=False)
+    if "error" in entry:
+        print(f"[tick-dry-run] error: {entry['error']}")
+        sys.exit(1)
+    if "skipped" in entry:
+        print(f"[tick-dry-run] {entry['skipped']} -- nothing to do "
+              "(state file was never opened for writing)")
+        return
+    print("[tick-dry-run] a real decision was computed for an UNTRADED bar "
+          "-- this would be a live trade under `evotrader_bundle.py tick`, "
+          "but nothing here was saved:")
+    print(json.dumps({k: v for k, v in entry.items() if k != "decision"}, indent=2))
+    d = entry.get("decision") or {}
+    for f in (d.get("fills") or []):
+        print(f"  {f['status']:8s} {f['side']:4s} {f['symbol']:10s} {f.get('reason', '')[:110]}")
+    if not d.get("fills"):
+        print("  no trades this bar")
+    print("[tick-dry-run] state file untouched -- re-run "
+          "`evotrader_bundle.py tick` (or this bar's normal scheduled run) "
+          "to actually book this decision")
+
+
 def main() -> None:
     cmd = sys.argv[1] if len(sys.argv) > 1 else "summary"
     if cmd not in SUPPORTED_COMMANDS:
@@ -244,6 +298,8 @@ def main() -> None:
         _cmd_regime(acct)
     elif cmd == "fold-dd-blindspot":
         _cmd_fold_dd_blindspot(acct)
+    elif cmd == "tick-dry-run":
+        _cmd_tick_dry_run(acct)
 
 
 if __name__ == "__main__":
