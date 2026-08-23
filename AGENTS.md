@@ -244,7 +244,7 @@ and check `AMENDMENTS.md` first.
 |---|---|
 | `evotrader_bundle.py` | **the live path** — the entire runtime flattened into one file (agents, judges, broker, evolution loop). Every scheduled run executes this, not the real files below. |
 | `core/`, `agents/`, `loop/`, `constitution/` | real, normally-importable copies of every module `evotrader_bundle.py` embeds in `_SRC`, added 2026-08-23 (weekend all-hands) as item 7's unflatten — see "Current state" and `runs/2026-08-23-0600-weekend-all-hands.md`. **Not the live path**: only the equivalence test and `run_from_files.py` import these; `evotrader_bundle.py` is untouched and still what every scheduled command actually runs. Kept byte-identical to the bundle's `_SRC` entries by `tests/test_unflattened_files_match_bundle.py` — edit a module with `tools/edit_bundle_module.py`, then hand-sync (or re-extract) the real file, or the test fails. |
-| `run_from_files.py` | read-only CLI entrypoint (`summary`/`signals` only) that runs against the real files above instead of the bundle, added 2026-08-23 (3-hourly check) as a safe first step of item 7's cutover — see "Current state" and `runs/2026-08-23-0946-run-from-files-entrypoint.md`. **Not wired into any scheduled run** — `evotrader_bundle.py` is still what every scheduled command executes. |
+| `run_from_files.py` | read-only CLI entrypoint (`summary`/`signals`/`holdout-pressure`/`regime`) that runs against the real files above instead of the bundle, added 2026-08-23 (3-hourly check) as a safe first step of item 7's cutover, extended the same day with two more read-only diagnostics — see "Current state" and `runs/2026-08-23-0946-run-from-files-entrypoint.md` / `runs/2026-08-23-1254-run-from-files-diagnostics.md`. **Not wired into any scheduled run** — `evotrader_bundle.py` is still what every scheduled command executes. |
 | `evotrader_dashboard.py` | dashboard builder (zero external deps, hand-rolled SVG) |
 | `evotrader.manifest` | constitution checksum (`8b74865634b1db07` as of 2026-08-21's `HOLDOUT_SIGMA` amendment — rotates on every constitution change, don't hardcode-trust this table over the file itself) — the anti-tampering seal |
 | `live_state.json` | **the account**: cash, positions, trade ledger, NAV history, current genome, evolution lineage, researcher memory |
@@ -265,6 +265,45 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Done 2026-08-23 (3-hourly check): `run_from_files.py` grows two more
+  read-only diagnostics — `holdout-pressure` and `regime` — verified
+  byte-identical to `evotrader_bundle.py`'s own output for the same
+  commands.** (see `runs/2026-08-23-1254-run-from-files-diagnostics.md`)
+  Both commands' bodies are transcribed verbatim from the bundle's own
+  `elif cmd == "holdout-pressure"`/`elif cmd == "regime"` blocks — not
+  reimplemented. `holdout-pressure` reads only `acct.lineage` (no market
+  data, no backtest, the cheapest diagnostic in the whole command table);
+  `regime` does one `core.market.load_universe` call plus equal-weight
+  buy-and-hold per fold/holdout window, `--interval` passthrough preserved.
+  New parametrized case added to `tests/test_run_from_files_matches_bundle.py`
+  for `holdout-pressure` (no network dependency, fast — suite 222 → 223
+  passed). `regime` deliberately has **no** automated test: it needs a
+  network market-data fetch on a cold `state/cache` (gitignored, not
+  committed), which would make the whole suite's runtime and
+  offline-ability depend on Binance being reachable — verified manually
+  instead (bundle vs. `run_from_files.py` at both the live champion's own
+  `1d` interval and `--interval 4h`: byte-identical stdout in both cases,
+  `live_state.json` md5 unchanged throughout). Verified safe: `py_compile` clean, full suite 223 passed,
+  `tools/edit_bundle_module.py verify` round-trip clean, `sync --check`
+  reports no drift, `live_state.json` md5 unchanged
+  (`af16ffdc22a57c5d63a83003216a8f99`), `evotrader.manifest` unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), `evotrader_bundle.py` unchanged
+  (`3835305b96044055bc17d43358e2bfba`), `constitution verified
+  8b74865634b1db07` unchanged on every invocation, today's bar already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run this session, no double-trade), `review-hard-calls` checked (0
+  pending), no genome promotion (no README Status change needed). No push
+  notification sent — infrastructure/maintainability work with zero effect
+  on live trading behavior, same reasoning as every prior item-7 session
+  today. Next: `run_from_files.py`'s read-only surface can keep growing —
+  the next cheapest candidates by the bundle's own documented cost class
+  are `fold-scheme`/`rolling-folds`/`fitness-decomp`/`fold-dd-blindspot`/
+  `succession-audit` (one backtest per fold, heavier than `regime` but
+  still read-only) — but the actual cutover (`tick`/`evolve` against the
+  real files, and the decision to ever point a scheduled run at this file)
+  remains the separate, bigger, riskier session it has been flagged as all
+  day.
 
 - **Done 2026-08-23 (3-hourly check): a safe, read-only stepping stone toward
   item 7's remaining piece — a small CLI entrypoint now runs `summary` and
@@ -3453,6 +3492,15 @@ every `evolve` call.
    scheduled run has been pointed at this file instead of the bundle — that
    decision, and the work to get there safely, is still a separate, bigger
    session.
+
+   **Grown 2026-08-23 (3-hourly check): `run_from_files.py`'s read-only
+   surface widened to `holdout-pressure` and `regime` — see "Current state"
+   above and `runs/2026-08-23-1254-run-from-files-diagnostics.md`.** Both
+   transcribed verbatim from the bundle, verified byte-identical output.
+   Still open, and still the actual point of this item: `tick`/`evolve`
+   against the real files, and the decision to ever point a scheduled run
+   here instead of at the bundle — a separate, bigger, riskier session, not
+   moved forward by this or any prior read-only-surface addition.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but

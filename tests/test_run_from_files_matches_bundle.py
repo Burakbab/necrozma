@@ -1,6 +1,6 @@
-"""Verifies run_from_files.py's two supported commands (summary, signals)
-produce byte-identical output to evotrader_bundle.py for the same command
-against the same live_state.json.
+"""Verifies run_from_files.py's supported commands produce byte-identical
+output to evotrader_bundle.py for the same command against the same
+live_state.json.
 
 This is the safe stepping stone AGENTS.md's item 7 asked for: proof that a
 read-only command running against the real core/agents/loop/constitution
@@ -12,6 +12,14 @@ this test process -- run_from_files.py imports the real `core`/`constitution`
 packages directly, while every other test in this suite goes through
 evotrader_bundle.py's meta-path finder (installed via tests/conftest.py); the
 two must not be mixed in one interpreter.
+
+`regime` is also wired up in run_from_files.py but deliberately has no
+automated test here: unlike `summary`/`signals`/`holdout-pressure`, it calls
+core.market.load_universe, which hits the network on a cold state/cache
+(gitignored, not committed) and would make this suite's runtime and
+offline-ability depend on market data availability. Verified manually
+instead (both against 1d and `--interval 4h`, output byte-identical,
+live_state.json untouched) -- see runs/2026-08-23-*-run-from-files-diagnostics.md.
 """
 import os
 import subprocess
@@ -23,7 +31,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-@pytest.mark.parametrize("cmd", ["summary", "signals"])
+@pytest.mark.parametrize("cmd", ["summary", "signals", "holdout-pressure"])
 def test_run_from_files_matches_bundle_output(cmd):
     before = (REPO_ROOT / "live_state.json").read_bytes()
 
