@@ -265,6 +265,47 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-23 (3-hourly check): the bundler half of item 7's remaining
+  gap — `evotrader_bundle.py` can now be regenerated from the real
+  `core`/`agents`/`loop`/`constitution` files, not just checked for drift
+  against them.** (see `runs/2026-08-23-0648-bundle-sync-tool.md`) New
+  `sync [--check]` command on `tools/edit_bundle_module.py`: `sync_from_files
+  (bundle_text, root)` walks every `_SRC` module and replaces its entry with
+  the current content of its corresponding real file (the reverse of
+  `extract`) — the real files are now the source of truth for this
+  direction. `pkgs`/`module_to_path`, previously private to
+  `tests/test_unflattened_files_match_bundle.py`, moved onto
+  `tools/edit_bundle_module.py` itself (parameterized by `root` instead of a
+  module global) so both the test and the new `sync` share one
+  implementation instead of two copies that could themselves drift; the test
+  file now imports them, no behavior change. New
+  `tests/test_bundle_sync_from_files.py` (10 tests, suite 209 → 219):
+  synthetic-tree unit tests via `tmp_path` (package-vs-module path mapping,
+  drift pulled in, already-in-sync is a true no-op, missing file raises
+  `FileNotFoundError` naming the module) plus one real-repo test confirming
+  `sync_from_files` against the actual bundle/tree is a no-op today. Verified
+  against real data, not just the synthetic cases: `sync --check` on the
+  real repo reports no drift and exits 0; `sync` in write mode leaves
+  `evotrader_bundle.py`'s md5 unchanged
+  (`3835305b96044055bc17d43358e2bfba`, matching the weekend session's
+  recorded value); a deliberately-induced one-line edit to `core/types.py`
+  made `sync --check` correctly report `DRIFT`/exit 1, then was reverted
+  (`git status` clean afterward) — proves the check path isn't vacuously
+  always-pass. `tools/edit_bundle_module.py verify` (pre-existing
+  round-trip) still clean, `py_compile` clean, full suite 219 passed,
+  `live_state.json` md5 unchanged (`af16ffdc22a57c5d63a83003216a8f99`),
+  `evotrader.manifest` unchanged (`0bf3a7d9411ee692d0a9f152a7533803`),
+  `constitution verified 8b74865634b1db07` unchanged, today's bar already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run), `review-hard-calls` checked (0 pending), no genome promotion (no
+  README Status change needed). No push notification sent —
+  infrastructure/maintainability work with zero effect on live trading
+  behavior. **Still open, item 7's last remaining piece**: no CLI entrypoint
+  runs the live commands (`tick`/`summary`/`evolve`/...) against the real
+  files instead of the bundle — that's the actual cutover, a bigger and
+  riskier separate session; `evotrader_bundle.py` remains the live path,
+  untouched by this session.
+
 - **Done 2026-08-23 (weekend all-hands): item 7's unflatten, the piece that's real work — a byte-identical, normally-importable copy of every `evotrader_bundle.py` module now exists on disk as real files, verified equivalent by re-running the entire test suite against them, without ever touching the live path.** (see
   `runs/2026-08-23-0600-weekend-all-hands.md`) Per item 7's own instructions
   ("do it as its own isolated commit, keep the bundle working as a fallback
@@ -3332,6 +3373,19 @@ every `evolve` call.
    runs the live commands against the real files — both needed before this
    item can be called fully closed, both bigger and separate from this
    session's scope.
+
+   **Done 2026-08-23 (3-hourly check): the bundler now exists — see "Current
+   state" above and `runs/2026-08-23-0648-bundle-sync-tool.md`.**
+   `tools/edit_bundle_module.py sync [--check]` regenerates every `_SRC`
+   entry from the real files (or reports drift without writing), verified
+   both synthetically (10 new tests) and against the real repo (a true
+   no-op today, and correctly flags a deliberately-induced one-line edit as
+   drift). Hand-editing a real file directly and running `sync` now keeps
+   the bundle honest without needing `tools/edit_bundle_module.py reinsert`
+   as a separate manual step. **Item 7's one remaining piece**: no CLI
+   entrypoint runs the live commands (`tick`/`summary`/`evolve`/...) against
+   the real files instead of the bundle — that's the actual cutover, still a
+   bigger, riskier, separate session, not attempted here.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but
