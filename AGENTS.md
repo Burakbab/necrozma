@@ -264,6 +264,52 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Tested 2026-08-23 (3-hourly check): the 2026-08-16 "bad buyer, excellent
+  seller" `consult_conservative` finding, unactioned for a week, turns out to
+  be genome-dependent rather than a fixed law — and for the current live
+  champion specifically, already a non-issue.** (see
+  `runs/2026-08-23-0352-consult-role-test-diagnostic.md`) New read-only CLI
+  `consult-role-test [--also-version N]` monkeypatches
+  `ConservativeConsult.consider` to strip its buy intents for one extra
+  full-history `run_backtest` call (its sell rule left untouched), restores
+  the original method immediately after, never persists anything — composes
+  only already-tested `run_backtest`/`benchmark_buy_hold`/`fitness`/
+  `_reconstruct_champion_genome`, same diagnostic-only precedent as every
+  other CLI command in this file. Tested against all three real champions:
+  **v1** (the seed) gets *worse* with conservative's entries suppressed
+  (return -11.8% → -34.4%, maxDD -54.3% → -65.2%) — the opposite direction
+  the 08-16 finding's framing would predict, a reminder that a per-trade P&L
+  attribution and a counterfactual full replay are different questions.
+  **v2** improves sharply (fitness 0.183 → 0.584, maxDD -38.1% → -29.9%,
+  return +37.9% → +76.8%, trade count actually rising slightly rather than
+  falling) — real evidence the 08-16 finding pointed at something genuine,
+  at least for that genome. **v3, the live champion**, is essentially flat:
+  4 fewer trades out of 1069, fitness/maxDD/return unchanged to the
+  precision reported. Reading: v3's own entry-gate genes
+  (`rsi_buy_below`/`z_buy_below`/`max_dd_from_high`) have already been tuned
+  tight enough by 13+ generations of unrelated search that
+  `consult_conservative` rarely fires as an entry signal at all any more —
+  the bad-buyer problem looks like it was search-corrected as a side effect,
+  not by any gene that models "this consult should be exit-only." Verified
+  safe: `py_compile` clean, `tools/edit_bundle_module.py verify` round-trip
+  clean, `git diff --stat` confirms a pure addition (84 insertions, 0
+  deletions, zero `_SRC[...]` lines touched), full suite still 192 passed
+  (unchanged — no new pure function, just a CLI command composing existing
+  ones), `live_state.json` md5 identical throughout
+  (`af16ffdc22a57c5d63a83003216a8f99`), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), `constitution verified
+  8b74865634b1db07` unchanged on every invocation, today's 2026-08-23 bar
+  confirmed already processed by the 00:20 UTC daily run before this session
+  started (`tick` not run this session, no double-trade), `review-hard-calls`
+  checked (0 pending), no genome promotion (no README Status change needed).
+  No push notification sent — exploratory evidence on an unactioned finding,
+  not a safety issue or an incorrect promotion. Next: not worth building a
+  real `entry_enabled`/exit-only gene for v3 right now given the near-zero
+  delta — but if a future accepted promotion ever re-widens
+  `consult_conservative`'s entry gate, re-running `consult-role-test` at that
+  point is a one-line check for whether the problem has come back. See "Next
+  steps" item 8.
+
 - **Measured 2026-08-23 (3-hourly check): a fifth round of the
   vacuous-regression-check tracking — one more vacuous-accept flip, pulling
   the combined rate down slightly to 6/279 (≈2.15%), still no incorrect
@@ -3202,6 +3248,29 @@ every `evolve` call.
    doesn't do the unflatten (still a bigger, separate, isolated-commit task
    as described above), but it's the safer way to touch bundle internals for
    any smaller edit in the meantime, including a future attempt at this item.
+
+8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
+   "Measured" section below found it -$8,159 as an entry signal (38% win) but
+   +$25,706 as an exit signal (89% win), and nothing acted on it until now.
+
+   **Tested 2026-08-23 (3-hourly check): genome-dependent, not a fixed law —
+   see "Current state" above and
+   `runs/2026-08-23-0352-consult-role-test-diagnostic.md`.** New read-only
+   `consult-role-test [--also-version N]` (monkeypatches
+   `ConservativeConsult.consider` to strip its buy intents for one extra
+   `run_backtest` call, restores immediately after, nothing persisted) tested
+   all three real champions: v1 gets worse with entries suppressed (-11.8% →
+   -34.4% return), v2 improves sharply (fitness 0.183 → 0.584, maxDD -38.1% →
+   -29.9%), v3 (live) is essentially flat (4 fewer trades out of 1069,
+   everything else unchanged to the precision reported) — reading:
+   13+ generations of unrelated tuning already pushed v3's own entry gate
+   (`rsi_buy_below`/`z_buy_below`/`max_dd_from_high`) tight enough that it
+   rarely fires as an entry any more, so the bad-buyer problem looks
+   search-corrected for the current champion specifically, not a general
+   property worth building a real gene for right now. Closed for v3 unless a
+   future promotion re-widens that gate — if one does, re-running
+   `consult-role-test` at that point is a one-line check for whether the
+   problem has come back.
 
 ---
 

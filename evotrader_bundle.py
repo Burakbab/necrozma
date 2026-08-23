@@ -19,6 +19,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py margin-curve     # how much does required_margin() actually grow with n_candidates/n_draws?
     python evotrader_bundle.py fold-dd-blindspot  # does the fold-merged maxDD gate see drawdowns that span a fold boundary?
     python evotrader_bundle.py succession-audit  # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
+    python evotrader_bundle.py consult-role-test  # what if consult_conservative's buy intents were suppressed but its sell rule kept?
 """
 import sys, types, json, os, math
 
@@ -1985,6 +1986,89 @@ def main():
         print("Descriptive only -- does not decide whether any version should "
               "replace the live champion. That stays the owner's call "
               "(AGENTS.md item 2).")
+    elif cmd == "consult-role-test":
+        # Diagnostic: acts on the 2026-08-16 "Measured" section's role-asymmetry
+        # finding (`anatomy`'s by_entry_agent/by_exit_reason breakdown against
+        # the then-champion), which has sat unactioned since -- consult_conservative
+        # was -$8,159 as an entry signal (38% win) but +$25,706 as an exit signal
+        # (89% win). This tests the direct implication against the CURRENT
+        # champion's full history: what does the backtest look like if
+        # consult_conservative's buy intents are suppressed but its sell rule
+        # ("mean reversion complete: rsi > exit_rsi") is left exactly as
+        # evolution tuned it? Read-only: monkeypatches
+        # `ConservativeConsult.consider` for the duration of one extra
+        # `run_backtest` call and restores it in a `finally` before this command
+        # returns -- nothing is persisted, no genome gene is added, no mutation
+        # range changes, no constitution or `live_state.json` touch. Composes
+        # only already-tested `run_backtest`/`benchmark_buy_hold`/`fitness`
+        # (`loop.engine`, `constitution`) plus `_reconstruct_champion_genome`,
+        # same "diagnostic only" precedent as every other CLI command in this
+        # file. Does not decide whether to build this as a real gene -- see
+        # AGENTS.md's "Next steps" (item 8) for what this first result found
+        # and what it would and would not justify.
+        from core import market
+        from loop.engine import run_backtest
+        from agents.consults import ConservativeConsult
+        from core.types import Proposal
+
+        g0 = acct.genome
+        also_version = None
+        if "--also-version" in sys.argv:
+            also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+        g = g0 if also_version is None else _reconstruct_champion_genome(also_version, acct.lineage)
+
+        data = market.load_universe(g.universe, g.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+
+        print(f"[consult-role-test] replaying v{g.version} full history "
+              f"({len(data)} symbols) with/without consult_conservative "
+              f"entries ...", flush=True)
+
+        baseline = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+
+        _orig_consider = ConservativeConsult.consider
+
+        def _exit_only_consider(self, b):
+            prop = _orig_consider(self, b)
+            intents = tuple(i for i in prop.intents if i.side != "buy")
+            return Proposal(agent=prop.agent, ts=prop.ts, stance=prop.stance,
+                            intents=intents)
+
+        ConservativeConsult.consider = _exit_only_consider
+        try:
+            exit_only = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+        finally:
+            ConservativeConsult.consider = _orig_consider
+
+        def _row(label, res):
+            if res.get("error"):
+                return [label, "error", "", "", "", ""]
+            st = res["stats"]
+            edge = res.get("edge") or {}
+            return [label, f"{res['fitness']:.3f}",
+                    f"{st.get('total_return', 0):+.1%}",
+                    f"{st.get('max_dd', 0):.1%}",
+                    str(st.get('trades', 0)),
+                    f"{edge['excess_return']:+.1%}" if edge else "n/a"]
+
+        cols = ["variant", "fitness", "return", "maxDD", "trades", "excess vs b&h"]
+        widths = [26, 10, 10, 9, 8, 14]
+        print()
+        print("".join(c.rjust(w) for c, w in zip(cols, widths)))
+        print("-" * sum(widths))
+        for label, res in (("baseline (as tuned)", baseline),
+                           ("conservative exit-only", exit_only)):
+            print("".join(c.rjust(w) for c, w in zip(_row(label, res), widths)))
+        print()
+        print("exit-only: consult_conservative's buy intents are suppressed for "
+              "this replay only; its sell rule is untouched. Never persisted -- "
+              "ConservativeConsult.consider is restored immediately after this "
+              "command runs. This measures ONE genome's full-history replay, "
+              "not a fold-aggregate/holdout-gated result -- a positive delta "
+              "here is a reason to build the real gene and let search decide, "
+              "not itself a promotion case.")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)
