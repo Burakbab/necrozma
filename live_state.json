@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 8,
-  "updated": "2026-08-22T00:21:18+00:00",
+  "ticks": 9,
+  "updated": "2026-08-23T00:22:00+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,18 +154,18 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 4056.1768358080412,
+    "cash": 4014.999643415978,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "positions": {
       "LINKUSDT": {
         "symbol": "LINKUSDT",
-        "qty": 91.51692243860359,
-        "avg_cost": 9.342457569528447,
+        "qty": 95.03919241812349,
+        "avg_cost": 9.429046661440948,
         "opened_ts": "2026-08-14 00:00:00+00:00",
         "peak_price": 11.999,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -176,8 +176,8 @@
         "qty": 3.7420973254663554,
         "avg_cost": 602.8312707176756,
         "opened_ts": "2026-08-14 00:00:00+00:00",
-        "peak_price": 687.0,
-        "bars_held": 7,
+        "peak_price": 695.28,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -188,8 +188,8 @@
         "qty": 1616.1816670840292,
         "avg_cost": 0.3313656,
         "opened_ts": "2026-08-15 00:00:00+00:00",
-        "peak_price": 0.3434,
-        "bars_held": 6,
+        "peak_price": 0.3442,
+        "bars_held": 7,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -201,7 +201,7 @@
         "avg_cost": 1883.611335,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 2516.3,
-        "bars_held": 6,
+        "bars_held": 7,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -212,7 +212,7 @@
         "avg_cost": 2.239119,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 2.525,
-        "bars_held": 6,
+        "bars_held": 7,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -223,7 +223,7 @@
         "avg_cost": 0.33706844999999996,
         "opened_ts": "2026-08-21 00:00:00+00:00",
         "peak_price": 0.3369,
-        "bars_held": 0,
+        "bars_held": 1,
         "entry_agents": [
           "consult_risky"
         ]
@@ -379,6 +379,16 @@
         "ref_price": 11.999,
         "fee": 0.04459664050859055,
         "reason": "consult_risky: at/near range high (breakout +0.0%), momentum rank 0.92, slope +8.88% | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-08-22 00:00:00+00:00",
+        "symbol": "LINKUSDT",
+        "side": "buy",
+        "qty": 3.522269979519899,
+        "price": 11.6788365,
+        "ref_price": 11.673,
+        "fee": 0.041177192392063314,
+        "reason": "consult_moderate: confirmed trend: ma-spread +16.7%, slope +9.31%, rsi 71 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -477,6 +487,10 @@
       [
         "2026-08-21 00:00:00+00:00",
         11579.15168657734
+      ],
+      [
+        "2026-08-22 00:00:00+00:00",
+        11461.603321198909
       ]
     ],
     "peak_nav": 11579.15168657734,
@@ -2256,6 +2270,268 @@
           }
         ],
         "notes": "regime bull (scale 1.00), breadth 59%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-08-23T00:22:00+00:00",
+      "bar": "2026-08-22 00:00:00+00:00",
+      "tick": 9,
+      "nav_before": 11461.6,
+      "nav_after": 11475.02,
+      "cash": 4015.0,
+      "cash_before": 4056.18,
+      "positions": {
+        "LINKUSDT": 1109.39,
+        "BNBUSDT": 2602.55,
+        "TRXUSDT": 557.26,
+        "ETHUSDT": 464.84,
+        "ICPUSDT": 317.32,
+        "CRVUSDT": 2408.65
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-08-22 00:00:00+00:00",
+        "nav": 11461.603321198909,
+        "regime": "bull",
+        "breadth": 0.7407407407407407,
+        "cash_pct": 0.35389262061669013,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "BTCUSDT",
+              "side": "buy",
+              "conviction": 0.489,
+              "why": "at/near range high (breakout -1.6%), momentum rank 0.62, slope +5.82%"
+            },
+            {
+              "symbol": "BNBUSDT",
+              "side": "buy",
+              "conviction": 0.47,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.54, slope +3.46%"
+            },
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.509,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.69, slope +6.16%"
+            },
+            {
+              "symbol": "XRPUSDT",
+              "side": "buy",
+              "conviction": 0.549,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.85, slope +11.26%"
+            },
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.48,
+              "why": "at/near range high (breakout -1.4%), momentum rank 0.58, slope +5.16%"
+            },
+            {
+              "symbol": "DOGEUSDT",
+              "side": "buy",
+              "conviction": 0.529,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.77, slope +7.45%"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.46,
+              "why": "at/near range high (breakout -1.4%), momentum rank 0.50, slope +4.00%"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "buy",
+              "conviction": 0.579,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.96, slope +12.71%"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.559,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.88, slope +9.35%"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.499,
+              "why": "at/near range high (breakout -1.6%), momentum rank 0.65, slope +3.17%"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "buy",
+              "conviction": 0.42,
+              "why": "at/near range high (breakout -0.2%), momentum rank 0.35, slope +1.20%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "BTCUSDT",
+              "side": "buy",
+              "conviction": 0.835,
+              "why": "confirmed trend: ma-spread +4.7%, slope +5.82%, rsi 68 in band"
+            },
+            {
+              "symbol": "ETHUSDT",
+              "side": "buy",
+              "conviction": 0.869,
+              "why": "confirmed trend: ma-spread +9.4%, slope +8.47%, rsi 69 in band"
+            },
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.858,
+              "why": "confirmed trend: ma-spread +5.6%, slope +6.16%, rsi 68 in band"
+            },
+            {
+              "symbol": "XRPUSDT",
+              "side": "buy",
+              "conviction": 0.904,
+              "why": "confirmed trend: ma-spread +3.3%, slope +11.26%, rsi 69 in band"
+            },
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +6.7%, slope +5.16%, rsi 66 in band"
+            },
+            {
+              "symbol": "DOGEUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +4.4%, slope +7.45%, rsi 70 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +16.7%, slope +9.31%, rsi 71 in band"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.718,
+              "why": "confirmed trend: ma-spread +2.1%, slope +4.00%, rsi 62 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.915,
+              "why": "confirmed trend: ma-spread +3.2%, slope +9.35%, rsi 66 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.84,
+              "why": "confirmed trend: ma-spread +3.0%, slope +3.17%, rsi 55 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "amount": 41.18,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +16.7%, slope +9.31%, rsi 71 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "ETHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "XRPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "SOLUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "BTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ADAUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "LTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "BNBUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 3.522269979519899,
+            "price": 11.6788365,
+            "reason": "consult_moderate: confirmed trend: ma-spread +16.7%, slope +9.31%, rsi 71 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime bull (scale 1.00), breadth 74%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
