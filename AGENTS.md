@@ -266,6 +266,43 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-23 (3-hourly check, 22:16 UTC): a genuinely fresh, unscaled
+  seed evolved at the live 1d cadence for the first time — 16 generations,
+  zero promotions, and a mechanistic reason why.** (see "Current state"
+  history and `runs/2026-08-23-2216-fresh-seed-1d-shadow-evolution.md`) Every
+  prior seed-convergence test in item 2 below was at 4h bars; this is the
+  first at 1d, the interval that actually trades live. Deliberately picked
+  up a different open item than item 7's read-only-diagnostic thread (which
+  five sessions today had already grown, per that item's own flagged
+  judgment call) in favor of the "Measured 2026-08-16" section's standing
+  preference for evidence over capability. Unlike every 4h fresh/scaled-seed
+  run (first promotion within 1-2 generations, every time), this 1d run
+  found **no promotion in 16 generations** despite 235 cumulative proposals
+  and fold-aggregate fitness climbing as high as 0.885 vs. the seed's
+  `-0.022` — because the seed's own sealed-holdout fitness (`-2.566`) is
+  catastrophically worse than its fold-aggregate number, and
+  `holdout_accepts()`'s multiple-testing margin (by design, not a bug — see
+  `constitution.HOLDOUT_SIGMA`) grew from 2.355 to 4.761 across the 17
+  candidates that reached it, so even the best holdout score any candidate
+  ever drew (`+0.290`) fell short of what was needed. This sharpens the
+  2026-08-18 "lucky champion is hard to unseat" finding into its mirror
+  case: an *unlucky* seed traps itself the same way, and running more
+  generations only deepens the trap (every fold-clearing proposal burns
+  another draw and raises the bar) rather than resolving it. Verified safe:
+  fully isolated in a scratch dir with no state file at all (no copying of
+  the real `live_state.json` needed — a missing `EVO_STATE` path plus no
+  `state/genomes/` in this fresh container is what produced the plain
+  `SEED_GENOME` as champion v1), real `live_state.json` md5 unchanged
+  (`af16ffdc22a57c5d63a83003216a8f99`) throughout, `git status` clean, no
+  `state/` created under the real repo path, `review-hard-calls` checked (0
+  pending), today's bar already processed by the 00:20 UTC run before this
+  session started (no tick run this session). No push notification sent —
+  a shadow research finding, zero effect on live trading behavior. Next:
+  whether the seed's fold/holdout gap is a property of this specific
+  4-year data window or a durable property of `SEED_GENOME` itself is open
+  and not chased further this session (see the run note's closing
+  paragraph).
+
 - **Done 2026-08-23 (3-hourly check, 18:45 UTC): `run_from_files.py` gets its
   first slice of item 7's actual `tick` cutover — new `tick-dry-run` command
   runs the real `LiveAccount.tick()` decision pipeline (market data, Council,
@@ -3185,6 +3222,25 @@ every `evolve` call.
    therefore not the easy fix it looks like from the headline full-history
    number. If/when the owner opens the demotion/rollback design pass, this
    is the fact base to start from.
+
+   **Resolved 2026-08-23 (3-hourly check, 22:16 UTC): the "convergence
+   across independent seeds" open question, never tested at the live 1d
+   cadence (only at 4h, above) — a fresh unscaled seed does NOT reliably
+   converge to anything within a realistic budget.** See "Current state"
+   above and `runs/2026-08-23-2216-fresh-seed-1d-shadow-evolution.md`. 16
+   generations, 235 proposals, zero promotions — unlike every 4h run's
+   quick first fix. Root cause: the plain `SEED_GENOME`'s own sealed-holdout
+   fitness (`-2.566`) is far worse than its fold-aggregate fitness
+   (`-0.022`), and `holdout_accepts()`'s multiple-testing margin (by design)
+   grew from 2.355 to 4.761 across the 17 candidates that reached the
+   holdout gate, so even the best holdout score any candidate drew
+   (`+0.290`) never came close. Mirrors, and sharpens, the 2026-08-18
+   "lucky champion is hard to unseat" finding: an unlucky seed traps itself
+   the same way, and more generations only deepen the trap (each
+   fold-clearing proposal burns another draw and raises the bar) rather than
+   escaping it. Not chased further: whether this fold/holdout gap is
+   specific to the current 4-year data window or a durable property of
+   `SEED_GENOME` itself.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
