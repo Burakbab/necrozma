@@ -243,7 +243,8 @@ and check `AMENDMENTS.md` first.
 | path | what it is |
 |---|---|
 | `evotrader_bundle.py` | **the live path** — the entire runtime flattened into one file (agents, judges, broker, evolution loop). Every scheduled run executes this, not the real files below. |
-| `core/`, `agents/`, `loop/`, `constitution/` | real, normally-importable copies of every module `evotrader_bundle.py` embeds in `_SRC`, added 2026-08-23 (weekend all-hands) as item 7's unflatten — see "Current state" and `runs/2026-08-23-0600-weekend-all-hands.md`. **Not the live path**: nothing imports these except the new equivalence test; `evotrader_bundle.py` is untouched and still what every command actually runs. Kept byte-identical to the bundle's `_SRC` entries by `tests/test_unflattened_files_match_bundle.py` — edit a module with `tools/edit_bundle_module.py`, then hand-sync (or re-extract) the real file, or the test fails. |
+| `core/`, `agents/`, `loop/`, `constitution/` | real, normally-importable copies of every module `evotrader_bundle.py` embeds in `_SRC`, added 2026-08-23 (weekend all-hands) as item 7's unflatten — see "Current state" and `runs/2026-08-23-0600-weekend-all-hands.md`. **Not the live path**: only the equivalence test and `run_from_files.py` import these; `evotrader_bundle.py` is untouched and still what every scheduled command actually runs. Kept byte-identical to the bundle's `_SRC` entries by `tests/test_unflattened_files_match_bundle.py` — edit a module with `tools/edit_bundle_module.py`, then hand-sync (or re-extract) the real file, or the test fails. |
+| `run_from_files.py` | read-only CLI entrypoint (`summary`/`signals` only) that runs against the real files above instead of the bundle, added 2026-08-23 (3-hourly check) as a safe first step of item 7's cutover — see "Current state" and `runs/2026-08-23-0946-run-from-files-entrypoint.md`. **Not wired into any scheduled run** — `evotrader_bundle.py` is still what every scheduled command executes. |
 | `evotrader_dashboard.py` | dashboard builder (zero external deps, hand-rolled SVG) |
 | `evotrader.manifest` | constitution checksum (`8b74865634b1db07` as of 2026-08-21's `HOLDOUT_SIGMA` amendment — rotates on every constitution change, don't hardcode-trust this table over the file itself) — the anti-tampering seal |
 | `live_state.json` | **the account**: cash, positions, trade ledger, NAV history, current genome, evolution lineage, researcher memory |
@@ -264,6 +265,60 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Done 2026-08-23 (3-hourly check): a safe, read-only stepping stone toward
+  item 7's remaining piece — a small CLI entrypoint now runs `summary` and
+  `signals` against the real `core`/`agents`/`loop`/`constitution` files on
+  disk instead of `evotrader_bundle.py`'s embedded copy, verified
+  byte-for-byte identical to the bundle's own output for the same commands
+  against the same `live_state.json`.** (see
+  `runs/2026-08-23-0946-run-from-files-entrypoint.md`) New `run_from_files.py`
+  at the repo root: imports `constitution`/`core.live.LiveAccount` directly
+  (normal Python import, no meta-path finder involved — that only gets
+  installed by importing `evotrader_bundle`, which this file deliberately
+  never does), calls `verify()` the same way `evotrader_bundle.main()` does
+  but *without* populating `constitution.EMBEDDED_SOURCES`, so
+  `constitution.checksum()` takes its dormant file-based branch and hashes
+  the real `constitution/__init__.py` + `core/portfolio.py` on disk — the
+  same branch the weekend all-hands session first exercised, confirmed again
+  here to reproduce `evotrader.manifest`'s `8b74865634b1db07` exactly.
+  Deliberately supports only `summary` and `signals` — the two commands that
+  never call `acct.save()` — and exits 1 with an explanatory message on
+  anything else (`tick`/`evolve`/...); wiring up state-mutating commands and
+  deciding whether any scheduled run should ever point at this file instead
+  of the bundle remains the separate, bigger, riskier session item 7's own
+  text has flagged three sessions running now, not attempted here. New
+  `tests/test_run_from_files_matches_bundle.py` (3 tests, suite 219 → 222):
+  runs both entrypoints as subprocesses (deliberately never imported in the
+  same interpreter as the bundle-importing test suite, to avoid the
+  meta-path finder and the real on-disk packages fighting over the same
+  module names) and asserts `summary`/`signals` stdout is byte-identical
+  between `run_from_files.py` and `evotrader_bundle.py`, plus that
+  `live_state.json` is provably unmodified by either read-only command, plus
+  a rejection test for an unsupported command. Verified against real data,
+  not just the new tests: `python3 run_from_files.py summary`/`signals` run
+  directly against the live `live_state.json`, output eyeballed line-for-line
+  identical to `evotrader_bundle.py`'s own output for the same commands.
+  Verified safe: `py_compile` clean on both new files, full suite 222
+  passed, `tools/edit_bundle_module.py verify` round-trip clean, `sync
+  --check` still reports no drift, `git status` confirms a pure addition
+  (two new untracked files, zero existing lines touched), `live_state.json`
+  md5 unchanged (`af16ffdc22a57c5d63a83003216a8f99`), `evotrader.manifest`
+  md5 unchanged (`0bf3a7d9411ee692d0a9f152a7533803`), `evotrader_bundle.py`
+  md5 unchanged (`3835305b96044055bc17d43358e2bfba`), `constitution verified
+  8b74865634b1db07` unchanged on every invocation, today's 2026-08-23 bar
+  confirmed already processed by the 00:20 UTC daily run before this session
+  started (`tick` not run this session, no double-trade), `review-hard-calls`
+  checked (0 pending), no genome promotion (no README Status change needed).
+  No push notification sent — infrastructure/maintainability work with zero
+  effect on live trading behavior, same reasoning as the bundler-sync
+  session earlier today. Next: item 7's actual cutover still needs
+  `tick`/`evolve` wired up against the real files (the state-mutating half,
+  meaningfully riskier — a bug here could double-trade or corrupt
+  `live_state.json`, unlike a read-only command) and a real decision about
+  whether/when a scheduled run should ever point at `run_from_files.py`
+  instead of `evotrader_bundle.py` — both still explicitly out of scope for
+  a single 3-hourly slot.
 
 - **Done 2026-08-23 (3-hourly check): the bundler half of item 7's remaining
   gap — `evotrader_bundle.py` can now be regenerated from the real
@@ -3386,6 +3441,18 @@ every `evolve` call.
    entrypoint runs the live commands (`tick`/`summary`/`evolve`/...) against
    the real files instead of the bundle — that's the actual cutover, still a
    bigger, riskier, separate session, not attempted here.
+
+   **Done 2026-08-23 (3-hourly check): a safe first slice of that remaining
+   piece — see "Current state" above and
+   `runs/2026-08-23-0946-run-from-files-entrypoint.md`.** New
+   `run_from_files.py` runs `summary`/`signals` (the two commands that never
+   write to `live_state.json`) against the real files, verified
+   byte-for-byte identical to the bundle's output for the same commands.
+   Still open, and still the riskier remainder: `tick`/`evolve` (the
+   state-mutating commands) are not wired up against the real files, and no
+   scheduled run has been pointed at this file instead of the bundle — that
+   decision, and the work to get there safely, is still a separate, bigger
+   session.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but
