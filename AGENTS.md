@@ -266,6 +266,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-24 (3-hourly check, ~03:5x UTC): `tick-dry-run`'s non-skip
+  branch finally gets automated coverage, without waiting for the narrow
+  live-timing window every prior session flagged as the blocker.** (see
+  "Next steps" item 7 and `tests/test_run_from_files_matches_bundle.py`'s
+  two new `test_tick_dry_run_*` tests) Every session since 2026-08-23 18:45
+  UTC had only exercised `tick-dry-run` against an already-traded bar (the
+  skip path) — its non-skip branch (builds and prints a real would-be order
+  list) had zero coverage, automated or manual, because that requires a
+  session to start in the gap between a new bar closing and the 00:20 UTC
+  daily run claiming it, and no session had landed in that gap yet. Solved
+  it by not waiting: a fully synthetic 2-symbol scratch universe
+  (`ZZTESTAUSDT`/`ZZTESTBUSDT`, cache-only, never a real Binance pair) with
+  `state/cache/{sym}_1d.pkl` pre-populated to already span
+  `LiveAccount.tick()`'s full 1.5y `load_universe` window and dated through
+  today, so neither of `core.market.load()`'s two fetch branches ("need
+  older history", "need newer bars") ever fires — no network dependency for
+  the part of `tick()` that matters, unlike the reasoning that kept
+  `regime`/`fold-dd-blindspot`/`tick-dry-run`'s *skip* path manual-only. A
+  scratch genome (real seed genome, `universe`/`regime_anchor` swapped to
+  the fake symbols) plus a scratch `live_state.json` via the existing
+  `EVO_STATE` env override (never the real file) drives both branches
+  deterministically: empty `journal` forces the non-skip branch, a `journal`
+  pre-seeded with the exact bar `tick()` will compute forces the skip
+  branch. Both tests assert the scratch state file is byte-identical before
+  and after (proving `acct.save()` is genuinely never called, on the branch
+  that actually matters this time, not just the one every prior session
+  happened to exercise) and that the real `live_state.json` never moves.
+  Verified safe: full suite 225 passed (was 223; +2 new, 0 broken), synthetic
+  cache files (`state/cache/ZZTEST{A,B}USDT_1d.pkl`) removed by the fixture's
+  `finally` block after every run (confirmed empty `state/cache/` afterward),
+  `sync --check` clean, `py_compile` clean, real `live_state.json`
+  byte-identical throughout (git diff shows only the test file changed),
+  `evotrader_bundle.py summary` still runs clean, `review-hard-calls` 0
+  pending, today's bar already processed by the 00:20 UTC run before this
+  session started (no `tick`/`evolve` run for real). No push notification —
+  test-infrastructure work, zero effect on live trading. Item 7's actual
+  cutover (`tick`/`evolve` saving against the real files, and the decision
+  to ever point a scheduled run here) remains untouched and separate.
+
 - **Measured 2026-08-24 (3-hourly check, ~00:49 UTC): the seed's poor
   sealed-holdout score is an ordinary draw from its own noise, not an
   outlier — closes the open question the entry below left unchased.** (see
@@ -3737,6 +3776,22 @@ every `evolve` call.
    `evolve`) against the real files, plus the decision to ever point a
    scheduled run at `run_from_files.py` instead of the bundle — remains
    separate, bigger, and riskier, not attempted here.
+
+   **Done 2026-08-24 (3-hourly check): the non-skip branch now has automated
+   coverage — see "Current state" above and
+   `tests/test_run_from_files_matches_bundle.py`'s two new
+   `test_tick_dry_run_*` tests.** Sidesteps the live-timing blocker entirely
+   with a fully synthetic scratch universe instead of waiting for a session
+   to land in the narrow post-close-pre-00:20-UTC window. This closes the
+   "untested against a real decision" gap the entry above flagged, but it is
+   deliberately not the same thing as verifying against real live data with
+   a real would-be order list — that specific check (real files, real
+   universe, a genuinely untraded bar) is still open and still requires that
+   narrow window; whoever next lands in it should still run `tick-dry-run`
+   first, same as the 2026-08-23 18:45 UTC entry originally suggested. The
+   actual cutover — `tick`/`evolve` saving against the real files, and the
+   decision to ever point a scheduled run at `run_from_files.py` instead of
+   the bundle — remains separate, bigger, and riskier, not attempted here.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but
