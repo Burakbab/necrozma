@@ -266,6 +266,34 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-24 (3-hourly check, ~22:01 UTC): a second champion
+  (reconstructed v2) shows the same winner's-curse-shaped selection-noise
+  pattern as v3 did — directionally consistent, still not significant
+  alone, but now replicated on a genuinely different genome.** (see
+  `runs/2026-08-24-2201-selection-noise-second-champion.md`) The ~18:57 UTC
+  entry below explicitly named "a second champion" as the next genuinely
+  different check worth running. Same six-draw method (fold-aggregate
+  winner vs. one random non-winning candidate from the same batch, both run
+  through the sealed holdout, `exclude` accumulated across draws) against
+  reconstructed champion v2 instead of live v3. Result: winner gap mean
+  +1.851 (std 1.158) vs random gap mean +0.237 (std 1.484), winner's gap
+  larger in 5/6 draws, paired t≈1.667 (df=5) — close in shape and strength
+  to v3 batch 1's t≈1.55 (4/6 draws), and a bit stronger than v3's own
+  diluted 12-draw combined number (t≈1.02). Neither champion is individually
+  significant, but two unrelated genomes landing on the same direction and
+  similar magnitude is stronger evidence than either alone. **Reading
+  revised again**: not strong enough to justify touching `HOLDOUT_SIGMA`
+  (already a measured floor, not a guess), but strong enough that this
+  isn't "one favorable draw" any more either. A rigorous pooled test across
+  champions would need a genome-stratified or mixed-effects design (the
+  samples aren't draws from one distribution) — flagged as a real next step
+  if this remains worth resolving, not attempted here. Verified safe:
+  `git status --short` clean, `live_state.json` md5 unchanged throughout,
+  full suite 235 passed (no code changed), `review-hard-calls` still 0
+  pending, today's bar already processed by the 00:20 UTC run before this
+  session started (no double-trade). No push notification — read-only
+  research finding, zero effect on live trading.
+
 - **Measured 2026-08-24 (3-hourly check, ~18:57 UTC): batch 2 of the
   selection-noise diagnostic weakens the signal, not strengthens it —
   the "more draws" follow-up the ~16:15 UTC entry below explicitly left
@@ -3565,6 +3593,20 @@ every `evolve` call.
    draws or a genuinely different check (e.g. a second champion) to be worth
    another session. No `HOLDOUT_SIGMA`-style correction proposed; the evidence
    doesn't support one.
+
+   **Measured 2026-08-24 (3-hourly check, ~22:01 UTC): the "second champion"
+   check named above — and it replicates the direction.** See "Current
+   state" above and `runs/2026-08-24-2201-selection-noise-second-champion.md`.
+   Same six-draw method against reconstructed champion v2 instead of v3:
+   winner gap mean +1.851 vs random gap mean +0.237, winner larger in 5/6
+   draws, paired t≈1.667 (df=5) — similar shape and strength to v3 batch 1
+   (t≈1.55), not diluted the way v3's own batch 2 diluted it. Neither
+   champion is individually significant, but two unrelated genomes landing
+   on the same direction and similar magnitude is meaningfully stronger
+   evidence than either alone, without being strong enough to justify a
+   `HOLDOUT_SIGMA` change. Next, if this stays worth resolving: a
+   genome-stratified or mixed-effects pooled test across all 18 draws so
+   far (6 v3-batch1 + 6 v3-batch2 + 6 v2), not another same-shape batch.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
