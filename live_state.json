@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 9,
-  "updated": "2026-08-23T00:22:00+00:00",
+  "ticks": 10,
+  "updated": "2026-08-24T00:22:01+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 4014.999643415978,
+    "cash": 5323.5544231709755,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -165,7 +165,7 @@
         "avg_cost": 9.429046661440948,
         "opened_ts": "2026-08-14 00:00:00+00:00",
         "peak_price": 11.999,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -173,11 +173,11 @@
       },
       "BNBUSDT": {
         "symbol": "BNBUSDT",
-        "qty": 3.7420973254663554,
+        "qty": 1.8710486627331777,
         "avg_cost": 602.8312707176756,
         "opened_ts": "2026-08-14 00:00:00+00:00",
-        "peak_price": 695.28,
-        "bars_held": 8,
+        "peak_price": 702.37,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -189,7 +189,7 @@
         "avg_cost": 0.3313656,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 0.3442,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -201,7 +201,7 @@
         "avg_cost": 1883.611335,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 2516.3,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -212,7 +212,7 @@
         "avg_cost": 2.239119,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 2.525,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -223,7 +223,7 @@
         "avg_cost": 0.33706844999999996,
         "opened_ts": "2026-08-21 00:00:00+00:00",
         "peak_price": 0.3369,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_risky"
         ]
@@ -389,6 +389,16 @@
         "ref_price": 11.673,
         "fee": 0.041177192392063314,
         "reason": "consult_moderate: confirmed trend: ma-spread +16.7%, slope +9.31%, rsi 71 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-08-23 00:00:00+00:00",
+        "symbol": "BNBUSDT",
+        "side": "sell",
+        "qty": 1.8710486627331777,
+        "price": 700.06979,
+        "ref_price": 700.42,
+        "fee": 1.3098646443993966,
+        "reason": "consult_conservative: mean reversion complete: rsi 79"
       }
     ],
     "closed": [
@@ -453,6 +463,22 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "BNBUSDT",
+        "qty": 1.8710486627331777,
+        "entry_price": 602.8312707176756,
+        "exit_price": 700.06979,
+        "entry_ts": "2026-08-14 00:00:00+00:00",
+        "exit_ts": "2026-08-23 00:00:00+00:00",
+        "pnl": 180.62813682494806,
+        "pnl_pct": 0.16130304449296595,
+        "bars_held": 9,
+        "exit_reason": "consult_conservative: mean reversion complete: rsi 79",
+        "entry_agents": [
+          "consult_moderate",
+          "consult_risky"
+        ]
       }
     ],
     "nav_history": [
@@ -491,6 +517,10 @@
       [
         "2026-08-22 00:00:00+00:00",
         11461.603321198909
+      ],
+      [
+        "2026-08-23 00:00:00+00:00",
+        11453.367708648635
       ]
     ],
     "peak_nav": 11579.15168657734,
@@ -2532,6 +2562,284 @@
           }
         ],
         "notes": "regime bull (scale 1.00), breadth 74%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-08-24T00:22:01+00:00",
+      "bar": "2026-08-23 00:00:00+00:00",
+      "tick": 10,
+      "nav_before": 11453.37,
+      "nav_after": 11394.71,
+      "cash": 5323.55,
+      "cash_before": 4015.0,
+      "positions": {
+        "LINKUSDT": 1087.82,
+        "BNBUSDT": 1310.52,
+        "TRXUSDT": 555.16,
+        "ETHUSDT": 470.32,
+        "ICPUSDT": 325.87,
+        "CRVUSDT": 2321.48
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-08-23 00:00:00+00:00",
+        "nav": 11453.367708648635,
+        "regime": "bull",
+        "breadth": 0.7777777777777778,
+        "cash_pct": 0.3505518853100458,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "BTCUSDT",
+              "side": "buy",
+              "conviction": 0.499,
+              "why": "at/near range high (breakout -0.8%), momentum rank 0.65, slope +6.54%"
+            },
+            {
+              "symbol": "BNBUSDT",
+              "side": "buy",
+              "conviction": 0.489,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.62, slope +4.01%"
+            },
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.519,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.73, slope +7.02%"
+            },
+            {
+              "symbol": "XRPUSDT",
+              "side": "buy",
+              "conviction": 0.559,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.88, slope +13.43%"
+            },
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.46,
+              "why": "at/near range high (breakout -0.9%), momentum rank 0.50, slope +7.14%"
+            },
+            {
+              "symbol": "DOGEUSDT",
+              "side": "buy",
+              "conviction": 0.539,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.81, slope +9.07%"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.48,
+              "why": "at/near range high (breakout -1.7%), momentum rank 0.58, slope +5.03%"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout +0.0%), momentum rank 1.00, slope +18.24%"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.42,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.35, slope +6.23%"
+            },
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.44,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.42, slope +5.80%"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.569,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.92, slope +14.14%"
+            },
+            {
+              "symbol": "XLMUSDT",
+              "side": "buy",
+              "conviction": 0.45,
+              "why": "at/near range high (breakout -1.0%), momentum rank 0.46, slope +7.16%"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.47,
+              "why": "at/near range high (breakout -0.1%), momentum rank 0.54, slope +3.04%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "BTCUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +6.4%, slope +6.54%, rsi 72 in band"
+            },
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.8,
+              "why": "confirmed trend: ma-spread +8.8%, slope +7.14%, rsi 69 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.904,
+              "why": "confirmed trend: ma-spread +18.8%, slope +9.36%, rsi 71 in band"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +3.4%, slope +5.03%, rsi 62 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +7.7%, slope +14.14%, rsi 72 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.938,
+              "why": "confirmed trend: ma-spread +20.9%, slope +8.54%, rsi 72 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.812,
+              "why": "confirmed trend: ma-spread +3.7%, slope +3.04%, rsi 59 in band"
+            }
+          ],
+          "consult_conservative": [
+            {
+              "symbol": "BNBUSDT",
+              "side": "sell",
+              "conviction": 0.7,
+              "why": "mean reversion complete: rsi 79"
+            }
+          ]
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "BNBUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_conservative: mean reversion complete: rsi 79"
+            ]
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "amount": 2.88,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +20.9%, slope +8.54%, rsi 72 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "BNBUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "same-bar exit takes precedence"
+          },
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "XRPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "BTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "LTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "SOLUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ADAUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "XLMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "BNBUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 1.8710486627331777,
+            "price": 700.06979,
+            "reason": "consult_conservative: mean reversion complete: rsi 79"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "status": "rejected"
+          }
+        ],
+        "notes": "regime bull (scale 1.00), breadth 78%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
