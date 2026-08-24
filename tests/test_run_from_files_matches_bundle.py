@@ -72,9 +72,40 @@ live trading path (nothing outside `core/genome.py` itself reads
 `tick`/`evolve` run. The fixture snapshots and restores both anyway, purely
 so this test doesn't leave a fake-universe genome archive lying around in
 the container for a human (or the next session) to trip over.
+
+`test_tick_*` (real, saving `tick`, added 2026-08-24) reuses the same
+`synthetic_universe` fixture as `test_tick_dry_run_*` above, but instead of
+asserting the scratch state file never changes, it runs the bundle's own
+real `tick` and run_from_files.py's real `tick` against two byte-identical
+copies of the same starting scratch state and asserts their resulting
+state files are identical afterward, aside from wall-clock timestamps --
+the strongest parity check available, direct proof rather than inference
+from the dry-run twin. `tick` is deterministic here (no real randomness in
+`LiveAccount.tick()` itself; the one network call, `live_prices()`'s
+live-ticker fetch, is wrapped in a broad try/except that falls back to the
+synthetic close for fake symbols regardless of network reachability, same
+as the dry-run tests already established) -- but not byte-identical,
+because the two subprocesses run a moment apart in real time and several
+fields (`updated`, `genome.created`, `journal[].ts`, ...) are stamped from
+`core.live._now()` at save/construction time, not derived from the bar
+being traded. `_normalize_timestamps` below recursively blanks any
+ISO-8601-shaped string before comparing, so the check still fails on any
+real content difference.
+
+`test_evolve_*` (real, saving `evolve`, added 2026-08-24) cannot use the
+same subprocess-vs-bundle parity trick `tick` uses, because the bundle's
+own `evolve` command has no `--seed` flag -- there is no way to make two
+separate processes' RandomState draws line up. Instead it checks parity
+against `evolve`'s own dry-run twin: run `evolve-dry-run` and `evolve`
+with the same `--seed` against byte-identical starting scratch state, and
+assert they reach the same decision (same final champion version, same
+number of lineage generations appended, same researcher-memory contents)
+-- the only difference being that `evolve` actually persists it and
+`evolve-dry-run` doesn't, which is exactly the property being tested.
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -109,7 +140,7 @@ def test_run_from_files_matches_bundle_output(cmd):
 
 def test_run_from_files_rejects_unsupported_command():
     result = subprocess.run(
-        [sys.executable, "run_from_files.py", "tick"],
+        [sys.executable, "run_from_files.py", "anatomy"],
         cwd=REPO_ROOT, capture_output=True, text=True,
     )
     assert result.returncode == 1
@@ -351,3 +382,157 @@ def test_evolve_dry_run_resumes_researcher_memory(synthetic_universe_4y, tmp_pat
     assert "boldness 5)" in matched.stdout, matched.stdout
     assert scratch.read_bytes() == before_scratch, \
         "evolve-dry-run must never call acct.save(), even with resumed memory"
+
+
+# ---------------------------------------------------------------------------
+# tick (real, saving) -- byte-for-byte state parity against the bundle's own
+# real tick, on identical starting scratch state, both branches
+# ---------------------------------------------------------------------------
+
+def _run_bundle_tick(scratch_state_path, *extra_args):
+    env = dict(os.environ, EVO_STATE=str(scratch_state_path))
+    return subprocess.run(
+        [sys.executable, "evotrader_bundle.py", "tick", *extra_args],
+        cwd=REPO_ROOT, capture_output=True, text=True, env=env,
+    )
+
+
+def _run_tick(scratch_state_path, *extra_args):
+    env = dict(os.environ, EVO_STATE=str(scratch_state_path))
+    return subprocess.run(
+        [sys.executable, "run_from_files.py", "tick", *extra_args],
+        cwd=REPO_ROOT, capture_output=True, text=True, env=env,
+    )
+
+
+_ISO_TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}")
+
+
+def _normalize_timestamps(obj):
+    """Recursively blank any ISO-8601-shaped string (core.live._now()'s own
+    format, and pandas' str(Timestamp) format for bar labels) so two
+    real-time subprocess runs of an otherwise-deterministic command can be
+    compared for decision content without wall-clock noise failing the
+    comparison. Any other content difference still fails it."""
+    if isinstance(obj, dict):
+        return {k: _normalize_timestamps(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_normalize_timestamps(v) for v in obj]
+    if isinstance(obj, str) and _ISO_TS_RE.match(obj):
+        return "<TIMESTAMP>"
+    return obj
+
+
+def test_tick_matches_bundle_on_untraded_bar(synthetic_universe, tmp_path):
+    genome, last_closed_bar, _forming_bar = synthetic_universe
+    starting_state = json.dumps(
+        {"genome": genome, "journal": [], "lineage": [], "ticks": 0})
+    bundle_scratch = tmp_path / "bundle_live_state.json"
+    real_scratch = tmp_path / "real_live_state.json"
+    bundle_scratch.write_text(starting_state)
+    real_scratch.write_text(starting_state)
+    before_real_repo = (REPO_ROOT / "live_state.json").read_bytes()
+
+    bundle_result = _run_bundle_tick(bundle_scratch)
+    real_result = _run_tick(real_scratch)
+
+    assert bundle_result.returncode == real_result.returncode == 0, \
+        (bundle_result.stderr, real_result.stderr)
+    assert f'"bar": "{last_closed_bar}"' in bundle_result.stdout
+    assert f'"bar": "{last_closed_bar}"' in real_result.stdout
+    assert bundle_scratch.read_bytes() != starting_state.encode(), \
+        "sanity check: the non-skip branch must actually save something"
+
+    bundle_state = _normalize_timestamps(json.loads(bundle_scratch.read_bytes()))
+    real_state = _normalize_timestamps(json.loads(real_scratch.read_bytes()))
+    assert real_state == bundle_state, \
+        "run_from_files.py tick must persist the same state as " \
+        "evotrader_bundle.py tick (aside from wall-clock timestamps), " \
+        "given identical starting state"
+    assert (REPO_ROOT / "live_state.json").read_bytes() == before_real_repo, \
+        "this test must never touch the real live_state.json"
+
+
+def test_tick_skips_already_traded_bar_without_saving(synthetic_universe, tmp_path):
+    genome, last_closed_bar, _forming_bar = synthetic_universe
+    scratch = tmp_path / "scratch_live_state.json"
+    scratch.write_text(json.dumps({
+        "genome": genome,
+        "journal": [{"bar": last_closed_bar, "tick": 1}],
+        "lineage": [], "ticks": 1,
+    }))
+    before_real = (REPO_ROOT / "live_state.json").read_bytes()
+    before_scratch = scratch.read_bytes()
+
+    result = _run_tick(scratch)
+
+    assert result.returncode == 0, result.stderr
+    assert "nothing to do" in result.stdout
+    assert scratch.read_bytes() == before_scratch, \
+        "tick must not call acct.save() on the skip branch"
+    assert (REPO_ROOT / "live_state.json").read_bytes() == before_real
+
+
+# ---------------------------------------------------------------------------
+# evolve (real, saving) -- decision parity against its own evolve-dry-run
+# twin (the bundle's `evolve` has no --seed flag, so a byte-for-byte
+# subprocess comparison like tick's isn't possible here)
+# ---------------------------------------------------------------------------
+
+def _run_evolve(scratch_state_path, *extra_args):
+    env = dict(os.environ, EVO_STATE=str(scratch_state_path))
+    return subprocess.run(
+        [sys.executable, "run_from_files.py", "evolve", *extra_args],
+        cwd=REPO_ROOT, capture_output=True, text=True, env=env,
+    )
+
+
+def test_evolve_saves_and_matches_its_own_dry_run_decision(synthetic_universe_4y, tmp_path):
+    genome = synthetic_universe_4y
+    starting_state = json.dumps(
+        {"genome": genome, "journal": [], "lineage": [], "ticks": 0})
+    dry_scratch = tmp_path / "dry_live_state.json"
+    real_scratch = tmp_path / "real_live_state.json"
+    dry_scratch.write_text(starting_state)
+    real_scratch.write_text(starting_state)
+    before_real_repo = (REPO_ROOT / "live_state.json").read_bytes()
+
+    dry_result = _run_evolve_dry_run(dry_scratch, "1", "--seed", "7")
+    real_result = _run_evolve(real_scratch, "1", "--seed", "7")
+
+    assert dry_result.returncode == real_result.returncode == 0, \
+        (dry_result.stderr, real_result.stderr)
+    assert dry_scratch.read_bytes() == starting_state.encode(), \
+        "sanity check: evolve-dry-run must still never save"
+    assert real_scratch.read_bytes() != starting_state.encode(), \
+        "evolve must actually persist state"
+
+    dry_held = "champion would have held" in dry_result.stdout
+    real_held = "champion held" in real_result.stdout
+    assert dry_held == real_held, (dry_result.stdout, real_result.stdout)
+
+    real_state = json.loads(real_scratch.read_bytes())
+    assert len(real_state["lineage"]) == 1, \
+        "one generation's worth of search should have been appended"
+    assert real_state["researcher_memory"]["champion_version"] == genome["version"]
+    assert real_state["researcher_memory"]["stagnation"] >= 0
+    assert (REPO_ROOT / "live_state.json").read_bytes() == before_real_repo, \
+        "this test must never touch the real live_state.json"
+
+
+def test_evolve_rejects_unsupported_flags_the_same_as_evolve_dry_run(synthetic_universe_4y, tmp_path):
+    """`evolve` (real) and `evolve-dry-run` share the same argv-parsing code
+    shape (positional generation count, optional --seed) -- confirms the
+    default generation count (3, unspecified) is respected identically, one
+    generation at a time being the only case exercised above."""
+    genome = synthetic_universe_4y
+    scratch = tmp_path / "scratch_live_state.json"
+    scratch.write_text(json.dumps(
+        {"genome": genome, "journal": [], "lineage": [], "ticks": 0}))
+
+    result = _run_evolve(scratch, "2", "--seed", "3")
+
+    assert result.returncode == 0, result.stderr
+    assert "2 generations" in result.stdout
+    state = json.loads(scratch.read_bytes())
+    assert len(state["lineage"]) == 2

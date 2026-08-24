@@ -266,6 +266,57 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-24 (3-hourly check, ~09:46 UTC): item 7's actual cutover
+  ships -- `run_from_files.py tick`/`evolve` now genuinely call
+  `acct.save()`, the same real bodies as `evotrader_bundle.py`'s own
+  `tick`/`evolve` commands, transcribed verbatim.** (see `run_from_files.py`'s
+  module docstring and `tests/test_run_from_files_matches_bundle.py`'s new
+  `test_tick_*`/`test_evolve_*` tests) This is the piece the 06:56 and 09:00
+  UTC entries below both named as the natural next checkpoint once both
+  dry-run twins existed, and the 09:00 daily discussion explicitly checked
+  whether it needed owner sign-off first and concluded it didn't ("an
+  engineering/testing milestone... nothing here rises to something the
+  system can't decide for itself"). `tick` supports `--force` (unlike
+  `tick-dry-run`, which deliberately omits it) since this command is meant
+  to be a genuine drop-in replacement for the bundle's own `tick`, not a
+  narrower variant. `evolve` keeps the same test-only `--seed N` flag
+  `evolve-dry-run` already had (the bundle's own `evolve` has no such flag).
+  Verified safe: full suite 231 passed (was 227; +4 new, 0 broken). The two
+  new `test_tick_*` tests give the strongest parity check in this file yet
+  -- run the bundle's real `tick` and this file's real `tick` against two
+  byte-identical copies of the same synthetic scratch starting state and
+  assert the resulting state files match once wall-clock timestamps
+  (`updated`, `genome.created`, `journal[].ts` -- all stamped by
+  `core.live._now()` at save/construction time, not derived from the bar
+  being traded) are normalized out; caught a real first-draft test bug this
+  way (two subprocesses a moment apart in real time predictably differ on
+  those fields even with identical decisions -- not a code defect, a test
+  design issue, fixed by recursively blanking ISO-8601-shaped strings
+  before comparing rather than relaxing the check to skip real content).
+  The two new `test_evolve_*` tests check `evolve` against its own
+  `evolve-dry-run` twin instead (same seed, same starting state, same
+  decision), since the bundle's `evolve` has no `--seed` flag to pin down
+  for a subprocess-level comparison the way `tick`'s does. `sync --check`
+  clean (no `_SRC` module touched -- `run_from_files.py` is plain CLI-script
+  code, same as every prior addition to this file), `py_compile` clean,
+  real `live_state.json` md5 unchanged throughout (confirmed both by `git
+  status --short` showing no diff and by re-running `tick-dry-run` against
+  the real state afterward: still correctly reports today's bar already
+  traded), `evotrader_bundle.py summary`/`review-hard-calls` both still
+  clean (0 hard-call reviews pending), today's bar already processed by the
+  00:20 UTC run before this session started (no double-trade). **What this
+  does NOT do**: no scheduled run has been pointed at `run_from_files.py`
+  instead of the bundle -- `evotrader_bundle.py` remains what every
+  scheduled `tick`/`evolve`/`summary` actually runs, unchanged by this
+  commit, and that stays true until a separate, deliberate decision (not
+  made here) says otherwise. No push notification -- test-infrastructure
+  work, zero effect on live trading; the file that actually executes on a
+  schedule is untouched. **Item 7 is now feature-complete relative to the
+  bundle's own state-mutating commands** (both `tick` and `evolve` exist in
+  both dry-run and real form against the real files); what remains, if
+  anyone ever wants it, is purely the scheduling decision itself, which is
+  a policy call about the migration timeline, not an engineering task.
+
 - **Done 2026-08-24 (3-hourly check, ~06:56 UTC): `evolve-dry-run` ships --
   the second and final state-mutating command in item 7's tick/evolve
   cutover now has a dry-run twin, tested.** (see "Next steps" item 7 and
@@ -3843,6 +3894,33 @@ every `evolve` call.
    bigger and riskier, not attempted here. With both dry-run commands done,
    that decision — not another dry-run or read-only addition — is the
    natural next checkpoint for whoever next picks up this item.
+
+   **Done 2026-08-24 (3-hourly check, ~09:46 UTC): the actual cutover
+   shipped — see "Current state" above.** `run_from_files.py tick`/`evolve`
+   now genuinely call `acct.save()`, transcribed verbatim from the bundle's
+   own command bodies. The 09:00 UTC daily discussion the same day checked
+   explicitly whether this needed owner sign-off before proceeding and
+   concluded it didn't (an engineering/testing milestone the existing
+   byte-identical-verification discipline already covers, not a
+   real-money or risk-appetite call). Item 7 is now feature-complete
+   relative to the bundle: every state-mutating command exists in both
+   dry-run and real form against the real files, proven equivalent to the
+   bundle's own behavior by direct subprocess comparison (`tick`) or by
+   comparison against its own dry-run twin (`evolve`, since the bundle's
+   `evolve` has no `--seed` flag to pin a subprocess comparison down with).
+   **What's left is deliberately not engineering**: no scheduled run has
+   been pointed at `run_from_files.py` instead of the bundle, and
+   `evotrader_bundle.py` remains what every scheduled command actually
+   runs. Whether to ever make that switch — and if so, whether to cut over
+   all at once or command-by-command, and what if anything should keep the
+   bundle as a fallback — is a migration-policy question, not a
+   correctness one; nothing currently forces it, since the bundle and the
+   real files are now proven to behave identically and either can be
+   maintained going forward (`tools/edit_bundle_module.py sync` keeps them
+   that way). Not attempted here, and not obviously worth attempting
+   without a reason to prefer one entrypoint over the other beyond "it's
+   more files" — flagging this explicitly so the next session doesn't
+   default to treating it as unfinished engineering work.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but

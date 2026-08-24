@@ -76,6 +76,40 @@ writing on any code path here, same discipline as `tick-dry-run`. Unlike
 `evolve` always passes `seed=None` for genuine randomness on every live
 run) so a caller -- namely this file's own test suite -- can make a run
 reproducible without waiting on real market conditions.
+
+`tick`/`evolve` (added 2026-08-24, after both dry-run twins above were
+tested) are the actual cutover: the same bodies as evotrader_bundle.py's
+own `tick`/`evolve` commands, transcribed verbatim, including the real
+`acct.save(state_path)` calls. This is the point item 7 has been building
+toward across many prior sessions -- proof, not assertion, that the real
+files produce identical decisions to the bundle came first (byte-identical
+output tests for every read-only command, byte-identical *state* tests for
+both dry-run twins on both their skip and non-skip branches), and only
+then did the saving versions get added. `tick` supports `--force` (unlike
+`tick-dry-run`, which deliberately omits it -- see that docstring) because
+this command is meant to be a genuine drop-in replacement for the bundle's
+own `tick`, not a narrower safety-scoped variant of it. `evolve` keeps the
+same test-only `--seed N` escape hatch `evolve-dry-run` added, for the same
+reason. `tests/test_run_from_files_matches_bundle.py`'s `test_tick_*`
+tests prove byte-for-byte state-file parity against the bundle's own real
+`tick` on identical starting scratch state (both branches); `evolve`'s
+parity is checked against its own `evolve-dry-run` twin instead (same seed,
+same starting state, same decision), since the bundle's `evolve` has no
+`--seed` flag to pin down for a subprocess-level comparison the way `tick`
+does.
+
+Adding these two commands here does NOT change what powers live trading:
+no scheduled run has been pointed at this file, `evotrader_bundle.py`
+remains what every scheduled `tick`/`evolve`/`summary` command actually
+runs, and that stays true until a separate, deliberate decision says
+otherwise -- this file makes the real-files path *capable* of the real
+cutover, it does not flip it. Running `tick`/`evolve` here against the
+real `live_state.json` has exactly the same effect as running the
+bundle's own `tick`/`evolve` against it (proven, not assumed, by the
+tests above) -- there is no more safety margin in calling the bundle
+today than in calling this file, which is exactly the point: the
+remaining reason to prefer the bundle for scheduled runs is now habit and
+caution, not an unverified risk.
 """
 from __future__ import annotations
 
@@ -87,7 +121,8 @@ from constitution import verify
 from core.live import LiveAccount
 
 SUPPORTED_COMMANDS = ("summary", "signals", "holdout-pressure", "regime",
-                      "fold-dd-blindspot", "tick-dry-run", "evolve-dry-run")
+                      "fold-dd-blindspot", "tick-dry-run", "evolve-dry-run",
+                      "tick", "evolve")
 
 
 def _reconstruct_champion_genome(version, lineage):
@@ -340,6 +375,81 @@ def _cmd_evolve_dry_run(acct) -> None:
               "live_state.json untouched")
 
 
+def _cmd_tick(acct, state_path) -> None:
+    """The actual `tick` cutover -- transcribed verbatim from
+    evotrader_bundle.py's own `tick` command body, including the real
+    acct.save(state_path) call. See the module docstring for the parity
+    argument."""
+    entry = acct.tick(force="--force" in sys.argv)
+    if "error" in entry:
+        print(f"[live] error: {entry['error']}")
+        sys.exit(1)
+    if "skipped" in entry:
+        print(f"[live] {entry['skipped']} — nothing to do")
+        return
+    acct.save(state_path)
+    print(json.dumps({k: v for k, v in entry.items() if k != "decision"}, indent=2))
+    d = entry.get("decision") or {}
+    for f in (d.get("fills") or []):
+        print(f"  {f['status']:8s} {f['side']:4s} {f['symbol']:10s} {f.get('reason', '')[:110]}")
+    if not (d.get("fills")):
+        print("  no trades this bar")
+
+
+def _cmd_evolve(acct, state_path) -> None:
+    """The actual `evolve` cutover -- transcribed verbatim from
+    evotrader_bundle.py's own `evolve` command body, including the real
+    acct.save(state_path) calls on both the promote and hold paths. Adds
+    the same test-only `--seed N` escape hatch `evolve-dry-run` has (the
+    bundle's own `evolve` always passes seed=None); see the module
+    docstring for why."""
+    from core import market
+    from core.genome import Genome
+    from loop.evolve import EvolutionRun
+
+    n = 3
+    if len(sys.argv) > 2 and not sys.argv[2].startswith("--"):
+        n = int(sys.argv[2])
+    seed = None
+    if "--seed" in sys.argv:
+        seed = int(sys.argv[sys.argv.index("--seed") + 1])
+
+    g0 = acct.genome
+    g0.save("champion")
+    data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+    print(f"[evolve] {len(data)} symbols, champion v{g0.version} "
+          f"({g0.bar_interval} bars), {n} generations")
+
+    mem = acct.researcher_memory or {}
+    if mem.get("champion_version") == g0.version:
+        init_tested = {tuple(tuple(pair) for pair in item) for item in mem.get("tested", [])}
+        init_stagnation = int(mem.get("stagnation", 0))
+    else:
+        init_tested, init_stagnation = set(), 0
+    init_holdout_draws = int(mem.get("holdout_draws", 0))
+
+    run = EvolutionRun(data, seed=seed, initial_tested=init_tested,
+                       initial_stagnation=init_stagnation,
+                       initial_champion_version=g0.version,
+                       initial_holdout_draws=init_holdout_draws)
+    res = run.run(generations=n, n_blind=14)
+    acct.lineage.extend(res.get("generations", []))
+    acct.researcher_memory = {
+        "champion_version": run.tested_version,
+        "tested": [[list(pair) for pair in k] for k in run.tested],
+        "stagnation": run.stagnation,
+        "holdout_draws": run.holdout_draws,
+    }
+    final = Genome.champion()
+    if final.version != g0.version:
+        acct.genome = final
+        acct.save(state_path)
+        print(f"[evolve] champion promoted to v{final.version}")
+    else:
+        acct.save(state_path)
+        print("[evolve] champion held")
+
+
 def main() -> None:
     cmd = sys.argv[1] if len(sys.argv) > 1 else "summary"
     if cmd not in SUPPORTED_COMMANDS:
@@ -371,6 +481,10 @@ def main() -> None:
         _cmd_tick_dry_run(acct)
     elif cmd == "evolve-dry-run":
         _cmd_evolve_dry_run(acct)
+    elif cmd == "tick":
+        _cmd_tick(acct, state_path)
+    elif cmd == "evolve":
+        _cmd_evolve(acct, state_path)
 
 
 if __name__ == "__main__":
