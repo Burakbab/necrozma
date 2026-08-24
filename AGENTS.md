@@ -266,6 +266,37 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-24 (3-hourly check, ~16:15 UTC): a first number on the
+  "harder, unquantified question" `holdout-sigma-recalibration` (2026-08-21)
+  left unchased — whether a fold-selected winner's sealed-holdout score is
+  optimistically biased relative to a candidate that merely existed in the
+  same batch.** (see `runs/2026-08-24-1615-selection-noise-diagnostic.md`)
+  One-off script (same precedent as the 2026-08-24 00:49 seed-holdout-noise
+  diagnostic — not a new CLI command): six independent draws of real
+  `Researcher.propose`/`Evaluator.evaluate` batches against real champion v3,
+  each taking the fold-aggregate winner (what `EvolutionRun.generation()`
+  actually carries to the holdout gate) and one candidate picked uniformly at
+  random from the rest of the batch, running **both** through the sealed
+  holdout (`generation()` itself never does this for a non-finalist).
+  Caught and fixed a real methodology bug first: with `exclude` reset every
+  draw, the same deterministic (non-perturbation) proposal won all 6 draws
+  identically, because `from_diagnosis()`/`structural()` don't depend on the
+  Researcher's seed — fixed by accumulating `exclude` across draws, mirroring
+  `EvolutionRun.tested`'s real cumulative-per-champion behavior. Result:
+  winner's mean (fold − holdout) gap +2.172 (std 0.928, n=6) vs random's
+  +0.990 (std 1.274, n=6), winner's gap larger in 4/6 draws, paired t≈1.55 —
+  directionally consistent with a winner's-curse-style selection effect but
+  **not statistically significant at this sample size**. First real
+  measurement of this question, not a settled answer or a constitution
+  change — see AGENTS.md item 2 below for the full writeup and what's still
+  open (more draws, a second champion, or translating a confirmed effect
+  into an actual correction). Verified safe: `git status --short` clean
+  (script lives in the session scratchpad, not the repo), `live_state.json`
+  md5 unchanged throughout, full suite 235 passed (no code changed),
+  `review-hard-calls` still 0 pending. No push notification — read-only
+  research finding, directionally suggestive not conclusive, zero effect on
+  live trading.
+
 - **Done 2026-08-24 (3-hourly check, ~12:47 UTC): `succession-audit` gets a
   new diagnostic-only `trust-cont fit` column, plus the pure function behind
   it — `loop.evolve.dd_trust_continuous_stats`.** (see the 2026-08-22
@@ -3464,6 +3495,30 @@ every `evolve` call.
    missing case" loose end the 2026-08-22 entry named, but does not restart
    or resolve the demotion/rollback design question itself, which remains
    the owner's call, unchanged.
+
+   **Measured 2026-08-24 (3-hourly check, ~16:15 UTC): a first number on the
+   "harder, unquantified" selection-noise question the 2026-08-21
+   `holdout-sigma-recalibration` entry left unchased.** See "Current state"
+   above and `runs/2026-08-24-1615-selection-noise-diagnostic.md`. Six
+   independent draws of real `Researcher.propose`/`Evaluator.evaluate`
+   batches against real champion v3: each draw's fold-aggregate winner (what
+   `EvolutionRun.generation()` actually carries to the holdout gate) and one
+   randomly-picked non-winner from the same batch both ran through the
+   sealed holdout (`generation()` itself never evaluates holdout for a
+   non-finalist). Caught and fixed a real methodology bug first — a fresh
+   `exclude=set()` every draw let the same deterministic
+   `from_diagnosis()`/`structural()` proposal win all 6 draws identically,
+   since only `perturb()` depends on the Researcher's seed; fixed by
+   accumulating `exclude` across draws like `EvolutionRun.tested` really
+   does. Result: winner's mean (fold − holdout) gap +2.172 (std 0.928, n=6)
+   vs random's +0.990 (std 1.274, n=6), winner larger in 4/6 draws, paired
+   t≈1.55 — directionally consistent with a winner's-curse-style selection
+   effect, **not statistically significant at n=6**. A first measurement,
+   not a settled answer: still open, and not attempted here — more draws to
+   sharpen significance, a second champion, or (if a larger sample confirms
+   the effect) translating it into an actual correction, which would be a
+   constitution change needing its own design pass and `AMENDMENTS.md` row,
+   not a natural extension of one measurement session.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
