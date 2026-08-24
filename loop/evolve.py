@@ -463,6 +463,44 @@ def dd_corrected_stats(evaluator: "Evaluator", g: Genome, stats: dict[str, Any],
     return corrected
 
 
+def dd_trust_continuous_stats(evaluator: "Evaluator", g: Genome, stats: dict[str, Any],
+                               folds: list[tuple[float, float]] | None = None) -> dict[str, Any]:
+    """Diagnostic-only sibling of `dd_corrected_stats()` -- NOT wired into
+    `accepts()`/`EvolutionRun.generation()`, and never will be without a
+    deliberate decision to change the live gate's policy. Exists only so a
+    read-only diagnostic (`succession-audit`) can show what the gate's
+    verdict would look like under a different, two-sided correction policy,
+    for comparison against the current one-sided one.
+
+    `dd_corrected_stats()` takes `min(fold-merged, continuous)`, which can
+    only ever tighten the gate: correct for the original `fold-dd-blindspot`
+    direction (fold-merged UNDERSTATING true risk, since each fold's local
+    peak-to-trough resets at its boundary and misses a drawdown that spans
+    two folds), but blind to the opposite direction the 2026-08-22
+    `succession-audit` diagnostic found in champion v2 -- fold-merged can
+    also OVERSTATE true risk, when a fold rebases to a fresh, lower local
+    peak and a decline that would be a modest fraction of the real
+    long-accumulated peak becomes a much larger fraction of that reset
+    peak. `min()` has no way to recover a truer, better continuous number
+    from an overstated fold-local one.
+
+    This function instead always trusts `continuous_max_dd()` -- the one
+    unbroken replay, "what actually would have happened" -- when it's
+    available, replacing `max_dd` outright rather than taking the worse of
+    the two. That is a genuine loosening in the overstatement case, which is
+    exactly why it stays a diagnostic-only comparison point and not a
+    replacement for the conservative gate: whether the gate should ever
+    actually loosen is a real design decision (see AGENTS.md item 2's
+    still-open succession/demotion thread), not something a read-only
+    report should decide by quietly using a different function.
+    """
+    corrected = dict(stats)
+    cont = evaluator.continuous_max_dd(g, folds)
+    if cont is not None:
+        corrected["max_dd"] = cont
+    return corrected
+
+
 class EvolutionRun:
     def __init__(self, data: dict, seed: int | None = 7, verbose: bool = True,
                  initial_tested: set | None = None, initial_stagnation: int = 0,

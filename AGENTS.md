@@ -266,6 +266,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-24 (3-hourly check, ~12:47 UTC): `succession-audit` gets a
+  new diagnostic-only `trust-cont fit` column, plus the pure function behind
+  it — `loop.evolve.dd_trust_continuous_stats`.** (see the 2026-08-22
+  `succession-audit` finding under item 2 and
+  `tests/test_continuous_max_dd.py`'s four new tests) That finding left a
+  concrete loose end: `dd_corrected_stats()` (the fix `accepts()` actually
+  gates real promotions on) takes `min(fold-merged, continuous)`, which can
+  only ever tighten the gate — correct for the original `fold-dd-blindspot`
+  direction (fold-merged understating true risk) but blind to the opposite
+  one `succession-audit` found in champion v2 (fold-merged *overstating*
+  true risk via fold-2 rebasing to a fresh local peak). `min()` has no way
+  to recover a truer, better continuous number from an overstated
+  fold-local one. New `dd_trust_continuous_stats()` is a diagnostic-only
+  sibling that always trusts the continuous replay instead of taking the
+  worse of the two — explicitly NOT wired into `accepts()`/
+  `EvolutionRun.generation()`, and does not change any live gate behavior.
+  `succession-audit` now prints it alongside the existing `dd-corr fit`
+  column so a future demotion/rollback design pass (still the owner's call,
+  unchanged by this) has the two-sided comparison already computed instead
+  of needing to build it from scratch. Verified safe: full suite 235 passed
+  (was 231; +4 new, 0 broken), `sync --check`/`verify` clean (new function
+  lives in the real `loop/evolve.py`, synced into the bundle's `_SRC` entry;
+  the CLI's own succession-audit code is a plain-script addition, no
+  `_SRC[...]` line touched there), `py_compile` clean, real `live_state.json`
+  md5 unchanged across every command run this session (`succession-audit`
+  ×2, `summary`, `review-hard-calls`), `review-hard-calls` still 0 pending,
+  today's bar already processed by the 00:20 UTC run before this session
+  started (no double-trade). Manually ran `succession-audit` against real
+  data: today's numbers differ from the 2026-08-22 diagnostic's (window has
+  moved 2 days, so v2's fold-merged and continuous max_dd happen to coincide
+  today rather than diverge) — expected, and not evidence the original
+  finding was wrong, just a reminder these numbers are date-dependent
+  snapshots, not fixed properties of a genome. **What this does NOT do**: no
+  change to `accepts()`'s actual policy, no opinion offered on whether the
+  gate should ever really use the two-sided correction — that stays a real
+  design decision for whoever eventually opens the demotion/rollback
+  question, same standing note as every session since 2026-08-22. No push
+  notification — read-only diagnostic tooling, zero effect on live trading.
+
 - **Done 2026-08-24 (3-hourly check, ~09:46 UTC): item 7's actual cutover
   ships -- `run_from_files.py tick`/`evolve` now genuinely call
   `acct.save()`, the same real bodies as `evotrader_bundle.py`'s own
@@ -3409,6 +3448,22 @@ every `evolve` call.
    noise-vs-signal question: whether a *different* 4-year data pull would
    show the seed in a better light at all (a question about `SEED_GENOME`'s
    robustness across market regimes generally, not attempted here).
+
+   **Built 2026-08-24 (3-hourly check, ~12:47 UTC): `succession-audit` gets
+   the two-sided comparison the 2026-08-22 entry above flagged as missing.**
+   See "Current state" above and `tests/test_continuous_max_dd.py`'s four
+   new tests. New `loop.evolve.dd_trust_continuous_stats()` is a
+   diagnostic-only sibling of `dd_corrected_stats()` — instead of
+   `min(fold-merged, continuous)`, it always trusts the continuous replay's
+   `max_dd` outright, so it can recover a truer, better number in the
+   overstatement direction `min()` can't (v2's case). `succession-audit`
+   now prints this as a `trust-cont fit` column next to the existing
+   `dd-corr fit` one. Explicitly NOT wired into `accepts()` or
+   `EvolutionRun.generation()` — no live gate behavior changed, no opinion
+   offered on whether it should be. This closes the specific "build the
+   missing case" loose end the 2026-08-22 entry named, but does not restart
+   or resolve the demotion/rollback design question itself, which remains
+   the owner's call, unchanged.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured

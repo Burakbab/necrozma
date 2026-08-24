@@ -10,7 +10,7 @@ max_dd into the gate stats -- see `EvolutionRun.generation()` for where the
 correction is actually applied to a promotion decision."""
 import pytest
 
-from loop.evolve import Evaluator, dd_corrected_stats
+from loop.evolve import Evaluator, dd_corrected_stats, dd_trust_continuous_stats
 
 
 def test_continuous_max_dd_calls_backtest_over_full_fold_span(monkeypatch):
@@ -107,5 +107,59 @@ def test_dd_corrected_stats_preserves_other_fields():
     ev = Evaluator(data={}, n_folds=3)
     stats = {"max_dd": -0.341, "trades": 100, "bars": 900, "sortino": 1.2}
     corrected = dd_corrected_stats(ev, object(), stats, folds=[])
+    assert corrected["trades"] == 100
+    assert corrected["sortino"] == pytest.approx(1.2)
+
+
+# dd_trust_continuous_stats -- diagnostic-only sibling, NOT wired into
+# accepts()/EvolutionRun.generation() (see succession-audit's 2026-08-22
+# finding: fold-merged max_dd can also OVERSTATE true risk via fold
+# rebasing, a direction dd_corrected_stats()'s min() can't recover from).
+
+def test_dd_trust_continuous_stats_replaces_worse_fold_local_number(monkeypatch):
+    # v2's own case: fold-merged (-40.1%) is WORSE than the true continuous
+    # replay (-38.1%), an overstatement from fold-2 rebasing to a fresh local
+    # peak. Unlike dd_corrected_stats() (which would keep -40.1%, the worse
+    # of the two), this function always trusts the continuous number.
+    import loop.evolve as evolve
+
+    monkeypatch.setattr(evolve, "run_backtest",
+                        lambda g, data, a, b, log_detail=False: {"stats": {"max_dd": -0.381}})
+    ev = Evaluator(data={}, n_folds=3)
+    stats = {"max_dd": -0.401, "trades": 100, "bars": 900}
+    corrected = dd_trust_continuous_stats(ev, object(), stats)
+    assert corrected["max_dd"] == pytest.approx(-0.381)
+    assert stats["max_dd"] == pytest.approx(-0.401)
+
+
+def test_dd_trust_continuous_stats_also_replaces_better_fold_local_number(monkeypatch):
+    # The original fold-dd-blindspot direction: continuous is WORSE than
+    # fold-merged. Same outcome as dd_corrected_stats() here (both trust the
+    # worse continuous number), just by always-replace rather than min().
+    import loop.evolve as evolve
+
+    monkeypatch.setattr(evolve, "run_backtest",
+                        lambda g, data, a, b, log_detail=False: {"stats": {"max_dd": -0.465}})
+    ev = Evaluator(data={}, n_folds=3)
+    stats = {"max_dd": -0.341, "trades": 100, "bars": 900}
+    corrected = dd_trust_continuous_stats(ev, object(), stats)
+    assert corrected["max_dd"] == pytest.approx(-0.465)
+
+
+def test_dd_trust_continuous_stats_falls_back_to_original_on_backtest_error(monkeypatch):
+    import loop.evolve as evolve
+
+    monkeypatch.setattr(evolve, "run_backtest",
+                        lambda g, data, a, b, log_detail=False: {"error": "boom"})
+    ev = Evaluator(data={}, n_folds=3)
+    stats = {"max_dd": -0.341, "trades": 100, "bars": 900}
+    corrected = dd_trust_continuous_stats(ev, object(), stats)
+    assert corrected["max_dd"] == pytest.approx(-0.341)
+
+
+def test_dd_trust_continuous_stats_preserves_other_fields():
+    ev = Evaluator(data={}, n_folds=3)
+    stats = {"max_dd": -0.341, "trades": 100, "bars": 900, "sortino": 1.2}
+    corrected = dd_trust_continuous_stats(ev, object(), stats, folds=[])
     assert corrected["trades"] == 100
     assert corrected["sortino"] == pytest.approx(1.2)
