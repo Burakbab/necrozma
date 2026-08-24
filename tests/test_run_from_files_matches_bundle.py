@@ -57,9 +57,25 @@ Both tests assert the scratch state file is byte-identical before and after
 read-only commands), and that the real repo's `live_state.json` never
 moves -- proving the safety guarantee on the branch that actually matters,
 not just the skip path every prior session happened to exercise.
+
+`test_evolve_dry_run_*` below (added 2026-08-24) covers the second and
+final state-mutating command, `evolve-dry-run`. Same EVO_STATE-scratch
+discipline, but with two differences from the tick-dry-run tests above:
+the synthetic cache needs ~4.1 years of bars, not ~1.6 (evolve's own
+`market.load_universe(..., 4.0)` call, not tick's 1.5y window), and the
+real `loop.evolve.EvolutionRun` also writes archive files to
+`state/genomes/` and `state/lineage.jsonl` as an ordinary side effect of a
+real run (`Genome.save`/`.promote()`) -- both gitignored, rebuildable local
+cache per `.gitignore`'s own comment, never read back by anything on the
+live trading path (nothing outside `core/genome.py` itself reads
+`state/genomes/`), so leaving them behind would not corrupt a later real
+`tick`/`evolve` run. The fixture snapshots and restores both anyway, purely
+so this test doesn't leave a fake-universe genome archive lying around in
+the container for a human (or the next session) to trip over.
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -195,3 +211,143 @@ def test_tick_dry_run_skips_already_traded_bar(synthetic_universe, tmp_path):
     assert "a real decision was computed" not in result.stdout
     assert scratch.read_bytes() == before_scratch
     assert (REPO_ROOT / "live_state.json").read_bytes() == before_real
+
+
+# ---------------------------------------------------------------------------
+# evolve-dry-run, against the same kind of synthetic scratch universe, but
+# with enough history to cover evolve's own 4-year market.load_universe()
+# ---------------------------------------------------------------------------
+
+_GENOME_DIR = REPO_ROOT / "state" / "genomes"
+_LINEAGE_PATH = REPO_ROOT / "state" / "lineage.jsonl"
+_N_BARS_4Y = 1500  # > 4y evolve's own load_universe() window, with margin
+
+
+@pytest.fixture
+def synthetic_universe_4y():
+    """Same discipline as `synthetic_universe` above (fully synthetic, never-
+    a-real-Binance-pair symbols, cache pre-populated so no fetch branch of
+    core.market.load() ever fires), but with ~4.1 years of bars instead of
+    ~1.6 -- evolve's own `market.load_universe(..., 4.0)` call needs the
+    whole window covered, unlike tick()'s 1.5y one. Also snapshots and
+    restores state/genomes/ and state/lineage.jsonl around the test: running
+    the real EvolutionRun against a fake-universe genome writes ordinary
+    archive files there (Genome.save/.promote(), gitignored, rebuildable,
+    never read back by the live trading path -- see the module docstring),
+    but restoring them anyway keeps this test from leaving a fake-universe
+    genome archive behind in the container."""
+    _FAKE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    today = pd.Timestamp.now(tz="UTC").floor("D")
+    idx = pd.date_range(end=today, periods=_N_BARS_4Y, freq="D", tz="UTC")
+    rng = np.random.default_rng(5678)
+    paths = []
+    for sym in _FAKE_SYMBOLS:
+        close = 100 * np.exp(np.cumsum(rng.normal(0, 0.02, _N_BARS_4Y)))
+        open_ = np.concatenate([[close[0]], close[:-1]])
+        high = np.maximum(open_, close) * (1 + rng.uniform(0, 0.01, _N_BARS_4Y))
+        low = np.minimum(open_, close) * (1 - rng.uniform(0, 0.01, _N_BARS_4Y))
+        vol = rng.uniform(1000, 5000, _N_BARS_4Y)
+        df = pd.DataFrame({"open": open_, "high": high, "low": low, "close": close,
+                            "volume": vol, "quote_volume": vol * close}, index=idx)
+        df.index.name = "ts"
+        path = _FAKE_CACHE_DIR / f"{sym}_1d.pkl"
+        df.to_pickle(path)
+        paths.append(path)
+
+    from core.genome import SEED_GENOME
+    genome = json.loads(json.dumps(SEED_GENOME))
+    genome["universe"] = list(_FAKE_SYMBOLS)
+    genome["agents"]["analyst"]["genes"]["regime_anchor"] = _FAKE_SYMBOLS[0]
+
+    genomes_existed = _GENOME_DIR.exists()
+    genomes_backup = ({p.name: p.read_bytes() for p in _GENOME_DIR.glob("*.json")}
+                      if genomes_existed else {})
+    lineage_existed = _LINEAGE_PATH.exists()
+    lineage_backup = _LINEAGE_PATH.read_bytes() if lineage_existed else None
+
+    try:
+        yield genome
+    finally:
+        for p in paths:
+            p.unlink(missing_ok=True)
+        if _GENOME_DIR.exists():
+            for p in list(_GENOME_DIR.glob("*.json")):
+                if p.name not in genomes_backup:
+                    p.unlink(missing_ok=True)
+            for name, data in genomes_backup.items():
+                (_GENOME_DIR / name).write_bytes(data)
+            if not genomes_existed:
+                shutil.rmtree(_GENOME_DIR, ignore_errors=True)
+        if lineage_existed:
+            _LINEAGE_PATH.write_bytes(lineage_backup)
+        elif _LINEAGE_PATH.exists():
+            _LINEAGE_PATH.unlink(missing_ok=True)
+
+
+def _run_evolve_dry_run(scratch_state_path, *extra_args):
+    env = dict(os.environ, EVO_STATE=str(scratch_state_path))
+    return subprocess.run(
+        [sys.executable, "run_from_files.py", "evolve-dry-run", *extra_args],
+        cwd=REPO_ROOT, capture_output=True, text=True, env=env,
+    )
+
+
+def test_evolve_dry_run_never_saves_state(synthetic_universe_4y, tmp_path):
+    genome = synthetic_universe_4y
+    scratch = tmp_path / "scratch_live_state.json"
+    scratch.write_text(json.dumps(
+        {"genome": genome, "journal": [], "lineage": [], "ticks": 0}))
+    before_real = (REPO_ROOT / "live_state.json").read_bytes()
+    before_scratch = scratch.read_bytes()
+
+    result = _run_evolve_dry_run(scratch, "1", "--seed", "7")
+
+    assert result.returncode == 0, result.stderr
+    assert "1 generations" in result.stdout
+    assert ("champion would have held" in result.stdout
+            or "would have promoted champion" in result.stdout)
+    assert scratch.read_bytes() == before_scratch, \
+        "evolve-dry-run must never call acct.save(), win or lose"
+    assert (REPO_ROOT / "live_state.json").read_bytes() == before_real
+
+
+def test_evolve_dry_run_resumes_researcher_memory(synthetic_universe_4y, tmp_path):
+    """The bundle's `evolve` resumes acct.researcher_memory so the
+    Researcher's boldness (stagnation count, which widens its mutation
+    batches -- see loop/evolve.py's Researcher.propose) keeps climbing
+    across invocations instead of resetting to 0 every time (see
+    evotrader_bundle.py's own comment on this) -- evolve-dry-run must do
+    the same, even though it never writes the resumed memory back out.
+    Checked via the "boldness N" the generation log line always prints,
+    rather than trying to reconstruct the Researcher's internal key format
+    for its excluded-proposals set from stdout, which the code makes no
+    promise to expose in a parseable form."""
+    genome = synthetic_universe_4y
+    scratch = tmp_path / "scratch_live_state.json"
+    from core.genome import SEED_GENOME
+    g0_version = SEED_GENOME["version"]
+
+    # A champion_version MISMATCH must not resume anything -- stagnation
+    # resets to 0 regardless of what the stale memory claims.
+    scratch.write_text(json.dumps({
+        "genome": genome, "journal": [], "lineage": [], "ticks": 0,
+        "researcher_memory": {"champion_version": g0_version + 999,
+                              "tested": [], "stagnation": 5, "holdout_draws": 0},
+    }))
+    mismatched = _run_evolve_dry_run(scratch, "1", "--seed", "7")
+    assert mismatched.returncode == 0, mismatched.stderr
+    assert "boldness 0)" in mismatched.stdout, mismatched.stdout
+
+    # A champion_version MATCH must resume the stagnation count as-is.
+    scratch.write_text(json.dumps({
+        "genome": genome, "journal": [], "lineage": [], "ticks": 0,
+        "researcher_memory": {"champion_version": g0_version,
+                              "tested": [], "stagnation": 5, "holdout_draws": 0},
+    }))
+    before_scratch = scratch.read_bytes()
+    matched = _run_evolve_dry_run(scratch, "1", "--seed", "7")
+
+    assert matched.returncode == 0, matched.stderr
+    assert "boldness 5)" in matched.stdout, matched.stdout
+    assert scratch.read_bytes() == before_scratch, \
+        "evolve-dry-run must never call acct.save(), even with resumed memory"

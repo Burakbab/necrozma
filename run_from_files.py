@@ -59,6 +59,23 @@ design. `--force` is intentionally NOT wired here (unlike the bundle's
 `tick`): forcing a repeat decision on an already-traded bar is an explored
 question for a human, not something a 3-hourly script should ever need,
 and leaving it out removes any temptation to add it under time pressure.
+
+`evolve-dry-run` (added 2026-08-24) is the second and final piece of that
+cutover: it runs the real self-improvement search (`loop.evolve.
+EvolutionRun`, the same class the bundle's `evolve` command drives) against
+the real files, generation by generation, exactly as `evolve` does --
+including resuming `acct.researcher_memory` so the multiple-testing bar
+keeps rising across invocations the same way -- but it NEVER calls
+`acct.save()`, no matter whether a candidate would have been promoted.
+`EvolutionRun` itself still writes to `state/genomes/` (via `Genome.save`/
+`.promote()`) and appends to `state/lineage.jsonl` -- both gitignored,
+rebuildable local cache per `.gitignore`'s own comment, not the durable
+state this guarantee is about. `live_state.json` is never opened for
+writing on any code path here, same discipline as `tick-dry-run`. Unlike
+`evolve`, this command also accepts an optional `--seed N` (the bundle's
+`evolve` always passes `seed=None` for genuine randomness on every live
+run) so a caller -- namely this file's own test suite -- can make a run
+reproducible without waiting on real market conditions.
 """
 from __future__ import annotations
 
@@ -70,7 +87,7 @@ from constitution import verify
 from core.live import LiveAccount
 
 SUPPORTED_COMMANDS = ("summary", "signals", "holdout-pressure", "regime",
-                      "fold-dd-blindspot", "tick-dry-run")
+                      "fold-dd-blindspot", "tick-dry-run", "evolve-dry-run")
 
 
 def _reconstruct_champion_genome(version, lineage):
@@ -271,6 +288,58 @@ def _cmd_tick_dry_run(acct) -> None:
           "to actually book this decision")
 
 
+def _cmd_evolve_dry_run(acct) -> None:
+    """Run the real self-improvement loop (loop.evolve.EvolutionRun) against
+    the real files -- transcribed verbatim from evotrader_bundle.py's own
+    `evolve` command body -- but never call acct.save(), on any code path,
+    win or lose. See the module docstring for the exact safety argument."""
+    from core import market
+    from core.genome import Genome
+    from loop.evolve import EvolutionRun
+
+    n = 3
+    if len(sys.argv) > 2 and not sys.argv[2].startswith("--"):
+        n = int(sys.argv[2])
+    seed = None
+    if "--seed" in sys.argv:
+        seed = int(sys.argv[sys.argv.index("--seed") + 1])
+
+    print("[evolve-dry-run] DRY RUN -- searching against the real files, "
+          "will NOT call acct.save() no matter what happens below", flush=True)
+    g0 = acct.genome
+    g0.save("champion")
+    data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+    if not data:
+        print("no market data")
+        sys.exit(1)
+    print(f"[evolve-dry-run] {len(data)} symbols, champion v{g0.version} "
+          f"({g0.bar_interval} bars), {n} generations")
+
+    # Same researcher-memory resume as the bundle's `evolve` -- see its own
+    # comment for why this matters (the multiple-testing bar must keep
+    # rising across invocations, not reset to n=1 every time).
+    mem = acct.researcher_memory or {}
+    if mem.get("champion_version") == g0.version:
+        init_tested = {tuple(tuple(pair) for pair in item) for item in mem.get("tested", [])}
+        init_stagnation = int(mem.get("stagnation", 0))
+    else:
+        init_tested, init_stagnation = set(), 0
+    init_holdout_draws = int(mem.get("holdout_draws", 0))
+
+    run = EvolutionRun(data, seed=seed, initial_tested=init_tested,
+                       initial_stagnation=init_stagnation,
+                       initial_champion_version=g0.version,
+                       initial_holdout_draws=init_holdout_draws)
+    run.run(generations=n, n_blind=14)
+    final = Genome.champion()
+    if final.version != g0.version:
+        print(f"[evolve-dry-run] would have promoted champion v{g0.version} -> "
+              f"v{final.version} -- NOT saved, live_state.json untouched")
+    else:
+        print("[evolve-dry-run] champion would have held -- NOT saved, "
+              "live_state.json untouched")
+
+
 def main() -> None:
     cmd = sys.argv[1] if len(sys.argv) > 1 else "summary"
     if cmd not in SUPPORTED_COMMANDS:
@@ -300,6 +369,8 @@ def main() -> None:
         _cmd_fold_dd_blindspot(acct)
     elif cmd == "tick-dry-run":
         _cmd_tick_dry_run(acct)
+    elif cmd == "evolve-dry-run":
+        _cmd_evolve_dry_run(acct)
 
 
 if __name__ == "__main__":

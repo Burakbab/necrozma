@@ -266,6 +266,40 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Done 2026-08-24 (3-hourly check, ~06:56 UTC): `evolve-dry-run` ships --
+  the second and final state-mutating command in item 7's tick/evolve
+  cutover now has a dry-run twin, tested.** (see "Next steps" item 7 and
+  `runs/2026-08-24-0656-evolve-dry-run.md`) New `run_from_files.py` command
+  runs the real `loop.evolve.EvolutionRun` (same class the bundle's
+  `evolve` drives, transcribed verbatim including the researcher-memory
+  resume) against the real files, but never calls `acct.save()` regardless
+  of whether a candidate would have promoted or the champion would have
+  held. Needed a new, bigger synthetic fixture (`synthetic_universe_4y`,
+  ~1500 daily bars / ~4.1y, vs. `tick-dry-run`'s 600/1.6y) because `evolve`
+  requests a 4-year `load_universe` window, not `tick()`'s 1.5y one. Also
+  traced a non-obvious wrinkle: `EvolutionRun` writes real files under
+  `state/genomes/` and `state/lineage.jsonl` (via `Genome.save`/`.promote`),
+  which resolve to the *same* absolute path in bundled and real-files mode
+  -- confirmed this is provably inert (both `evolve` and `evolve-dry-run`
+  overwrite `champion.json` with the real champion before `EvolutionRun`
+  ever reads it back, and nothing outside `core/genome.py` itself reads
+  those archive files), but the fixture snapshots/restores them anyway for
+  cleanliness. Verified safe: full suite 227 passed (was 225; +2 new, 0
+  broken), both new tests run in ~60s combined against the synthetic
+  universe (no real market data needed), `state/genomes/` and
+  `state/cache/ZZTEST*` confirmed absent after the run, `sync --check`
+  clean (no `_SRC` module touched), `py_compile` clean, real
+  `live_state.json` byte-identical throughout, `evotrader_bundle.py
+  summary` still runs clean, `review-hard-calls` 0 pending, today's bar
+  already processed by the 00:20 UTC run before this session started (no
+  `tick`/`evolve` run for real). No push notification -- test-
+  infrastructure work, zero effect on live trading. Item 7's actual
+  remaining piece -- a genuinely *saving* `tick`/`evolve` against the real
+  files, and the decision to ever schedule a run against `run_from_files.py`
+  instead of the bundle -- remains untouched and separate; with both dry-run
+  commands now in place, that decision (not another dry-run/read-only
+  addition) is the natural next checkpoint for this item.
+
 - **Done 2026-08-24 (3-hourly check, ~03:5x UTC): `tick-dry-run`'s non-skip
   branch finally gets automated coverage, without waiting for the narrow
   live-timing window every prior session flagged as the blocker.** (see
@@ -3792,6 +3826,23 @@ every `evolve` call.
    actual cutover — `tick`/`evolve` saving against the real files, and the
    decision to ever point a scheduled run at `run_from_files.py` instead of
    the bundle — remains separate, bigger, and riskier, not attempted here.
+
+   **Done 2026-08-24 (3-hourly check, ~06:56 UTC): `evolve-dry-run` ships —
+   see "Current state" above and `runs/2026-08-24-0656-evolve-dry-run.md`.**
+   The second and last state-mutating command (`evolve`, alongside `tick`)
+   now has a tested dry-run twin: runs the real `loop.evolve.EvolutionRun`
+   against the real files but never calls `acct.save()`, verified with a
+   new ~4.1-year synthetic universe fixture (`evolve`'s own `load_universe`
+   window is 4y, wider than `tick-dry-run`'s 1.5y one) and two new tests
+   covering both the never-saves guarantee and the researcher-memory resume
+   wiring. Both of `run_from_files.py`'s missing commands relative to the
+   bundle are now at least dry-run-safe. **Still the actual remaining
+   piece, unchanged by this**: a genuinely *saving* `tick`/`evolve` against
+   the real files, and the decision to ever schedule a run against
+   `run_from_files.py` instead of the bundle at all — both explicitly
+   bigger and riskier, not attempted here. With both dry-run commands done,
+   that decision — not another dry-run or read-only addition — is the
+   natural next checkpoint for whoever next picks up this item.
 
 8. **`consult_conservative`'s entry-vs-exit role asymmetry** — the 2026-08-16
    "Measured" section below found it -$8,159 as an entry signal (38% win) but
