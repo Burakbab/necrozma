@@ -266,6 +266,33 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-24 (3-hourly check, ~18:57 UTC): batch 2 of the
+  selection-noise diagnostic weakens the signal, not strengthens it —
+  the "more draws" follow-up the ~16:15 UTC entry below explicitly left
+  open.** (see `runs/2026-08-24-1857-selection-noise-batch2.md`) Same
+  method, 6 more independent draws (n_blind=10, exclude accumulated) against
+  real champion v3. Batch 2 alone reverses the direction (random gap mean
+  1.818 > winner gap mean 1.679, paired t=−0.218, wrong sign for the
+  winner's-curse hypothesis), driven partly by one outlier random-gap draw
+  (−1.358, batch 2's `exclude` had already burned through the deterministic
+  diagnosis-driven proposals so this batch was pulling from a different part
+  of the mutation space than batch 1's early draws). Combined 12-draw sample:
+  paired t≈1.02 (df=11) — weaker than batch 1's t≈1.55 alone. Doubling the
+  sample moved the result further from significance, the opposite of what
+  "just needs more data" would predict if the effect were real. **Reading
+  revised**: no good evidence yet of a winner's-curse selection effect
+  distinct from ordinary per-candidate holdout noise; batch 1's number looks
+  like a favorable draw from a noisy distribution, not the start of a
+  sharpenable signal. Leaving this question here — further identical-method
+  batches are unlikely to resolve it either way given batch 2's own variance
+  blowup; would need either an order-of-magnitude more draws or a genuinely
+  different check (e.g. a second champion) to be worth another session.
+  Verified safe: `git status --short` clean, `live_state.json` md5 unchanged
+  throughout, full suite 235 passed (no code changed), `review-hard-calls`
+  still 0 pending, today's bar already processed by the 00:20 UTC run before
+  this session started (no double-trade). No push notification — read-only
+  research finding (a negative one, this time), zero effect on live trading.
+
 - **Measured 2026-08-24 (3-hourly check, ~16:15 UTC): a first number on the
   "harder, unquantified question" `holdout-sigma-recalibration` (2026-08-21)
   left unchased — whether a fold-selected winner's sealed-holdout score is
@@ -3519,6 +3546,25 @@ every `evolve` call.
    the effect) translating it into an actual correction, which would be a
    constitution change needing its own design pass and `AMENDMENTS.md` row,
    not a natural extension of one measurement session.
+
+   **Measured 2026-08-24 (3-hourly check, ~18:57 UTC): the "more draws" follow-up
+   weakens the signal instead of sharpening it.** See "Current state" above and
+   `runs/2026-08-24-1857-selection-noise-batch2.md`. Same method, 6 more
+   independent draws (n_blind=10, exclude accumulated) against the same real
+   champion v3. Batch 2 alone reverses the direction (random gap mean 1.818 >
+   winner gap mean 1.679, paired t=−0.218). Combined 12-draw sample: paired
+   t≈1.02 (df=11), weaker than batch 1's t≈1.55 alone — the opposite of what
+   "just needs more data" would predict if the effect were real, driven by a
+   variance blowup in batch 2's random-gap draws (one outlier at −1.358, the
+   only negative gap either batch produced). **Reading revised**: no good
+   evidence yet of a winner's-curse selection effect distinct from ordinary
+   per-candidate holdout noise; batch 1's number now looks like a favorable
+   draw from a noisy distribution rather than the start of a sharpenable
+   signal. Leaving this question here — further identical-method batches are
+   unlikely to resolve it either way; would need an order-of-magnitude more
+   draws or a genuinely different check (e.g. a second champion) to be worth
+   another session. No `HOLDOUT_SIGMA`-style correction proposed; the evidence
+   doesn't support one.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
