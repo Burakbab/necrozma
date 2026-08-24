@@ -266,6 +266,30 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-24 (3-hourly check, ~00:49 UTC): the seed's poor
+  sealed-holdout score is an ordinary draw from its own noise, not an
+  outlier — closes the open question the entry below left unchased.** (see
+  `runs/2026-08-24-0049-seed-holdout-noise-diagnostic.md`) One-off script
+  (not a new CLI command; `SEED_GENOME` isn't in `live_state.json`'s
+  lineage, so `holdout-noise --also-version` doesn't reach it) reused
+  `loop.engine.run_backtest`/`bootstrap_fitness_distribution` directly from
+  the real unflattened packages against the seed genome. Block-bootstrapped
+  its own sealed-holdout return path (fresh window: -1.194 this time, not
+  the prior entry's -2.566, purely from the one-day date shift) 2000 times
+  across 4 RNG seeds: real fitness lands within 0.13 sigma of the bootstrap
+  mean every time, and the bootstrap sigma itself (~1.77-1.85) matches the
+  same range already measured for all three real champions (1.21-2.04).
+  Reading: the seed genuinely performs badly on this holdout window, it
+  isn't return-order noise — a genuinely bad seed on a genuinely bad window,
+  correctly rejected by the gates, not a bug. Verified safe: only
+  `state/cache/` (gitignored) touched, `live_state.json` md5 unchanged, full
+  test suite still 223 passed (no code changed), `review-hard-calls` still 0
+  pending, today's bar already processed by the 00:20 UTC run before this
+  session started. No push notification — read-only research finding, zero
+  effect on live trading. Still open: whether a different 4-year data pull
+  would show the seed in a better light at all — bigger question, not
+  attempted.
+
 - **Done 2026-08-23 (3-hourly check, 22:16 UTC): a genuinely fresh, unscaled
   seed evolved at the live 1d cadence for the first time — 16 generations,
   zero promotions, and a mechanistic reason why.** (see "Current state"
@@ -3241,6 +3265,26 @@ every `evolve` call.
    escaping it. Not chased further: whether this fold/holdout gap is
    specific to the current 4-year data window or a durable property of
    `SEED_GENOME` itself.
+
+   **Measured 2026-08-24 (3-hourly check): the seed's poor holdout score is an
+   ordinary draw from its own noise, not an outlier.** See "Current state"
+   above and `runs/2026-08-24-0049-seed-holdout-noise-diagnostic.md`. A
+   one-off script (not a new CLI command — this genome isn't in
+   `live_state.json`'s lineage, so `holdout-noise`'s own `--also-version`
+   flag doesn't reach it) block-bootstrapped the seed's own sealed-holdout
+   return path (fresh window, one day later than the prior entry: -1.194
+   this time, not -2.566, purely from the date shift) 2000 times across 4
+   RNG seeds. Real fitness lands within 0.13 sigma of its own bootstrap mean
+   every time, and the bootstrap sigma itself (~1.77-1.85) matches the same
+   range `holdout-noise` already measured for all three real champions
+   (1.21-2.04) — not exceptional either way. Reading: the seed genuinely
+   performs badly on this holdout window; it isn't a fluke of return-order
+   noise. Combined with the entry above, the picture is a genuinely bad seed
+   on a genuinely bad window, correctly and consistently rejected by the
+   gates — not a bug. Still open, and explicitly bigger than a
+   noise-vs-signal question: whether a *different* 4-year data pull would
+   show the seed in a better light at all (a question about `SEED_GENOME`'s
+   robustness across market regimes generally, not attempted here).
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
