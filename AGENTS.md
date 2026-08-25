@@ -266,6 +266,56 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-25 (3-hourly check, ~07:00 UTC): `history-perturb`, the
+  last untried leg of the 2026-08-16 "perturbation tests on
+  fees/slippage/universe/start-date" note — `costs` covers fees/slippage,
+  `universe-perturb` covers universe composition, this covers start-date.**
+  New read-only CLI `evotrader_bundle.py history-perturb [--years
+  Y1,Y2,...] [--also-version N]`, same guarantees as `costs`/
+  `universe-perturb`: real `run_backtest` per scenario, never touches
+  `live_state.json` or the champion. Sweeps total lookback length ending
+  "now" (default 2/3/4/5/6 years) — a genuinely different start date each
+  time, not another fold-windowing variant of the fixed 4y window (that line
+  was set aside as exhausted back on 2026-08-21). **Caught a real bug in the
+  first draft before shipping it**: `core.market.load()`'s cache is a floor,
+  not a window — "the cache only ever grows" means `load_universe(...,
+  years=X)` returns the *full* cached range once the cache already covers X,
+  not an X-year slice. Passing `years` straight through, as the first draft
+  did, silently returned identical multi-year data for every "shorter"
+  scenario in one process (whichever request built the cache widest
+  satisfies every smaller one too) — verified this concretely with a
+  throwaway script (`market.load('BTCUSDT', '1d', 2.0)` and `..., 4.0)`
+  returned byte-identical 1461-row frames once the cache held 4y; only
+  `6.0` correctly extended it). Fixed by loading once at `max(years_list)`
+  and explicitly truncating each symbol's frame to `[now - years, now]`
+  before backtesting, independent of whatever the on-disk cache holds.
+  Verified against real data post-fix: three genuinely different window
+  starts (2y→2024-10-24, 4y→2022-10-25, 6y→2020-10-24) with real variance —
+  champion v3 **loses to benchmark at 2y** (-40.6% excess return, hard-fails
+  the maxDD gate too) but **beats it at 4y and 6y** (+78.7%, +3065.1%
+  excess return; 6y's raw fitness is a further -3.161 despite the huge
+  excess return, a separate Sortino/penalty-shape question not chased here).
+  First real evidence that the champion's apparent edge is start-date
+  dependent, not a settled result — n=3 windows, all sharing the same
+  overlapping recent history rather than being independent draws, so this
+  is a first measurement to build on, not a verdict. Not chased further this
+  session (time-boxed to shipping the working diagnostic plus one real
+  finding, not a full sensitivity study). No new pure function added (composes
+  already-tested `run_backtest`/`Genome`/`market.load_universe`), so no new
+  test file, same precedent as `costs`/`universe-perturb`/`regime`. Verified
+  safe: full suite 235 passed (`pytest tests/`, matches baseline, nothing new
+  to test), `git status --short` clean before this commit, `live_state.json`
+  md5 unchanged (`f7590581b893d3866e00e28c87fe1c02`) and `evotrader.manifest`
+  md5 unchanged (`0bf3a7d9411ee692d0a9f152a7533803`) throughout, constitution
+  verified `8b74865634b1db07` unchanged, today's bar already processed by the
+  00:20 UTC daily run before this session started (`tick` not run this
+  session, no double-trade), `review-hard-calls` still 0 pending, no genome
+  promotion (no README Status change needed). **Next, if this thread stays
+  worth pursuing**: more/denser `--years` points, or (sharper) independent
+  non-overlapping windows instead of nested ones sharing the same recent
+  history, to tell "recent regime happens to favor this genome" apart from
+  genuine start-date robustness — not attempted here.
+
 - **Measured 2026-08-25 (3-hourly check, ~04:02 UTC): the third-genome check
   the ~01:00 UTC entry named as the concrete next step — run, and it closes
   this line of inquiry with a negative result.** (see

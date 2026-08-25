@@ -1843,6 +1843,89 @@ def main():
                           f"vs baseline {base_fit:.3f}; {n_hard_fail}/{n_ran} hit a hard "
                           f"gate (fitness -inf: maxDD over {MAX_DD_HARD_FAIL:.0%}, too few "
                           f"trades, or too few bars)")
+    elif cmd == "history-perturb":
+        # Diagnostic: AGENTS.md's 2026-08-16 "read before proposing more genes"
+        # note names "perturbation tests on fees/slippage/universe/start-date"
+        # as the preferred kind of evidence. `costs` covers fees/slippage,
+        # `universe-perturb` covers universe composition; nothing has covered
+        # start-date. This sweeps the total lookback length ending "now" --
+        # i.e. genuinely different start dates -- and checks whether the
+        # champion's edge over benchmark holds at each. Read-only, same cost
+        # class as `costs`/`universe-perturb`: one real full-history backtest
+        # per scenario, never touches live_state.json or the champion.
+        #
+        # IMPORTANT, discovered while building this: `core.market.load()`'s
+        # cache is a floor, not a window -- "the cache only ever grows" means
+        # `load_universe(..., years=X)` returns the FULL cached range once
+        # the cache already covers X, not an X-year slice. Passing `years`
+        # straight through (as a first draft of this command did) silently
+        # returned the *same* multi-year data for every "shorter" scenario in
+        # one process (cache built by the longest request satisfies every
+        # smaller one too) -- not a start-date perturbation at all. Fixed
+        # here by loading once at max(years_list) (extending the cache if
+        # needed) and then explicitly truncating each symbol's frame to its
+        # own [now - years, now] window before backtesting, independent of
+        # whatever the shared on-disk cache happens to hold.
+        import time
+        import pandas as pd
+        from core import market
+        from loop.engine import run_backtest
+        years_list = [2.0, 3.0, 4.0, 5.0, 6.0]
+        if "--years" in sys.argv:
+            years_list = [float(y) for y in sys.argv[sys.argv.index("--years") + 1].split(",")]
+        g0 = acct.genome
+        genomes = [(f"v{g0.version} (live)", g0)]
+        if "--also-version" in sys.argv:
+            also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+            try:
+                g_other = _reconstruct_champion_genome(also_version, acct.lineage)
+            except ValueError as e:
+                print(f"[history-perturb] {e}")
+                sys.exit(1)
+            genomes.append((f"v{also_version} (reconstructed)", g_other))
+        print(f"[history-perturb] replaying {len(genomes)} genome(s) over "
+              f"{len(years_list)} history lengths ({years_list}) ...", flush=True)
+        for label, genome in genomes:
+            print()
+            print(f"START-DATE SENSITIVITY -- {label}")
+            print("=" * 100)
+            print(f"  {'years back':>10s} {'window start':>12s} {'fitness':>8s} "
+                  f"{'return':>9s} {'sharpe':>7s} {'maxDD':>7s} {'trades':>7s} "
+                  f"{'excess ret':>11s} {'beat bench':>10s}")
+            raw = market.load_universe(genome.universe, genome.bar_interval, max(years_list))
+            if not raw:
+                print("  no market data")
+                continue
+            now_ms = int(time.time() * 1000)
+            rows = []
+            for years in years_list:
+                cutoff = pd.Timestamp(now_ms - int(years * 365.25 * 86_400_000), unit="ms", tz="UTC")
+                data = {s: df[df.index >= cutoff] for s, df in raw.items()}
+                data = {s: df for s, df in data.items() if len(df) > 0}
+                if not data:
+                    print(f"  {years:>10.1f}  no market data")
+                    continue
+                res = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+                if res.get("error"):
+                    print(f"  {years:>10.1f}  backtest failed: {res['error']}")
+                    continue
+                st, edge = res["stats"], res.get("edge", {})
+                win_start = res["window"]["start"][:10]
+                fit = res["fitness"]
+                rows.append((years, fit, edge.get("beat_benchmark")))
+                fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
+                print(f"  {years:>10.1f} {win_start:>12s} {fit_str} "
+                      f"{st.get('total_return', 0):>8.1%} {st.get('sharpe', 0):>7.2f} "
+                      f"{st.get('max_dd', 0):>7.1%} {st.get('trades', 0):>7d} "
+                      f"{edge.get('excess_return', 0):>10.1%} "
+                      f"{str(edge.get('beat_benchmark')):>10s}", flush=True)
+            finite = [f for _, f, _ in rows if math.isfinite(f)]
+            beats = [b for _, _, b in rows if b is not None]
+            if finite:
+                print(f"  -> {len(finite)}/{len(rows)} finite-fitness, range "
+                      f"[{min(finite):.3f}, {max(finite):.3f}]; "
+                      f"beats benchmark in {sum(1 for b in beats if b)}/{len(beats)} "
+                      f"of the scenarios that reported it")
     elif cmd == "fold-dd-blindspot":
         # Diagnostic: explains the 2026-08-22 "-34.1% vs -46.5% maxDD" mystery
         # this file's Current state spent a whole session investigating as a
