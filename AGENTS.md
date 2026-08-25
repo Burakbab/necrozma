@@ -287,6 +287,37 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Checked 2026-08-25 (3-hourly check, ~21:55 UTC): trend/chop, volatility,
+  benchmark shape, and cross-asset correlation all fail to distinguish
+  window 5 from the windows the champion beats — the "what's different
+  about 2024-2026" question from 09:56 UTC is not a coarse market-regime
+  question.** (see
+  `runs/2026-08-25-2155-history-perturb-window5-regime-characterization.md`)
+  No code shipped — three throwaway `/tmp` scripts reused already-tested
+  pure functions (`benchmark_buy_hold`, `pairwise_correlation_stats`, plus a
+  simple efficiency-ratio/volatility calc) over the same 5 independent
+  windows `history-perturb --independent` already tiles. Result: window 5's
+  mean efficiency ratio (0.036), annualized volatility (84.6%), buy-and-hold
+  benchmark shape (+79.5% return, sharpe 0.77 — a genuine melt-up, not a
+  crash or chop), and mean pairwise correlation (0.584) all sit inside the
+  range of windows 3-4, which the champion clears comfortably (+57.5%/+0.8%
+  excess return there vs -41.2% in window 5). Rules out "window 5 is a
+  different kind of market" by every genome-independent metric checked here
+  — whatever makes the champion fail specifically in window 5 has to be
+  about how its own genome/mechanism responds to that window's actual bar
+  sequence, not a coarse regime label. Verified safe: no repo files touched
+  by the check itself, `live_state.json` md5 unchanged
+  (`f7590581b893d3866e00e28c87fe1c02`), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), today's bar already processed by the
+  00:20 UTC daily run before this session started (`tick` not run this
+  session, no double-trade), no genome promotion (no README Status change
+  needed). **Next, if this thread stays worth pursuing**: an `anatomy`-style
+  per-trade post-mortem restricted to window 5, or a trade-count/turnover
+  comparison against windows 3-4, since the coarse regime-shape hypotheses
+  are now exhausted; otherwise fold this into the already-open v3
+  demotion/rollback question (raised to the owner 2026-08-22, reaffirmed
+  since) as one more data point that the edge isn't fully regime-general.
+
 - **Checked 2026-08-25 (3-hourly check, ~18:52 UTC): the continuous-exceeds-
   sub-slice drawdown gap is real but not universal — 2 of 4 testable
   windows (2 and 5) show it, 2 (3 and 4) don't, window 1 untestable.** (see
