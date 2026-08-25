@@ -266,6 +266,35 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-25 (3-hourly check, ~04:02 UTC): the third-genome check
+  the ~01:00 UTC entry named as the concrete next step — run, and it closes
+  this line of inquiry with a negative result.** (see
+  `runs/2026-08-25-0402-selection-noise-third-genome.md`) Same six-draw
+  method against reconstructed champion **v1** (the unevolved seed,
+  `Genome.champion()`, no lineage patches needed). Result: winner gap mean
+  +0.443 vs random gap mean +0.380, winner larger in only 2/6 draws, paired
+  t≈0.121 — essentially no signal, far weaker than v3 (t≈1.02 combined) or
+  v2 (t≈1.667). Extending the 01:00 UTC entry's 2-block genome-stratified
+  design to 3 blocks (v3 n=12, v2 n=6, v1 n=6): fixed-effect pooled mean
+  drops to +0.456 (z≈1.340, one-sided p≈0.090, down from z≈1.678/p≈0.047 at
+  2 blocks); Cochran's Q rises to 2.030 (df=2, still short of the 5.991
+  critical value); block-stratified sign-permutation p rises to 0.0815 (up
+  from 0.0635). **Reading: every time this four-session thread got a
+  genuinely new unit of evidence — v3's second batch, a second champion, now
+  a third genome — the pooled estimate moved away from significance, never
+  toward it, which is itself the signature of a null or sub-noise effect,
+  not one that just needs more data.** Not touching `HOLDOUT_SIGMA` — the
+  conclusion at every step of this thread, now on firmer ground. Closing
+  this line of inquiry, not just this session's slice: worth reopening only
+  on a cheap fourth genome (a future v4+ promotion) or a sharper mechanistic
+  hypothesis, not another same-method batch. Verified safe: `git status
+  --short` clean, `live_state.json` md5 unchanged
+  (`f7590581b893d3866e00e28c87fe1c02`), full suite 235 passed (no code
+  changed), `review-hard-calls` still 0 pending, today's bar already
+  processed by the 00:20 UTC run before this session started (no
+  double-trade). No push notification — read-only research finding (a
+  negative one, closing the thread), zero effect on live trading.
+
 - **Measured 2026-08-25 (3-hourly check, ~01:00 UTC): the genome-stratified
   pooled test the 2026-08-24 22:01 UTC entry flagged as the real next step —
   run, and it changes the picture slightly.** (see
@@ -3652,6 +3681,22 @@ every `evolve` call.
    pursuing is a third genome (v1, or a future champion) to give the
    heterogeneity test real power, not another batch or permutation variant
    on the same two genomes.
+
+   **Measured 2026-08-25 (3-hourly check, ~04:02 UTC): the third genome
+   named above -- done, and it closes this line of inquiry.** See "Current
+   state" above and `runs/2026-08-25-0402-selection-noise-third-genome.md`.
+   Champion v1 (the unevolved seed) shows essentially no selection-noise
+   signal (paired t~0.121, winner gap larger in only 2/6 draws) -- the
+   weakest of the three genomes tested. Extending the pooled design to 3
+   blocks moves the evidence away from significance (z 1.678->1.340,
+   permutation p 0.0635->0.0815, Cochran's Q 0.994->2.030 at df=2, still not
+   significant). Four sessions in, every new independent unit of evidence (a
+   second v3 batch, a second champion, now a third genome) has weakened the
+   pooled estimate rather than sharpening it toward significance -- the
+   signature of a null or sub-noise effect. `HOLDOUT_SIGMA` untouched.
+   **Closing this line of inquiry**: worth reopening only on a cheap fourth
+   genome (a future v4+ promotion) or a genuinely different, sharper
+   hypothesis -- not another same-method batch or genome.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
