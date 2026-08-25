@@ -287,6 +287,41 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Checked 2026-08-25 (3-hourly check, ~18:52 UTC): the continuous-exceeds-
+  sub-slice drawdown gap is real but not universal — 2 of 4 testable
+  windows (2 and 5) show it, 2 (3 and 4) don't, window 1 untestable.** (see
+  `runs/2026-08-25-1852-history-perturb-windows1to4-drawdown.md`) No code
+  shipped — reused existing tested pieces (`run_backtest`,
+  `drawdown_episodes`, `market.load_universe`) from a throwaway `/tmp`
+  script, same precedent as the 4h shadow-evolution sessions, to check the
+  15:53 UTC entry's open question: do windows 1-4 (which all beat
+  benchmark) show the same continuous-run's-maxDD-exceeds-any-of-its-own-
+  sub-slices gap that window 5 showed? Result: window 2 (2018-08-25 to
+  2020-08-25) shows the same shape — continuous maxDD -37.0% vs worst
+  quarter -22.2%, a second real `fold-dd-blindspot`-style instance. Windows
+  3 and 4 show essentially no gap (window 3 is actually *shallower*
+  continuous than its worst quarter, -34.7% vs -42.3% — a locally deep
+  quarter-level dip that isn't part of the real peak-to-trough once the
+  quarter boundary resets the running peak). Window 1 (2017-08-17 to
+  2018-08-25, the earliest history edge) can't be sub-sliced at all: each
+  quarter has too few bars (~93) and too few listed symbols (3-8 of the
+  full roster) for the genome's lookback genes, even though the full window
+  backtests fine. **Reading: this is boundary-placement dependent, not a
+  general continuous-vs-sub-sliced artifact and not unique to window 5's
+  current regime** — closes the open question from 15:53 UTC without
+  further sub-slicing being the obviously useful next step. Verified safe:
+  no repo files touched by the check itself (`git status --short` clean
+  before/after except this note + AGENTS.md), `live_state.json` md5
+  unchanged (`f7590581b893d3866e00e28c87fe1c02`), `evotrader.manifest` md5
+  unchanged (`0bf3a7d9411ee692d0a9f152a7533803`), today's bar already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run this session, no double-trade), no genome promotion (no README
+  Status change needed). **Next, if this thread stays worth pursuing**:
+  window 5's drawdown is still unrecovered as of 2026-08-25 (the live
+  champion's actual current regime, not a historical curiosity) — worth a
+  glance in a future session whether NAV keeps declining or starts
+  recovering over the next several daily bars.
+
 - **Shipped 2026-08-25 (3-hourly check, ~15:50 UTC): `history-perturb
   --drawdown` locates window 5's continuous -44.0% drawdown exactly, and it
   is a real cross-sub-window span, confirming the ~12:55 UTC entry's
