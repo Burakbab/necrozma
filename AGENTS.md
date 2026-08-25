@@ -266,6 +266,34 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-25 (3-hourly check, ~01:00 UTC): the genome-stratified
+  pooled test the 2026-08-24 22:01 UTC entry flagged as the real next step —
+  run, and it changes the picture slightly.** (see
+  `runs/2026-08-25-0100-selection-noise-genome-stratified.md`) Pure
+  arithmetic on the 18 draws already collected across two genomes (v3: 12,
+  v2: 6) — no new backtests. Cochran's Q test (Q=0.994, df=1) found no
+  detectable heterogeneity between the two genomes, so the specific worry
+  that blocked a pooled conclusion ("the samples aren't draws from one
+  distribution") isn't supported by this data — weak evidence given only 1
+  degree of freedom, but not the roadblock it was flagged as. Properly
+  pooled (inverse-variance weighted, not naive concatenation): fixed-effect
+  mean +0.761 (se 0.453, z≈1.678, one-sided p≈0.047); a block-stratified
+  sign-permutation test (200,000 resamples, no normality/pooling
+  assumptions) gives p≈0.0635 — closer to conventional significance than
+  either genome alone (v3 t≈1.02, v2 t≈1.667) but still not a clean cross.
+  **Reading: still not enough to justify touching `HOLDOUT_SIGMA`** (a
+  borderline p-value under a design that's low-powered at only 2 genomes
+  isn't a confirmed effect), but this closes the "needs a genome-stratified
+  design" loose end cleanly. **Sharper next step than more draws or more
+  permutation of the same two genomes: a third genome (v1, or a future
+  champion) would sharpen both the Q-test's power and the pooled estimate's
+  precision far more.** Verified safe: `git status --short` clean before
+  the commit (script lives in the session scratchpad), `live_state.json`
+  md5 unchanged, `review-hard-calls` still 0 pending, today's bar already
+  processed by the 00:20 UTC run before this session started (no
+  double-trade). No push notification — read-only research finding,
+  borderline not conclusive, zero effect on live trading.
+
 - **Measured 2026-08-24 (3-hourly check, ~22:01 UTC): a second champion
   (reconstructed v2) shows the same winner's-curse-shaped selection-noise
   pattern as v3 did — directionally consistent, still not significant
@@ -3607,6 +3635,23 @@ every `evolve` call.
    `HOLDOUT_SIGMA` change. Next, if this stays worth resolving: a
    genome-stratified or mixed-effects pooled test across all 18 draws so
    far (6 v3-batch1 + 6 v3-batch2 + 6 v2), not another same-shape batch.
+
+   **Measured 2026-08-25 (3-hourly check, ~01:00 UTC): the genome-stratified
+   pooled test named above — done.** See "Current state" above and
+   `runs/2026-08-25-0100-selection-noise-genome-stratified.md`. Pure
+   arithmetic on the 18 already-collected draws, no new backtests: Cochran's
+   Q (0.994, df=1) found no detectable heterogeneity between v3 and v2, so
+   the "samples aren't from one distribution" objection that blocked pooling
+   isn't supported by this data (weak evidence at df=1, but not the
+   roadblock it looked like). Properly pooled: fixed-effect mean +0.761
+   (z≈1.678, one-sided p≈0.047); a block-stratified sign-permutation test
+   (200,000 resamples, assumption-light) gives p≈0.0635 — closer to
+   conventional significance than either genome alone but not a clean
+   cross. Still not enough to justify touching `HOLDOUT_SIGMA`. Closes this
+   specific design loose end; the concrete next step if this stays worth
+   pursuing is a third genome (v1, or a future champion) to give the
+   heterogeneity test real power, not another batch or permutation variant
+   on the same two genomes.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
