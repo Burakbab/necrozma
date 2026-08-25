@@ -188,7 +188,17 @@ the same recent stretch. Both modes take `--also-version N`. Read-only, same
 cost class as `costs`/`universe-perturb` (one real backtest per scenario/
 window). First `--independent` result (2026-08-25): champion v3 beats
 benchmark in 4 of 5 independent windows spanning 2017-2024, but hard-fails
-in the most recent one (2024-2026) — see "Current state".
+in the most recent one (2024-2026) — see "Current state". `--independent
+--sub-slice N [--sub-slice-window I]` splits window `I` (default: the most
+recent) into `N` equal contiguous sub-windows and backtests each separately
+(reuses the already-loaded history, no new data loading). `--independent
+--drawdown [--sub-slice-window I]` instead runs one continuous backtest over
+window `I` and reports `loop.engine.drawdown_episodes` (peak/trough
+date, depth, recovery) for it, so a maxDD that a sub-slice view spreads
+across several locally-shallow pieces can still be pinned to its real,
+possibly cross-boundary, peak-to-trough span. Both flags require
+`--independent`. See "Current state" for the first `--sub-slice` and
+`--drawdown` results on window 5.
 
 `fold-dd-blindspot` explains the "-34.1% vs -46.5% maxDD" reproducibility question
 `universe-perturb` and `drawdown` kept raising: `loop.evolve.Evaluator._merge`
@@ -276,6 +286,48 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Shipped 2026-08-25 (3-hourly check, ~15:50 UTC): `history-perturb
+  --drawdown` locates window 5's continuous -44.0% drawdown exactly, and it
+  is a real cross-sub-window span, confirming the ~12:55 UTC entry's
+  hypothesis directly instead of just by shape.** New `--drawdown
+  [--sub-slice-window I]` flag on `history-perturb --independent`: runs one
+  continuous `run_backtest` over window `I` (default: the most recent) and
+  feeds its `nav_history` through the already-existing, already-tested
+  `loop.engine.drawdown_episodes` (the same pure function the `drawdown`
+  command already uses over the full 4-year history/holdout) to report the
+  actual peak/trough dates and depth, ranked, instead of a single max_dd
+  number. No new pure function — this only wires an existing one into
+  `history-perturb`'s already-loaded window list, same precedent as
+  `--sub-slice`. Result on champion v3's window 5 (2024-08-25 to
+  2026-08-25): the deepest episode reproduces the reported -44.0% exactly,
+  peak **2025-11-08** to trough **2026-08-11** (276 bars, **not yet
+  recovered** as of the newest available bar) — a single unbroken decline
+  that starts inside the ~12:55 UTC run's sub-window 3 (2025-08-25 to
+  2026-02-23) and bottoms out inside sub-window 4 (2026-02-23 to
+  2026-08-25), exactly the cross-boundary span that run's shape-based
+  argument predicted but couldn't locate without the NAV path. Four shallower
+  episodes also reported (-25.9% to -11.2%, all recovered), none close to
+  the 40% gate on their own. Answers the ~12:55 UTC "Next" item's first
+  option directly (no finer sub-slice needed once the real peak/trough dates
+  are in hand) — the second option (whether windows 1-4 show the same
+  continuous-exceeds-any-sub-slice gap) is still open, not attempted here.
+  Verified safe: full suite 235 passed (156.34s, matches baseline, no new
+  test file per the no-new-pure-function precedent), `git status --short`
+  clean before commit, `live_state.json` md5 unchanged
+  (`f7590581b893d3866e00e28c87fe1c02`), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), constitution verified
+  `8b74865634b1db07` unchanged, today's bar already processed by the 00:20
+  UTC daily run before this session started (`tick` not run this session,
+  no double-trade), `review-hard-calls` still 0 pending, no genome
+  promotion (no README Status change needed). **Next, if this thread stays
+  worth pursuing**: check windows 1-4 with the same `--drawdown` flag for
+  the continuous-exceeds-any-sub-slice gap; separately, the drawdown being
+  *unrecovered as of "now"* (2026-08-25) is itself worth flagging — this is
+  the live champion's own current real-time regime, not a historical
+  curiosity, so whether NAV keeps falling or starts recovering over the
+  next few daily bars is worth a glance in a future session rather than
+  assuming it already troughed.
 
 - **Shipped 2026-08-25 (3-hourly check, ~12:55 UTC): `history-perturb
   --sub-slice`, the follow-up the ~09:56 UTC entry below flagged — does the

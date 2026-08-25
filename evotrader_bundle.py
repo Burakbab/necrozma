@@ -1894,7 +1894,7 @@ def main():
         import time
         import pandas as pd
         from core import market
-        from loop.engine import run_backtest
+        from loop.engine import run_backtest, drawdown_episodes
         independent = "--independent" in sys.argv
         window_years = 2.0
         if "--window-years" in sys.argv:
@@ -1911,6 +1911,10 @@ def main():
         sub_slice_window = None
         if "--sub-slice-window" in sys.argv:
             sub_slice_window = int(sys.argv[sys.argv.index("--sub-slice-window") + 1])
+        show_drawdown = "--drawdown" in sys.argv
+        if show_drawdown and not independent:
+            print("[history-perturb] --drawdown requires --independent")
+            sys.exit(1)
         g0 = acct.genome
         genomes = [(f"v{g0.version} (live)", g0)]
         if "--also-version" in sys.argv:
@@ -2087,6 +2091,39 @@ def main():
                           f"[{min(sub_fits_only):.3f}, {max(sub_fits_only):.3f}]; "
                           f"beats benchmark in {sum(1 for b in sub_beats if b)}/"
                           f"{len(sub_beats)} of the sub-windows that reported it")
+            if show_drawdown:
+                target_idx = sub_slice_window if sub_slice_window is not None else len(windows)
+                if not (1 <= target_idx <= len(windows)):
+                    print(f"  --drawdown target window {target_idx} out of range "
+                          f"(1-{len(windows)})")
+                    continue
+                dw_start, dw_end = windows[target_idx - 1]
+                data = {s: df[(df.index >= dw_start) & (df.index < dw_end)]
+                        for s, df in raw.items()}
+                data = {s: df for s, df in data.items() if len(df) > 0}
+                res = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+                print()
+                print(f"  DRAWDOWN EPISODES within window {target_idx} "
+                      f"({str(dw_start.date())} to {str(dw_end.date())})")
+                if res.get("error"):
+                    print(f"  backtest failed: {res['error']}")
+                    continue
+                st = res.get("stats", {})
+                episodes = drawdown_episodes(res.get("nav_history", []), top_n=5)
+                print(f"  reported max_dd (stats, whole window): {st.get('max_dd', 0):.1%}")
+                if episodes:
+                    deepest = episodes[0]
+                    print(f"  deepest episode reproduces it: {deepest['dd_pct']:.1%} "
+                          f"({'match' if abs(deepest['dd_pct'] - st.get('max_dd', 0)) < 1e-9 else 'MISMATCH'})")
+                print(f"  {'depth':>8s}  {'peak date':<12s} {'trough date':<12s} "
+                      f"{'bars':>5s}  {'recovery':<12s}")
+                for e in episodes:
+                    recov = e["recovery_ts"][:10] if e["recovery_ts"] else "not recovered"
+                    print(f"  {e['dd_pct']:>7.1%}  {e['peak_ts'][:10]:<12s} "
+                          f"{e['trough_ts'][:10]:<12s} {e['peak_to_trough_bars']:>5d}  "
+                          f"{recov:<12s}")
+                if not episodes:
+                    print("  no drawdown episodes (nav never fell below its own peak)")
     elif cmd == "fold-dd-blindspot":
         # Diagnostic: explains the 2026-08-22 "-34.1% vs -46.5% maxDD" mystery
         # this file's Current state spent a whole session investigating as a
