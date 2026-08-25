@@ -277,6 +277,47 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-25 (3-hourly check, ~12:55 UTC): `history-perturb
+  --sub-slice`, the follow-up the ~09:56 UTC entry below flagged — does the
+  newest independent window's hard-fail spread evenly across its 2 years or
+  concentrate in a sub-period?** (see
+  `runs/2026-08-25-1255-history-perturb-sub-slice-window5.md`) New
+  `--sub-slice N [--sub-slice-window I]` flag on `history-perturb
+  --independent` (reuses its already-loaded history/window list, no new
+  data loading): splits window `I` (default: the most recent) into `N`
+  equal contiguous sub-windows, one real `run_backtest` each. Result on
+  champion v3's window 5 (2024-08-25 to 2026-08-25), split into 4 six-month
+  sub-windows: a clean front/back split, not an even spread — sub 1-2 are
+  fitness-positive (sub 1 hits 4.080, the best fitness of *any* window
+  measured in this whole thread), sub 3-4 are fitness-negative, and
+  benchmark is beaten in only 1/4 sub-windows overall. Sharper structural
+  finding: **no individual 6-month sub-window comes within 15 points of the
+  40% hard-fail drawdown threshold (worst is -25.2%), yet the full
+  continuous 2-year window's own max_dd is -44.0%** — the same *shape* as
+  the already-documented `fold-dd-blindspot` mechanism (a continuous
+  drawdown spanning a window boundary is invisible to any one
+  independently-reset backtest's local max_dd), here surfaced by one
+  continuous run exceeding what any of its own sub-slices show locally,
+  rather than by merging independent folds. Not proven mechanistically
+  identical (would need the actual NAV/drawdown path, not exposed by
+  `run_backtest`'s return value today) — a plausible match, not a closed
+  case. Verified safe: full suite 235 passed (135.67s, matches baseline, no
+  new pure function so no new test file, same precedent as every
+  perturbation diagnostic in this family), `git status --short` clean
+  before commit, `live_state.json` md5 unchanged
+  (`f7590581b893d3866e00e28c87fe1c02`), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), constitution verified
+  `8b74865634b1db07` unchanged, today's bar already processed by the 00:20
+  UTC daily run before this session started (`tick` not run this session,
+  no double-trade), `review-hard-calls` still 0 pending, no genome
+  promotion (no README Status change needed). **Next, if this thread stays
+  worth pursuing**: locate the continuous drawdown more precisely (a finer
+  `--sub-slice`, e.g. 8 windows of ~3 months, or exposing the internal
+  equity curve for a direct plot) and check whether windows 1-4 (which all
+  pass) show the same continuous-exceeds-any-sub-slice gap, to tell whether
+  this is generic to continuous-vs-sub-sliced backtesting or specific to
+  window 5 — not attempted here.
+
 - **Shipped 2026-08-25 (3-hourly check, ~09:56 UTC): `history-perturb
   --independent`, the sharper non-overlapping-windows follow-up the ~07:00
   UTC entry below explicitly flagged as its own next step.** (see

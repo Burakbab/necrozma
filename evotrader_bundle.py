@@ -1879,6 +1879,18 @@ def main():
         # and reports each as an independent draw, plus a fitness-vs-recency
         # correlation across them. Same guarantees: real run_backtest per
         # window, read-only, never touches live_state.json or the champion.
+        #
+        # `--sub-slice N [--sub-slice-window I]` (added 2026-08-25 3-hourly
+        # check): the 09:56 UTC run of `--independent` found champion v3
+        # hard-failing specifically the newest 2y window (window 5,
+        # 2024-08-24 to 2026-08-25) while beating benchmark in the other
+        # four -- open question was whether that failure is spread evenly
+        # across the whole 2 years or concentrated in a sub-period. Requires
+        # `--independent` (reuses its already-loaded `raw` history and
+        # computed `windows` list). Splits window I (1-indexed, defaults to
+        # the most recent/last window -- the one under investigation) into N
+        # equal contiguous sub-windows and runs one real run_backtest per
+        # sub-window, same read-only guarantees.
         import time
         import pandas as pd
         from core import market
@@ -1890,6 +1902,15 @@ def main():
         years_list = [2.0, 3.0, 4.0, 5.0, 6.0]
         if "--years" in sys.argv:
             years_list = [float(y) for y in sys.argv[sys.argv.index("--years") + 1].split(",")]
+        sub_slice_n = None
+        if "--sub-slice" in sys.argv:
+            sub_slice_n = int(sys.argv[sys.argv.index("--sub-slice") + 1])
+            if not independent:
+                print("[history-perturb] --sub-slice requires --independent")
+                sys.exit(1)
+        sub_slice_window = None
+        if "--sub-slice-window" in sys.argv:
+            sub_slice_window = int(sys.argv[sys.argv.index("--sub-slice-window") + 1])
         g0 = acct.genome
         genomes = [(f"v{g0.version} (live)", g0)]
         if "--also-version" in sys.argv:
@@ -2019,6 +2040,53 @@ def main():
                               "no clear trend")
                     print(f"  -> fitness-vs-recency correlation across independent windows: "
                           f"r={corr:+.3f} ({trend})")
+            if sub_slice_n:
+                target_idx = sub_slice_window if sub_slice_window is not None else len(windows)
+                if not (1 <= target_idx <= len(windows)):
+                    print(f"  --sub-slice-window {target_idx} out of range "
+                          f"(1-{len(windows)})")
+                    continue
+                tw_start, tw_end = windows[target_idx - 1]
+                sub_width = (tw_end - tw_start) / sub_slice_n
+                print()
+                print(f"  SUB-SLICE window {target_idx} "
+                      f"({str(tw_start.date())} to {str(tw_end.date())}) into "
+                      f"{sub_slice_n} equal sub-windows")
+                print(f"  {'sub':>4s} {'start':>12s} {'end':>12s} {'symbols':>7s} "
+                      f"{'fitness':>8s} {'return':>9s} {'sharpe':>7s} {'maxDD':>7s} "
+                      f"{'trades':>7s} {'excess ret':>11s} {'beat bench':>10s}")
+                sub_rows = []
+                for sidx in range(sub_slice_n):
+                    s_start = tw_start + sub_width * sidx
+                    s_end = tw_end if sidx == sub_slice_n - 1 else tw_start + sub_width * (sidx + 1)
+                    data = {s: df[(df.index >= s_start) & (df.index < s_end)]
+                            for s, df in raw.items()}
+                    data = {s: df for s, df in data.items() if len(df) > 0}
+                    n_syms = len(data)
+                    res = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+                    if res.get("error"):
+                        print(f"  {sidx + 1:>4d} {str(s_start.date()):>12s} "
+                              f"{str(s_end.date()):>12s} {n_syms:>7d}  "
+                              f"backtest failed: {res['error']}")
+                        continue
+                    st, edge = res["stats"], res.get("edge", {})
+                    fit = res["fitness"]
+                    sub_rows.append((sidx + 1, fit, edge.get("beat_benchmark")))
+                    fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
+                    print(f"  {sidx + 1:>4d} {str(s_start.date()):>12s} "
+                          f"{str(s_end.date()):>12s} {n_syms:>7d} {fit_str} "
+                          f"{st.get('total_return', 0):>8.1%} {st.get('sharpe', 0):>7.2f} "
+                          f"{st.get('max_dd', 0):>7.1%} {st.get('trades', 0):>7d} "
+                          f"{edge.get('excess_return', 0):>10.1%} "
+                          f"{str(edge.get('beat_benchmark')):>10s}", flush=True)
+                sub_finite = [(i, f) for i, f, _ in sub_rows if math.isfinite(f)]
+                sub_beats = [b for _, _, b in sub_rows if b is not None]
+                if sub_finite:
+                    sub_fits_only = [f for _, f in sub_finite]
+                    print(f"  -> {len(sub_finite)}/{len(sub_rows)} finite-fitness, range "
+                          f"[{min(sub_fits_only):.3f}, {max(sub_fits_only):.3f}]; "
+                          f"beats benchmark in {sum(1 for b in sub_beats if b)}/"
+                          f"{len(sub_beats)} of the sub-windows that reported it")
     elif cmd == "fold-dd-blindspot":
         # Diagnostic: explains the 2026-08-22 "-34.1% vs -46.5% maxDD" mystery
         # this file's Current state spent a whole session investigating as a
