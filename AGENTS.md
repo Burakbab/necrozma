@@ -179,6 +179,17 @@ Convergence checked 2026-08-20 at `--n-boot` up to 50000: stable by ~5000
 draws at refined per-champion estimates v3 ≈25.5x / v1 ≈18.5x / v2 ≈15.1x —
 see "Current state".
 
+`history-perturb` sweeps start-date sensitivity: `--years Y1,Y2,...` (default
+2/3/4/5/6) runs nested scenarios all ending "now"; `--independent
+[--window-years Y]` (default 2.0) instead tiles fixed-width, non-overlapping
+windows walking backward from "now" over the full available history per
+symbol, so each window is a genuinely independent draw rather than sharing
+the same recent stretch. Both modes take `--also-version N`. Read-only, same
+cost class as `costs`/`universe-perturb` (one real backtest per scenario/
+window). First `--independent` result (2026-08-25): champion v3 beats
+benchmark in 4 of 5 independent windows spanning 2017-2024, but hard-fails
+in the most recent one (2024-2026) — see "Current state".
+
 `fold-dd-blindspot` explains the "-34.1% vs -46.5% maxDD" reproducibility question
 `universe-perturb` and `drawdown` kept raising: `loop.evolve.Evaluator._merge`
 computes the merged max_dd the acceptance gates check as the worst of the 3
@@ -265,6 +276,40 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Shipped 2026-08-25 (3-hourly check, ~09:56 UTC): `history-perturb
+  --independent`, the sharper non-overlapping-windows follow-up the ~07:00
+  UTC entry below explicitly flagged as its own next step.** (see
+  `runs/2026-08-25-0956-history-perturb-independent-windows.md`) New mode
+  on the same command (`[--window-years Y]`, default 2.0): instead of
+  nested scenarios all ending "now," tiles fixed-width non-overlapping
+  windows walking backward from "now" over the full available history per
+  symbol (real Binance listing dates, via a generous 12y load). Result on
+  champion v3: 4 genuinely independent windows spanning 2017-2024 all beat
+  benchmark (3 by a large margin), but the most recent independent window
+  (2024-08-24 → 2026-08-25 — the same span the nested `--years 2` scenario
+  already flagged) hard-fails. **This sharpens, not just confirms, the
+  07:00 UTC finding**: it rules out "one shared recent stretch is a
+  headwind a longer nested window's older gains simply outweigh" (4
+  independent non-nested windows still show a real edge), reframing the
+  open question from "is the edge start-date dependent" (largely answered:
+  no, not broadly) to "what's specifically different about 2024-2026"
+  (open). A comparison run against reconstructed v1 (unevolved seed) found
+  a different, much weaker pattern (beats benchmark in only 1/5 windows vs
+  v3's 4/5, including losing badly in two windows where v3's edge was
+  largest) — evidence the edge is a genuine product of evolution, not
+  market beta, though v1 doesn't clear window 5 either. Verified safe: full
+  suite 235 passed, no new pure function so no new test file (same
+  precedent as the nested mode), `git status --short` clean before commit,
+  `live_state.json` md5 unchanged (`f7590581b893d3866e00e28c87fe1c02`),
+  `evotrader.manifest` md5 unchanged (`0bf3a7d9411ee692d0a9f152a7533803`),
+  constitution verified `8b74865634b1db07` unchanged, today's bar already
+  processed by the 00:20 UTC daily run before this session started (`tick`
+  not run this session, no double-trade), `review-hard-calls` still 0
+  pending, no genome promotion (no README Status change needed). **Next**:
+  characterize window 5 specifically (`regime` on that exact span, or a
+  sub-slice check to see if the failure is concentrated or spread across
+  the whole 2 years) — not attempted here.
 
 - **Shipped 2026-08-25 (3-hourly check, ~07:00 UTC): `history-perturb`, the
   last untried leg of the 2026-08-16 "perturbation tests on

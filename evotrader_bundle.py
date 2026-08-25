@@ -1866,10 +1866,27 @@ def main():
         # needed) and then explicitly truncating each symbol's frame to its
         # own [now - years, now] window before backtesting, independent of
         # whatever the shared on-disk cache happens to hold.
+        #
+        # `--independent` mode (added 2026-08-25 3-hourly check): the nested
+        # scenarios above all share the same recent history (every window
+        # ends "now"), so they can't tell "genuinely start-date robust" apart
+        # from "one shared recent stretch is a genuine headwind that a longer
+        # window's older gains simply outweigh" -- exactly the open question
+        # the first version of this command's own findings flagged. This
+        # tiles fixed-width, non-overlapping windows walking backward from
+        # "now" (so every window except possibly the oldest -- clipped to
+        # whatever history actually exists -- gets a full, comparable width)
+        # and reports each as an independent draw, plus a fitness-vs-recency
+        # correlation across them. Same guarantees: real run_backtest per
+        # window, read-only, never touches live_state.json or the champion.
         import time
         import pandas as pd
         from core import market
         from loop.engine import run_backtest
+        independent = "--independent" in sys.argv
+        window_years = 2.0
+        if "--window-years" in sys.argv:
+            window_years = float(sys.argv[sys.argv.index("--window-years") + 1])
         years_list = [2.0, 3.0, 4.0, 5.0, 6.0]
         if "--years" in sys.argv:
             years_list = [float(y) for y in sys.argv[sys.argv.index("--years") + 1].split(",")]
@@ -1883,49 +1900,125 @@ def main():
                 print(f"[history-perturb] {e}")
                 sys.exit(1)
             genomes.append((f"v{also_version} (reconstructed)", g_other))
-        print(f"[history-perturb] replaying {len(genomes)} genome(s) over "
-              f"{len(years_list)} history lengths ({years_list}) ...", flush=True)
+        if independent:
+            print(f"[history-perturb] replaying {len(genomes)} genome(s) over independent "
+                  f"non-overlapping {window_years:.1f}y windows ...", flush=True)
+        else:
+            print(f"[history-perturb] replaying {len(genomes)} genome(s) over "
+                  f"{len(years_list)} history lengths ({years_list}) ...", flush=True)
         for label, genome in genomes:
             print()
-            print(f"START-DATE SENSITIVITY -- {label}")
-            print("=" * 100)
-            print(f"  {'years back':>10s} {'window start':>12s} {'fitness':>8s} "
+            if not independent:
+                print(f"START-DATE SENSITIVITY -- {label}")
+                print("=" * 100)
+                print(f"  {'years back':>10s} {'window start':>12s} {'fitness':>8s} "
+                      f"{'return':>9s} {'sharpe':>7s} {'maxDD':>7s} {'trades':>7s} "
+                      f"{'excess ret':>11s} {'beat bench':>10s}")
+                raw = market.load_universe(genome.universe, genome.bar_interval, max(years_list))
+                if not raw:
+                    print("  no market data")
+                    continue
+                now_ms = int(time.time() * 1000)
+                rows = []
+                for years in years_list:
+                    cutoff = pd.Timestamp(now_ms - int(years * 365.25 * 86_400_000), unit="ms", tz="UTC")
+                    data = {s: df[df.index >= cutoff] for s, df in raw.items()}
+                    data = {s: df for s, df in data.items() if len(df) > 0}
+                    if not data:
+                        print(f"  {years:>10.1f}  no market data")
+                        continue
+                    res = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+                    if res.get("error"):
+                        print(f"  {years:>10.1f}  backtest failed: {res['error']}")
+                        continue
+                    st, edge = res["stats"], res.get("edge", {})
+                    win_start = res["window"]["start"][:10]
+                    fit = res["fitness"]
+                    rows.append((years, fit, edge.get("beat_benchmark")))
+                    fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
+                    print(f"  {years:>10.1f} {win_start:>12s} {fit_str} "
+                          f"{st.get('total_return', 0):>8.1%} {st.get('sharpe', 0):>7.2f} "
+                          f"{st.get('max_dd', 0):>7.1%} {st.get('trades', 0):>7d} "
+                          f"{edge.get('excess_return', 0):>10.1%} "
+                          f"{str(edge.get('beat_benchmark')):>10s}", flush=True)
+                finite = [f for _, f, _ in rows if math.isfinite(f)]
+                beats = [b for _, _, b in rows if b is not None]
+                if finite:
+                    print(f"  -> {len(finite)}/{len(rows)} finite-fitness, range "
+                          f"[{min(finite):.3f}, {max(finite):.3f}]; "
+                          f"beats benchmark in {sum(1 for b in beats if b)}/{len(beats)} "
+                          f"of the scenarios that reported it")
+                continue
+
+            print(f"INDEPENDENT-WINDOW SENSITIVITY -- {label}")
+            print("=" * 108)
+            print(f"  {'window':>6s} {'start':>12s} {'end':>12s} {'symbols':>7s} {'fitness':>8s} "
                   f"{'return':>9s} {'sharpe':>7s} {'maxDD':>7s} {'trades':>7s} "
                   f"{'excess ret':>11s} {'beat bench':>10s}")
-            raw = market.load_universe(genome.universe, genome.bar_interval, max(years_list))
+            # Load generously far back (Binance USDT-pair history starts
+            # ~2017-2019 depending on the symbol) so `earliest` below reflects
+            # real listing dates, not an arbitrary request cutoff.
+            raw = market.load_universe(genome.universe, genome.bar_interval, 12.0)
             if not raw:
                 print("  no market data")
                 continue
-            now_ms = int(time.time() * 1000)
+            starts = [df.index[0] for df in raw.values() if len(df) > 0]
+            if not starts:
+                print("  no market data")
+                continue
+            earliest = min(starts)
+            now_ts = pd.Timestamp(int(time.time() * 1000), unit="ms", tz="UTC")
+            width = pd.Timedelta(days=window_years * 365.25)
+            windows = []
+            w_end = now_ts
+            while w_end > earliest:
+                w_start = max(w_end - width, earliest)
+                windows.append((w_start, w_end))
+                w_end = w_start
+            windows.reverse()  # oldest first, chronological
             rows = []
-            for years in years_list:
-                cutoff = pd.Timestamp(now_ms - int(years * 365.25 * 86_400_000), unit="ms", tz="UTC")
-                data = {s: df[df.index >= cutoff] for s, df in raw.items()}
+            for widx, (w_start, w_end) in enumerate(windows, start=1):
+                data = {s: df[(df.index >= w_start) & (df.index < w_end)] for s, df in raw.items()}
                 data = {s: df for s, df in data.items() if len(df) > 0}
-                if not data:
-                    print(f"  {years:>10.1f}  no market data")
-                    continue
+                n_syms = len(data)
                 res = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
                 if res.get("error"):
-                    print(f"  {years:>10.1f}  backtest failed: {res['error']}")
+                    print(f"  {widx:>6d} {str(w_start.date()):>12s} {str(w_end.date()):>12s} "
+                          f"{n_syms:>7d}  backtest failed: {res['error']}")
                     continue
                 st, edge = res["stats"], res.get("edge", {})
-                win_start = res["window"]["start"][:10]
                 fit = res["fitness"]
-                rows.append((years, fit, edge.get("beat_benchmark")))
+                rows.append((widx, fit, edge.get("beat_benchmark")))
                 fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
-                print(f"  {years:>10.1f} {win_start:>12s} {fit_str} "
+                print(f"  {widx:>6d} {str(w_start.date()):>12s} {str(w_end.date()):>12s} "
+                      f"{n_syms:>7d} {fit_str} "
                       f"{st.get('total_return', 0):>8.1%} {st.get('sharpe', 0):>7.2f} "
                       f"{st.get('max_dd', 0):>7.1%} {st.get('trades', 0):>7d} "
                       f"{edge.get('excess_return', 0):>10.1%} "
                       f"{str(edge.get('beat_benchmark')):>10s}", flush=True)
-            finite = [f for _, f, _ in rows if math.isfinite(f)]
+            finite = [(i, f) for i, f, _ in rows if math.isfinite(f)]
             beats = [b for _, _, b in rows if b is not None]
             if finite:
+                fits_only = [f for _, f in finite]
                 print(f"  -> {len(finite)}/{len(rows)} finite-fitness, range "
-                      f"[{min(finite):.3f}, {max(finite):.3f}]; "
+                      f"[{min(fits_only):.3f}, {max(fits_only):.3f}]; "
                       f"beats benchmark in {sum(1 for b in beats if b)}/{len(beats)} "
-                      f"of the scenarios that reported it")
+                      f"of the windows that reported it")
+            if len(finite) >= 3:
+                idxs = [i for i, _ in finite]
+                fits = [f for _, f in finite]
+                n = len(idxs)
+                mean_i, mean_f = sum(idxs) / n, sum(fits) / n
+                cov = sum((i - mean_i) * (f - mean_f) for i, f in zip(idxs, fits))
+                var_i = sum((i - mean_i) ** 2 for i in idxs)
+                var_f = sum((f - mean_f) ** 2 for f in fits)
+                if var_i > 0 and var_f > 0:
+                    corr = cov / math.sqrt(var_i * var_f)
+                    trend = ("later windows score higher" if corr > 0.1 else
+                              "earlier windows score higher" if corr < -0.1 else
+                              "no clear trend")
+                    print(f"  -> fitness-vs-recency correlation across independent windows: "
+                          f"r={corr:+.3f} ({trend})")
     elif cmd == "fold-dd-blindspot":
         # Diagnostic: explains the 2026-08-22 "-34.1% vs -46.5% maxDD" mystery
         # this file's Current state spent a whole session investigating as a
