@@ -287,6 +287,38 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Checked 2026-08-26 (3-hourly check, ~03:53 UTC): the boundary-shift noise
+  found in window 5 is general, not a window-5 special case — windows 3 and
+  4 show the same order-of-magnitude sensitivity.** (see
+  `runs/2026-08-26-0353-history-perturb-boundary-shift-windows3-4.md`) Same
+  `--boundary-shift` flag (no code change), pointed at windows 3 and 4
+  instead of 5. Window 3: 10/15 shifts beat benchmark, excess return
+  [-162.7%, +366.2%] (widest spread of the three windows checked so far),
+  2/15 hard-fail. Window 4: 10/15 beat benchmark, excess return [-48.9%,
+  +142.5%], 0/15 hard-fail (maxDD never exceeds -34.1%). Window 5 for
+  comparison (00:59 UTC entry): 6/15 beat benchmark, excess return [-44.4%,
+  +57.3%], 14/15 hard-fail. Reading: the beat-benchmark/excess-return
+  verdict is boundary-placement noise in all three windows checked, not
+  unique to window 5 — but window 5's much higher hard-fail rate (14/15 vs.
+  2/15 and 0/15) is a real difference, consistent with the 00:59 UTC
+  entry's split (max-dd/hard-fail = genuine regime signal, beat-benchmark =
+  noisy draw). Sharpens the open v3 demotion/rollback question (raised to
+  the owner 2026-08-22): any single window's `beat_benchmark` reading is
+  unreliable regardless of which window, but window 5's drawdown depth
+  specifically is not. Verified safe: full suite 235 passed (129.54s,
+  matches baseline, no code changed so no new tests needed),
+  `live_state.json` untouched (still reflects tick 12 from the 00:20 UTC
+  daily run), `evotrader.manifest` md5 unchanged, constitution verified
+  `8b74865634b1db07` unchanged, today's bar already processed before this
+  session started (`tick` not run this session, no double-trade), no
+  genome promotion (no README Status change needed). **Next, if this
+  thread stays worth pursuing**: trace what actually differs between two
+  adjacent boundary-shift runs' first few trades (e.g. window 3's shift 2
+  vs 3, +357.2% vs -148.2% one day apart) to find the path-dependence
+  mechanism directly — the sharpest remaining item across all three
+  boundary-shift sessions so far; the per-trade `anatomy` post-mortem on
+  window 5 is still open too, with the noise caveat reinforced twice over.
+
 - **Shipped 2026-08-26 (3-hourly check, ~00:59 UTC): the "window 5 hard-fails
   benchmark" verdict is largely a boundary-placement artifact — the >40%
   max-dd hard-fail is comparatively robust, but the beat-benchmark call is
