@@ -287,6 +287,39 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Confirmed 2026-08-26 (3-hourly check, ~09:50 UTC): the day-1 greedy cash
+  allocation mechanism found on window 3 is general — it reproduces on
+  window 5 too, and more starkly.** (see
+  `runs/2026-08-26-0950-boundary-shift-window5-mechanism-check.md`) Picked up
+  the 06:55 UTC entry's open item directly: ran the same `--trace-diff 0,1`
+  check on window 5 instead of window 3 (no code change, existing flag).
+  Result: shift 0 vs shift 1's day-1 fills share **zero** symbols
+  (`['DOGEUSDT', 'SOLUSDT', 'ZECUSDT']` vs `['ETHUSDT', 'LINKUSDT',
+  'LTCUSDT']` — window 3's pair shared one), and the very first trade in the
+  625/603-trade sequence already diverges. Answers the open question: the
+  mechanism (a one-day boundary shift changes every asset's rolling
+  indicators on the new "day 1," and `risk_judge`'s greedy, hard-capped cash
+  allocation lets whichever symbols cross the entry threshold first claim
+  all available cash) is general across windows checked so far, not a
+  window-3 special case. Doesn't propose a fix, and raises a framing
+  question not asked before: since the live account only ever has one real
+  "day 1" (account creation), not a swept ensemble, does this
+  boundary-shift sensitivity have any live-trading relevance at all, or is
+  it purely a backtest-evaluation artifact? Verified safe: no code changed
+  this session (existing CLI flag reused, so no test suite run needed, same
+  precedent as prior no-code-change diagnostic sessions), `live_state.json`
+  untouched (md5 `1441d25f45fb4a927f993cbc8c505a5b`, still tick 12 from the
+  00:20 UTC daily run), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), constitution verified
+  `8b74865634b1db07` unchanged, today's bar already processed before this
+  session started (no double-trade), no genome promotion (no README Status
+  change needed). **Next, if this thread stays worth pursuing**: the
+  window-5 per-trade `anatomy` post-mortem, still open; whether a day-1
+  allocation redesign (proportional/ranked instead of greedy-first-come) is
+  worth attempting — untried design work; and the new live-trading-relevance
+  framing question above, which could resolve the whole thread without
+  further diagnostics.
+
 - **Traced 2026-08-26 (3-hourly check, ~06:55 UTC): found the boundary-shift
   path-dependence mechanism — it's a hard-capped, order-sensitive day-1 cash
   allocation, not a black box.** (see
