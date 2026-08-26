@@ -298,6 +298,46 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Confirmed 2026-08-26 (3-hourly check, ~21:52 UTC): the champion-score swing
+  flips a real accept/reject verdict — confirmed, not hypothetical.** (see
+  `runs/2026-08-26-2152-fold-date-sensitivity-verdict-flip.md`) Picked up the
+  sharpest open item from the 12:57 UTC entry directly: ran one real
+  generation's worth of work (real `researcher_memory` resumed — 182
+  already-tested proposals excluded against v3, stagnation 12, holdout_draws
+  13 — real `Researcher.propose`/`Evaluator.evaluate`, `n_blind=14`, 14 fresh
+  proposals, 196 cumulative), then re-ran `accepts()` on the top-3 real
+  candidates swapping only `champion_score` for the 7 values the 12:57 UTC
+  `fold-date-sensitivity --shift 7` run already measured. Result: 2 of the 3
+  top candidates (fold-aggregate fitness 1.2371 and 1.2067, both real 8-gene
+  blind-search patches) flip — ACCEPT the fold-aggregate gate on 3 of 7
+  measured champion-score days (shifts 0/1/3) and reject on the other 4
+  (2/4/5/6), with nothing about either candidate changing, only the champion
+  baseline it's compared against. The third candidate hard-fails a gate on
+  every shift and never reaches the comparison at all — not every candidate
+  is shift-sensitive, only ones close to the champion's own swing range.
+  Scope limit: "ACCEPT" here means clearing `accepts()`, the fold-aggregate
+  gate only — the sealed holdout is a separate, independent, already-
+  characterized second gate this experiment didn't re-run per shift, so this
+  doesn't claim either candidate would actually promote, only that which
+  candidates even reach the holdout gate depends on the calendar day
+  `evolve` happens to run. Verified safe: no code changed in the repo (script
+  lives only in session scratch space, never touches any committed file, so
+  no test suite run needed), `live_state.json` untouched (md5
+  `1441d25f45fb4a927f993cbc8c505a5b`, unchanged from the 18:51 UTC entry,
+  still tick 12 from the 00:20 UTC daily run — script never calls
+  `acct.save()`), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), today's bar already processed before
+  this session started (no double-trade), no genome promotion (no README
+  Status change needed). **Next, if this thread stays worth pursuing**:
+  whether the same flip pattern holds against a different proposal batch
+  (this was one draw); whether a flipped candidate that reaches the holdout
+  gate on an accept-verdict day would actually pass the sealed holdout too
+  (not attempted — would need to actually run `holdout_check`); whether
+  smoothing the champion's fold-aggregate baseline across several as-of
+  dates would reduce the flip rate — untried design work, would need its
+  own `AMENDMENTS.md` row if pursued; the day-1-allocation-redesign question
+  and window-5 `anatomy` post-mortem from the 09:50 UTC entry, still open.
+
 - **Confirmed 2026-08-26 (3-hourly check, ~18:51 UTC): the fold-date-sensitivity
   swing the 12:57 UTC entry found is not v3-specific — v1 and v2 show the
   same order-of-magnitude spread, and hard-fail more often.** (see
