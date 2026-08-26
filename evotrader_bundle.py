@@ -12,6 +12,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py consults         # are the three consults actually independent?
     python evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
     python evotrader_bundle.py fold-scheme      # fold-count sensitivity of fold-aggregate fitness
+    python evotrader_bundle.py fold-date-sensitivity  # does the real evolve() fold-aggregate fitness depend on which day it's run?
     python evotrader_bundle.py fitness-decomp   # split aggregate_fitness into mean vs consistency-penalty term
     python evotrader_bundle.py regime-scan      # is the fold-2 melt-up concentrated enough to warrant regime-stratified folds?
     python evotrader_bundle.py regime-folds     # does grouping sub-windows by regime instead of calendar stabilize aggregate_fitness?
@@ -1063,6 +1064,91 @@ def main():
                 if all(v is not None for v in vals):
                     print(f"    n_folds={n_folds}: " +
                           "  ".join(f"{l}: {v:.3f}" for l, v in zip(labels, vals)))
+    elif cmd == "fold-date-sensitivity":
+        # Diagnostic: the 2026-08-26 09:50 UTC boundary-shift entry (see
+        # AGENTS.md "Current state") raised a framing question the whole
+        # `history-perturb --boundary-shift` thread hadn't asked yet -- that
+        # diagnostic sweeps its own hand-rolled single-window backtest
+        # (`run_backtest(genome, data, 0.0, 1.0)`), never the real
+        # `loop.evolve.Evaluator` fold scheme `evolve` actually uses for
+        # promotion decisions. But `evolve`'s own
+        # `market.load_universe(g0.universe, g0.bar_interval, 4.0)` call
+        # always loads a trailing 4-year window ending "now" -- so every real
+        # `evolve` invocation implicitly redraws its own "day 1" the same way
+        # the diagnostic's synthetic boundary shift does, just by running on
+        # a different calendar day (the account is evolved from an
+        # unattended schedule, not on a fixed date). This checks whether that
+        # matters for real promotion decisions: re-evaluates a champion under
+        # the exact same `Evaluator(data, n_folds=N_FOLDS).evaluate(genome)`
+        # call `evolve` makes internally, at several different "as-of" dates
+        # (today, and up to N-1 days before), each with its own trailing
+        # 4-year window computed the same way `load_universe` computes it
+        # live. Same guarantees as `fold-scheme`: read-only, full replay per
+        # shift, never touches `live_state.json` or the champion. `--shift N`
+        # (default 7) sets how many days back to sweep; `--also-version N`
+        # works the same as every other diagnostic here.
+        import time
+        import pandas as pd
+        from loop.evolve import Evaluator
+        from core import market
+        from constitution import N_FOLDS, HOLDOUT_FRAC
+        g0 = acct.genome
+        shift_n = 7
+        if "--shift" in sys.argv:
+            shift_n = int(sys.argv[sys.argv.index("--shift") + 1])
+        genomes = [(f"v{g0.version} (live)", g0)]
+        if "--also-version" in sys.argv:
+            also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+            try:
+                g_other = _reconstruct_champion_genome(also_version, acct.lineage)
+            except ValueError as e:
+                print(f"[fold-date-sensitivity] {e}")
+                sys.exit(1)
+            genomes.append((f"v{also_version} (reconstructed)", g_other))
+        width = pd.Timedelta(days=4.0 * 365.25)
+        buffer_years = 4.0 + (shift_n / 365.25) + 0.1
+        for label, genome in genomes:
+            raw = market.load_universe(genome.universe, genome.bar_interval, buffer_years)
+            if not raw:
+                print("no market data")
+                continue
+            now_ts = pd.Timestamp(int(time.time() * 1000), unit="ms", tz="UTC")
+            print(f"FOLD-DATE SENSITIVITY -- {label} (n_folds={N_FOLDS}, "
+                  f"holdout_frac={HOLDOUT_FRAC:.2f}, trailing 4y window, "
+                  f"'now' walked back 0-{shift_n - 1} days)")
+            print("=" * 100)
+            print(f"  {'shift':>6s} {'as-of':>12s} {'window start':>12s} "
+                  f"{'aggregate_fitness':>18s}  fold fitnesses")
+            rows = []
+            for shift in range(shift_n):
+                as_of = now_ts - pd.Timedelta(days=shift)
+                start = as_of - width
+                data = {s: df[(df.index >= start) & (df.index <= as_of)]
+                        for s, df in raw.items()}
+                data = {s: df for s, df in data.items() if len(df) > 0}
+                if not data:
+                    print(f"  {shift:>6d}  no market data")
+                    continue
+                ev = Evaluator(data, n_folds=N_FOLDS)
+                res = ev.evaluate(genome, log_detail=False)
+                agg = res["aggregate_fitness"]
+                fits = res["fold_fitness"]
+                rows.append((shift, agg))
+                agg_str = f"{agg:>18.3f}" if math.isfinite(agg) else f"{'-inf':>18s}"
+                fits_str = ", ".join(f"{f:.3f}" if math.isfinite(f) else "-inf" for f in fits)
+                print(f"  {shift:>6d} {str(as_of.date()):>12s} {str(start.date()):>12s} "
+                      f"{agg_str}  [{fits_str}]", flush=True)
+            finite = [(s, a) for s, a in rows if math.isfinite(a)]
+            print()
+            if finite:
+                aggs_only = [a for _, a in finite]
+                spread = max(aggs_only) - min(aggs_only)
+                print(f"  -> {len(finite)}/{len(rows)} finite, aggregate_fitness range "
+                      f"[{min(aggs_only):.3f}, {max(aggs_only):.3f}] (spread {spread:.3f}) "
+                      f"across a {shift_n}-day 'as-of' window")
+            else:
+                print("  -> no finite aggregate_fitness across any shift")
+            print()
     elif cmd == "rolling-folds":
         # Diagnostic: fold-scheme (above) showed raising N_FOLDS on the fixed
         # disjoint calendar split shrinks the outlier gap but shrinks every

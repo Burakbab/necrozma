@@ -82,6 +82,7 @@ python3 evotrader_bundle.py hard-calls  # how often would agents.judges.flag_har
 python3 evotrader_bundle.py review-hard-calls  # list/record verdicts on flagged bars
 python3 evotrader_bundle.py holdout-pressure  # real fold-aggregate winners the sealed holdout has rejected
 python3 evotrader_bundle.py fold-scheme       # fold-count sensitivity of fold-aggregate fitness
+python3 evotrader_bundle.py fold-date-sensitivity  # does the real evolve() fold-aggregate fitness depend on which day it's run?
 python3 evotrader_bundle.py rolling-folds     # overlapping fixed-width windows vs the disjoint fold split
 python3 evotrader_bundle.py fitness-decomp    # split aggregate_fitness into its mean term vs consistency-penalty term across fold schemes
 python3 evotrader_bundle.py drawdown          # which date range actually drives maxDD, ranked by depth
@@ -147,6 +148,16 @@ genome, broker, or replay access, just timestamp bookkeeping; tested,
 held-only-vs-universe-wide table per fold/holdout window. Still read-only:
 never touches `live_state.json` or the champion. See "Current state" for the
 first result.
+
+`fold-date-sensitivity` re-evaluates the live champion under the exact same
+`loop.evolve.Evaluator(data, n_folds=N_FOLDS).evaluate(genome)` call `evolve`
+makes internally, at `--shift N` (default 7) different "as-of" dates walking
+back from today, each with its own trailing-4y-ending-"as-of" window built
+the same way `market.load_universe(..., 4.0)` builds it live. Answers
+whether the `history-perturb --boundary-shift` day-1-allocation artifact has
+any bearing on real promotion decisions (it does — see "Current state").
+Read-only, full replay per shift (same cost class as `fold-scheme`).
+`--also-version N` works the same as every other diagnostic here.
 
 `fold-scheme` re-evaluates the live champion under alternative `n_folds`
 counts (via `loop.evolve.Evaluator`, which already accepted `n_folds` as a
@@ -286,6 +297,46 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Resolved 2026-08-26 (3-hourly check, ~12:57 UTC): the 09:50 UTC framing
+  question — answered, and not the way "backtest-evaluation artifact, not a
+  live-trading risk" would have hoped. The real `evolve()` fold-aggregate
+  fitness is date-sensitive too, and it directly moves the bar every
+  challenger must clear.** (see "Next steps" item 2 history and
+  `runs/2026-08-26-1257-fold-date-sensitivity.md`) New `fold-date-sensitivity
+  [--shift N] [--also-version N]` re-evaluates a champion under the exact
+  same `loop.evolve.Evaluator(data, n_folds=N_FOLDS).evaluate(genome)` call
+  `evolve` makes internally (not `history-perturb`'s own hand-rolled sweep),
+  at several different "as-of" dates. Result against live champion v3,
+  `--shift 7`: `aggregate_fitness` ranges [-1.652, +1.480] (spread 3.13)
+  across 7 consecutive days, and fold 3 hard-fails outright (`-5.000` =
+  `RANK_FLOOR`) specifically on today's date while scoring 0.03-1.21 on the
+  other six days. Ruled out a partial-forming-bar confound first (today's
+  still-forming daily candle, verified present via its low volume, changes
+  nothing when dropped before evaluation — identical result to 5 decimals) —
+  this is the same day-1 greedy-allocation mechanism the 06:55/09:50 UTC
+  entries traced, now confirmed against the real fold scheme. Then read
+  `loop.evolve.EvolutionRun.generation()` directly: `champ_fit =
+  self.evaluator.evaluate(champion)["aggregate_fitness"]` is computed fresh
+  every real `generation()` call and passed straight into `accepts()` as
+  `champion_score` — never read from `live_state.json`'s stored
+  promotion-time fitness. So this date-sensitivity isn't a side-channel
+  curiosity: it directly changes the bar every challenger's fold-aggregate
+  fitness is compared against on whatever day `evolve` happens to run.
+  Verified safe: full suite 235 passed (133.12s, matches baseline, no new
+  test file per the no-new-pure-function precedent), `tools/
+  edit_bundle_module.py sync --check` reports no drift, `live_state.json`
+  untouched (md5 `1441d25f45fb4a927f993cbc8c505a5b`, still tick 12 from the
+  00:20 UTC daily run), `evotrader.manifest` md5 unchanged, constitution
+  verified `8b74865634b1db07` unchanged, today's bar already processed
+  before this session started (no double-trade), no genome promotion (no
+  README Status change needed). **Next, if this thread stays worth
+  pursuing**: whether this measurably flips any real accept/reject verdict
+  in practice (replay a real historical generation's candidate batch against
+  the champion re-evaluated at a different shift, not attempted); `--also-
+  version N` to check whether the swing is v3-specific or general; the
+  window-5 `anatomy` post-mortem and the day-1-allocation-redesign question
+  from the 09:50 UTC entry, both still open.
 
 - **Confirmed 2026-08-26 (3-hourly check, ~09:50 UTC): the day-1 greedy cash
   allocation mechanism found on window 3 is general — it reproduces on
