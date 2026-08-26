@@ -298,6 +298,35 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Confirmed 2026-08-26 (3-hourly check, ~18:51 UTC): the fold-date-sensitivity
+  swing the 12:57 UTC entry found is not v3-specific — v1 and v2 show the
+  same order-of-magnitude spread, and hard-fail more often.** (see
+  `runs/2026-08-26-1851-fold-date-sensitivity-also-version.md`) Ran
+  `fold-date-sensitivity --also-version 2` and `--also-version 1` (existing
+  CLI flag, no code change). Aggregate-fitness spread across the same 7-day
+  shift window: v3 (live) 3.132 (1/7 shifts hard-fail a fold at
+  `RANK_FLOOR`), v2 2.814 (4/7 hard-fail), v1 3.161 (3/7 hard-fail). Answers
+  the open item directly: this is a property of the day-1 greedy-allocation
+  mechanism itself (the same one the 06:55/09:50 UTC boundary-shift entries
+  traced), not an artifact of v3's specific parameters — checking all three
+  live-lineage genomes turns the one-genome finding into a general one, same
+  pattern as the unrelated selection-noise thread's second/third-genome
+  checks. Verified safe: no code changed, so no test suite run (same
+  precedent as prior no-code-change diagnostic sessions), `live_state.json`
+  untouched (md5 `1441d25f45fb4a927f993cbc8c505a5b`, still tick 12 from the
+  00:20 UTC daily run), `evotrader.manifest` md5 unchanged, `tools/
+  edit_bundle_module.py sync --check` reports no drift, constitution
+  verified `8b74865634b1db07` unchanged, today's bar already processed
+  before this session started (no double-trade), no genome promotion (no
+  README Status change needed). **Next, if this thread stays worth
+  pursuing**: whether this measurably flips any real accept/reject verdict
+  in practice (replay a real historical generation's candidate batch against
+  the champion re-evaluated at a different shift — needs a `Researcher`
+  batch, not just re-evaluating the champion, a bigger next session); the
+  day-1-allocation-redesign question (proportional/ranked instead of
+  greedy-first-come), still untried design work; the window-5 `anatomy`
+  post-mortem, also still open.
+
 - **Resolved 2026-08-26 (3-hourly check, ~12:57 UTC): the 09:50 UTC framing
   question — answered, and not the way "backtest-evaluation artifact, not a
   live-trading risk" would have hoped. The real `evolve()` fold-aggregate
