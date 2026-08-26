@@ -1939,6 +1939,13 @@ def main():
             if not independent:
                 print("[history-perturb] --boundary-shift requires --independent")
                 sys.exit(1)
+        trace_shifts = None
+        if "--trace-diff" in sys.argv:
+            _a, _b = sys.argv[sys.argv.index("--trace-diff") + 1].split(",")
+            trace_shifts = (int(_a), int(_b))
+            if not boundary_shift_n:
+                print("[history-perturb] --trace-diff requires --boundary-shift")
+                sys.exit(1)
         g0 = acct.genome
         genomes = [(f"v{g0.version} (live)", g0)]
         if "--also-version" in sys.argv:
@@ -2163,6 +2170,7 @@ def main():
                       f"{'fitness':>8s} {'return':>9s} {'maxDD':>7s} {'trades':>7s} "
                       f"{'excess ret':>11s} {'beat bench':>10s}")
                 bs_rows = []
+                traced = {}
                 for shift in range(boundary_shift_n):
                     s_end = bs_end - pd.Timedelta(days=shift)
                     s_start = s_end - width
@@ -2170,13 +2178,16 @@ def main():
                             for s, df in raw.items()}
                     data = {s: df for s, df in data.items() if len(df) > 0}
                     n_syms = len(data)
-                    res = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+                    want_detail = trace_shifts is not None and shift in trace_shifts
+                    res = run_backtest(genome, data, 0.0, 1.0, log_detail=want_detail)
                     if res.get("error"):
                         print(f"  {shift:>6d} backtest failed: {res['error']}")
                         continue
                     st, edge = res["stats"], res.get("edge", {})
                     fit = res["fitness"]
                     bs_rows.append((shift, fit, edge.get("beat_benchmark"), edge.get("excess_return")))
+                    if want_detail:
+                        traced[shift] = res
                     fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
                     print(f"  {shift:>6d} {str(s_end.date()):>12s} {str(s_start.date()):>12s} "
                           f"{n_syms:>7d} {fit_str} {st.get('total_return', 0):>8.1%} "
@@ -2185,6 +2196,51 @@ def main():
                           f"{str(edge.get('beat_benchmark')):>10s}", flush=True)
                 bs_beats = [b for _, _, b, _ in bs_rows if b is not None]
                 bs_excess = [e for _, _, _, e in bs_rows if e is not None]
+                if trace_shifts:
+                    a, b = trace_shifts
+                    print()
+                    if a not in traced or b not in traced:
+                        print(f"  --trace-diff shifts {trace_shifts} out of range "
+                              f"(0-{boundary_shift_n - 1}, or one failed a hard gate above)")
+                    else:
+                        # Mechanism check (2026-08-26 3-hourly check): the sharpest
+                        # open follow-up from the windows-3/4 boundary-shift entry --
+                        # trace the actual trade sequence divergence between two
+                        # adjacent shifts instead of treating it as a black box.
+                        ta, tb = traced[a]["closed_trades"], traced[b]["closed_trades"]
+
+                        def _tkey(t):
+                            return (t["symbol"], t["entry_ts"], t["exit_ts"],
+                                    round(t["qty"], 6), round(t["entry_price"], 4))
+
+                        first_diff = None
+                        for i in range(min(len(ta), len(tb))):
+                            if _tkey(ta[i]) != _tkey(tb[i]):
+                                first_diff = i
+                                break
+                        print(f"  TRADE-DIVERGENCE TRACE: shift {a} ({len(ta)} trades) vs "
+                              f"shift {b} ({len(tb)} trades)")
+                        if first_diff is None:
+                            print("  no structural divergence in the overlapping trade prefix")
+                        else:
+                            ta_t, tb_t = ta[first_diff], tb[first_diff]
+                            print(f"  first divergent trade index: {first_diff}")
+                            print(f"    shift {a}: {ta_t['symbol']} entry={ta_t['entry_ts'][:10]} "
+                                  f"exit={ta_t['exit_ts'][:10]} qty={ta_t['qty']:.6f} "
+                                  f"px={ta_t['entry_price']:.4f} pnl={ta_t['pnl']:.2f}")
+                            print(f"    shift {b}: {tb_t['symbol']} entry={tb_t['entry_ts'][:10]} "
+                                  f"exit={tb_t['exit_ts'][:10]} qty={tb_t['qty']:.6f} "
+                                  f"px={tb_t['entry_price']:.4f} pnl={tb_t['pnl']:.2f}")
+                        dl_a = traced[a]["decision_log"]
+                        dl_b = traced[b]["decision_log"]
+                        if dl_a and dl_b:
+                            fills_a = sorted(f["symbol"] for f in dl_a[0].get("fills", [])
+                                             if f.get("status") == "filled")
+                            fills_b = sorted(f["symbol"] for f in dl_b[0].get("fills", [])
+                                             if f.get("status") == "filled")
+                            same = "same set" if set(fills_a) == set(fills_b) else "DIFFERENT set"
+                            print(f"  day-1 fills ({same}): shift {a} {fills_a}  "
+                                  f"vs shift {b} {fills_b}")
                 if bs_beats:
                     print(f"  -> beats benchmark in {sum(1 for b in bs_beats if b)}/"
                           f"{len(bs_beats)} of the {len(bs_rows)} boundary shifts; "

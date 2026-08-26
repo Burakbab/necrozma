@@ -287,6 +287,46 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Traced 2026-08-26 (3-hourly check, ~06:55 UTC): found the boundary-shift
+  path-dependence mechanism — it's a hard-capped, order-sensitive day-1 cash
+  allocation, not a black box.** (see
+  `runs/2026-08-26-0655-boundary-shift-trade-divergence-trace.md`) Picked up
+  the 03:53 UTC entry's sharpest open item directly: traced window 3's shift
+  2 vs shift 3 (+357.2% vs -148.2% excess return, one day apart) trade by
+  trade with `log_detail=True`. Day 1's fills are a **different set of
+  symbols entirely** between the two shifts (`['BNBUSDT', 'LINKUSDT',
+  'XLMUSDT']` vs `['BCHUSDT', 'BNBUSDT', 'LTCUSDT']`, only one symbol in
+  common) — not a ranking change, a different entry set. Mechanism: shifting
+  the window start by one day changes every asset's rolling-indicator values
+  on what becomes "day 1," and `risk_judge`'s cash allocation that day is
+  greedy and hard-capped (most proposals vetoed `"no room: size cap or cash
+  floor"` even on bar 1) — whichever symbols cross the entry threshold first
+  claim the available cash outright, so a 1-day shift flips who gets funded,
+  not just by how much. That single-bar divergence then compounds through
+  500+ trades over ~2 years into the wildly different terminal returns the
+  03:53 UTC entry measured. Shipped `--trace-diff S1,S2` on
+  `history-perturb --boundary-shift` (same file/precedent as
+  `--sub-slice`/`--drawdown`/`--boundary-shift` itself: CLI-only code in
+  `main()`, not part of the unflattened `_SRC` modules, no new pure function
+  so no new test file) — given two already-swept shift indices, re-runs just
+  those two with `log_detail=True` and prints the first structurally
+  divergent trade plus whether day-1's fills are the same symbol set.
+  Verified against the 03:53 UTC entry's own window-3 numbers (reproduces
+  1.174/-inf fitness for shifts 2/3 exactly). Doesn't propose a fix — this
+  is a fragility of the greedy day-1 allocation scheme under `risk_judge`'s
+  caps, and whether that's worth changing (e.g. proportional day-1 sizing)
+  is separate, untried design work. Verified safe: full suite 235 passed
+  (138.71s), `git status --short` shows only `evotrader_bundle.py` modified,
+  `live_state.json` md5 unchanged (this session never calls `acct.save()`),
+  constitution verified `8b74865634b1db07` unchanged, today's bar already
+  processed before this session started (no double-trade), no genome
+  promotion (no README Status change needed). **Next, if this thread stays
+  worth pursuing**: check whether the same day-1-allocation mechanism
+  explains window 5's noise (the window currently in a real drawdown) the
+  same way, or whether window 5 shows something additionally regime-specific
+  — not checked this session, only window 3 was traced; the per-trade
+  `anatomy` post-mortem on window 5 is also still open.
+
 - **Checked 2026-08-26 (3-hourly check, ~03:53 UTC): the boundary-shift noise
   found in window 5 is general, not a window-5 special case — windows 3 and
   4 show the same order-of-magnitude sensitivity.** (see
