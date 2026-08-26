@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 11,
-  "updated": "2026-08-25T00:22:01+00:00",
+  "ticks": 12,
+  "updated": "2026-08-26T00:22:17+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,18 +154,18 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 4698.355776924727,
+    "cash": 3948.560424664698,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "positions": {
       "LINKUSDT": {
         "symbol": "LINKUSDT",
-        "qty": 95.03919241812349,
-        "avg_cost": 9.429046661440948,
+        "qty": 110.85814918593894,
+        "avg_cost": 9.689976667178906,
         "opened_ts": "2026-08-14 00:00:00+00:00",
         "peak_price": 11.999,
-        "bars_held": 10,
+        "bars_held": 11,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -177,7 +177,7 @@
         "avg_cost": 602.8312707176756,
         "opened_ts": "2026-08-14 00:00:00+00:00",
         "peak_price": 704.31,
-        "bars_held": 10,
+        "bars_held": 11,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -189,7 +189,7 @@
         "avg_cost": 0.3313656,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 0.3449,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -201,7 +201,7 @@
         "avg_cost": 1883.611335,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 2516.3,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -212,19 +212,20 @@
         "avg_cost": 2.3762466913714717,
         "opened_ts": "2026-08-15 00:00:00+00:00",
         "peak_price": 2.525,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "CRVUSDT": {
         "symbol": "CRVUSDT",
-        "qty": 7145.20259738313,
-        "avg_cost": 0.33706844999999996,
+        "qty": 8960.908355403051,
+        "avg_cost": 0.33248683104152005,
         "opened_ts": "2026-08-21 00:00:00+00:00",
         "peak_price": 0.3387,
-        "bars_held": 3,
+        "bars_held": 4,
         "entry_agents": [
+          "consult_moderate",
           "consult_risky"
         ]
       }
@@ -419,6 +420,26 @@
         "ref_price": 2.41,
         "fee": 1.2849780118331477,
         "reason": "consult_moderate: confirmed trend: ma-spread +6.1%, slope +2.65%, rsi 59 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-08-25 00:00:00+00:00",
+        "symbol": "CRVUSDT",
+        "side": "buy",
+        "qty": 1815.7057580199214,
+        "price": 0.31445715,
+        "ref_price": 0.3143,
+        "fee": 0.5715331910966307,
+        "reason": "consult_moderate: confirmed trend: ma-spread +26.0%, slope +9.22%, rsi 68 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-08-25 00:00:00+00:00",
+        "symbol": "LINKUSDT",
+        "side": "buy",
+        "qty": 15.81895676781545,
+        "price": 11.257626,
+        "ref_price": 11.252,
+        "fee": 0.17826216116339855,
+        "reason": "consult_moderate: confirmed trend: ma-spread +22.1%, slope +7.09%, rsi 70 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -561,6 +582,10 @@
       [
         "2026-08-24 00:00:00+00:00",
         11528.907825686063
+      ],
+      [
+        "2026-08-25 00:00:00+00:00",
+        11271.939550855546
       ]
     ],
     "peak_nav": 11579.15168657734,
@@ -3102,6 +3127,173 @@
           }
         ],
         "notes": "regime bull (scale 1.00), breadth 85%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-08-26T00:22:17+00:00",
+      "bar": "2026-08-25 00:00:00+00:00",
+      "tick": 12,
+      "nav_before": 11271.94,
+      "nav_after": 11255.11,
+      "cash": 3948.56,
+      "cash_before": 4698.36,
+      "positions": {
+        "LINKUSDT": 1247.38,
+        "BNBUSDT": 647.98,
+        "TRXUSDT": 542.39,
+        "ETHUSDT": 468.3,
+        "ICPUSDT": 1584.09,
+        "CRVUSDT": 2816.41
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-08-25 00:00:00+00:00",
+        "nav": 11271.939550855546,
+        "regime": "bull",
+        "breadth": 0.8888888888888888,
+        "cash_pct": 0.4168187520636694,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "BTCUSDT",
+              "side": "buy",
+              "conviction": 0.499,
+              "why": "at/near range high (breakout -0.6%), momentum rank 0.65, slope +6.72%"
+            },
+            {
+              "symbol": "BNBUSDT",
+              "side": "buy",
+              "conviction": 0.489,
+              "why": "at/near range high (breakout -1.4%), momentum rank 0.62, slope +4.36%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ETHUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +16.0%, slope +8.32%, rsi 72 in band"
+            },
+            {
+              "symbol": "XRPUSDT",
+              "side": "buy",
+              "conviction": 0.904,
+              "why": "confirmed trend: ma-spread +14.3%, slope +12.61%, rsi 69 in band"
+            },
+            {
+              "symbol": "DOGEUSDT",
+              "side": "buy",
+              "conviction": 0.858,
+              "why": "confirmed trend: ma-spread +11.4%, slope +7.82%, rsi 64 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.915,
+              "why": "confirmed trend: ma-spread +22.1%, slope +7.09%, rsi 70 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +26.0%, slope +9.22%, rsi 68 in band"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.8,
+              "why": "confirmed trend: ma-spread +6.6%, slope +2.53%, rsi 57 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "amount": 571.53,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +26.0%, slope +9.22%, rsi 68 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          },
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "amount": 178.26,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +22.1%, slope +7.09%, rsi 70 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "XRPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ETHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ICPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "BTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "BNBUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 1815.7057580199214,
+            "price": 0.31445715,
+            "reason": "consult_moderate: confirmed trend: ma-spread +26.0%, slope +9.22%, rsi 68 in band | superior_judge: approved (cap-checked)"
+          },
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 15.81895676781545,
+            "price": 11.257626,
+            "reason": "consult_moderate: confirmed trend: ma-spread +22.1%, slope +7.09%, rsi 70 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime bull (scale 1.00), breadth 89%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
