@@ -1891,6 +1891,24 @@ def main():
         # the most recent/last window -- the one under investigation) into N
         # equal contiguous sub-windows and runs one real run_backtest per
         # sub-window, same read-only guarantees.
+        #
+        # `--boundary-shift N [--sub-slice-window I]` (added 2026-08-26
+        # 3-hourly check): discovered while re-running `--independent` a day
+        # after the 2026-08-25 sessions -- window 5's verdict flipped from
+        # hard-fail/-41.2% excess return to beats-benchmark/+3.7% excess with
+        # only a one-day shift in "now" (every window boundary walks back
+        # one day). That's not a one-off: walking window I's end date back
+        # 0..N-1 days (same width, same start-of-search-window logic) shows
+        # `beat_benchmark` flipping True/False almost at random across shifts
+        # (6/15 True at N=15 in the run that motivated this), while the
+        # >40% max-dd hard-fail gate is comparatively stable (13/15 shifts
+        # breach it). Reads as backtest path-dependence -- a different first
+        # bar cascades into a different two-year trade sequence, not a
+        # regime property -- so the excess-return/beat-benchmark verdict
+        # from any single `--independent` run should be read as one noisy
+        # draw, not a stable characterization of "window 5." Same guarantees
+        # as `--sub-slice`/`--drawdown`: requires `--independent`, reuses its
+        # `raw`/`windows`, one real run_backtest per shift, read-only.
         import time
         import pandas as pd
         from core import market
@@ -1915,6 +1933,12 @@ def main():
         if show_drawdown and not independent:
             print("[history-perturb] --drawdown requires --independent")
             sys.exit(1)
+        boundary_shift_n = None
+        if "--boundary-shift" in sys.argv:
+            boundary_shift_n = int(sys.argv[sys.argv.index("--boundary-shift") + 1])
+            if not independent:
+                print("[history-perturb] --boundary-shift requires --independent")
+                sys.exit(1)
         g0 = acct.genome
         genomes = [(f"v{g0.version} (live)", g0)]
         if "--also-version" in sys.argv:
@@ -2124,6 +2148,47 @@ def main():
                           f"{recov:<12s}")
                 if not episodes:
                     print("  no drawdown episodes (nav never fell below its own peak)")
+            if boundary_shift_n:
+                target_idx = sub_slice_window if sub_slice_window is not None else len(windows)
+                if not (1 <= target_idx <= len(windows)):
+                    print(f"  --boundary-shift target window {target_idx} out of range "
+                          f"(1-{len(windows)})")
+                    continue
+                _, bs_end = windows[target_idx - 1]
+                print()
+                print(f"  BOUNDARY-SHIFT SENSITIVITY for window {target_idx} -- same "
+                      f"{window_years:.1f}y width, end date walked back 0-"
+                      f"{boundary_shift_n - 1} days from {str(bs_end.date())}")
+                print(f"  {'shift':>6s} {'end':>12s} {'start':>12s} {'symbols':>7s} "
+                      f"{'fitness':>8s} {'return':>9s} {'maxDD':>7s} {'trades':>7s} "
+                      f"{'excess ret':>11s} {'beat bench':>10s}")
+                bs_rows = []
+                for shift in range(boundary_shift_n):
+                    s_end = bs_end - pd.Timedelta(days=shift)
+                    s_start = s_end - width
+                    data = {s: df[(df.index >= s_start) & (df.index < s_end)]
+                            for s, df in raw.items()}
+                    data = {s: df for s, df in data.items() if len(df) > 0}
+                    n_syms = len(data)
+                    res = run_backtest(genome, data, 0.0, 1.0, log_detail=False)
+                    if res.get("error"):
+                        print(f"  {shift:>6d} backtest failed: {res['error']}")
+                        continue
+                    st, edge = res["stats"], res.get("edge", {})
+                    fit = res["fitness"]
+                    bs_rows.append((shift, fit, edge.get("beat_benchmark"), edge.get("excess_return")))
+                    fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
+                    print(f"  {shift:>6d} {str(s_end.date()):>12s} {str(s_start.date()):>12s} "
+                          f"{n_syms:>7d} {fit_str} {st.get('total_return', 0):>8.1%} "
+                          f"{st.get('max_dd', 0):>7.1%} {st.get('trades', 0):>7d} "
+                          f"{edge.get('excess_return', 0):>10.1%} "
+                          f"{str(edge.get('beat_benchmark')):>10s}", flush=True)
+                bs_beats = [b for _, _, b, _ in bs_rows if b is not None]
+                bs_excess = [e for _, _, _, e in bs_rows if e is not None]
+                if bs_beats:
+                    print(f"  -> beats benchmark in {sum(1 for b in bs_beats if b)}/"
+                          f"{len(bs_beats)} of the {len(bs_rows)} boundary shifts; "
+                          f"excess return range [{min(bs_excess):+.1%}, {max(bs_excess):+.1%}]")
     elif cmd == "fold-dd-blindspot":
         # Diagnostic: explains the 2026-08-22 "-34.1% vs -46.5% maxDD" mystery
         # this file's Current state spent a whole session investigating as a

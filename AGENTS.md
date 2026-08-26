@@ -287,6 +287,46 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-26 (3-hourly check, ~00:59 UTC): the "window 5 hard-fails
+  benchmark" verdict is largely a boundary-placement artifact — the >40%
+  max-dd hard-fail is comparatively robust, but the beat-benchmark call is
+  not.** (see `runs/2026-08-26-0059-history-perturb-boundary-shift.md`)
+  Discovered while setting up a window-5 anatomy post-mortem: re-running
+  `history-perturb --independent` one day after the 2026-08-25 09:56 UTC run
+  flipped window 5's excess return from -41.2% (hard-fail) to +3.7% (beats
+  benchmark) purely from every window boundary walking back one day. New
+  `--boundary-shift N [--sub-slice-window I]` flag (same file/precedent as
+  `--sub-slice`/`--drawdown`: requires `--independent`, reuses its loaded
+  `raw`/`windows`, one real `run_backtest` per shift, no new pure function)
+  confirms this isn't a one-off: walking window 5's end date back 0-14 days
+  shows `beat_benchmark` flipping True/False almost at random (6/15 True),
+  excess return ranging -44.4% to +57.3% — a ~100-point spread from two
+  weeks of boundary placement. The >40% max-dd hard-fail gate is more
+  stable (14/15 shifts breach it). Reads as backtest path-dependence (a
+  different first bar cascades into a different two-year trade sequence),
+  not a regime property. Doesn't erase the last two days of window-5 work —
+  the drawdown depth/location findings (2026-08-25 15:53/21:55 UTC entries)
+  are about the more-robust half — but the "champion loses to buy-and-hold
+  in its current regime" framing specifically was one noisy draw, not a
+  settled number; the open v3 demotion/rollback question (raised to the
+  owner 2026-08-22) should weigh that. Verified safe: full suite 235 passed
+  (150.53s, matches baseline, no new test file per the no-new-pure-function
+  precedent), `tools/edit_bundle_module.py sync --check` reports no drift
+  (this CLI-dispatch code isn't part of the unflattened `_SRC` modules),
+  `git status --short` clean before commit except `evotrader_bundle.py`,
+  `live_state.json` untouched by this session (still reflects tick 12 from
+  the 00:20 UTC daily run), `evotrader.manifest` md5 unchanged
+  (`0bf3a7d9411ee692d0a9f152a7533803`), constitution verified
+  `8b74865634b1db07` unchanged, today's bar already processed by the 00:20
+  UTC daily run before this session started (`tick` not run this session,
+  no double-trade), no genome promotion (no README Status change needed).
+  **Next, if this thread stays worth pursuing**: the per-trade `anatomy`
+  post-mortem restricted to window 5 that motivated this is still open
+  (now with the caveat that "window 5" is one noisy draw); running
+  `--boundary-shift` on windows 3/4 to see if they're similarly noisy;
+  tracing what actually differs between two adjacent-shift runs' first few
+  trades to find the path-dependence mechanism directly.
+
 - **Checked 2026-08-25 (3-hourly check, ~21:55 UTC): trend/chop, volatility,
   benchmark shape, and cross-asset correlation all fail to distinguish
   window 5 from the windows the champion beats — the "what's different
