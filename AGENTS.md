@@ -298,6 +298,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Confirmed 2026-08-27 (3-hourly check, ~04:05 UTC): stress-tested the
+  holdout backstop with a much larger sample — 15 more flip candidates
+  across 6 real generations, all rejected, closest gap 20x under the
+  margin.** (see
+  `runs/2026-08-27-0405-fold-date-flip-holdout-backstop-stress-test.md`)
+  Picked up the 00:52 UTC entry's open item directly: same method, extended
+  to 6 consecutive real generations (real `researcher_memory` resumed — 182
+  tested, stagnation 12, holdout_draws 13 — real `Researcher.propose`/
+  `Evaluator.evaluate`, `n_blind=14`, exclude accumulated across
+  generations). Found 15 flip candidates (2-3 per generation); **all 15
+  failed the sealed holdout**, closest gap (champion holdout 0.176 vs
+  challenger -0.054) still needing to clear a 4.595 margin it came nowhere
+  near. Combined with the 21:52 UTC and 00:52 UTC entries: 19/19 flip
+  candidates checked across three independent sessions have now failed the
+  holdout decisively, none a real close call. Reading: the stress test this
+  thread was building toward is answered for the current lineage state (14
+  cumulative holdout draws) — the backstop isn't just holding by luck on a
+  couple of draws, a 15-candidate sample found nothing that approached the
+  margin either. Caught and fixed a real bug before this counted as a real
+  run: an early draft called `LiveAccount.load()` with no path argument,
+  which resolves to `core.live.STATE_PATH` (a nonexistent
+  `state/live/account.json`, not this repo's `live_state.json`), silently
+  falling back to the seed genome v1 instead of live champion v3 — caught by
+  a 1-generation sanity check before the real 6-generation batch ran. Still
+  open, unresolved by a larger sample at the same draw count: what the
+  margin looks like for a lineage with few or zero accumulated holdout
+  draws (right after a promotion), where the margin would be roughly half
+  today's — this thread has only ever tested v3's current, well-aged draw
+  count. Verified safe: no code changed (script lives only in session
+  scratch space), `live_state.json` md5 `1add861014e44aa69e814491cbd22e00`
+  unchanged (still tick 13), `evotrader.manifest` md5
+  `0bf3a7d9411ee692d0a9f152a7533803` unchanged, `tools/edit_bundle_module.py
+  sync --check` clean, today's bar already processed before this session
+  started (no double-trade), no genome promotion. **Given 19/19 rejections
+  and a 20x-margin gap on the closest case, recommend against another
+  identical-method batch** — the sharper remaining question is the
+  lineage-age one above, not more samples at the current draw count.
+
 - **Found 2026-08-27 (3-hourly check, ~00:52 UTC): flipped fold-aggregate
   candidates fail the sealed holdout anyway — the holdout gate backstops the
   date-sensitivity, at least on the two draws checked so far.** (see
