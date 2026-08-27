@@ -209,7 +209,13 @@ date, depth, recovery) for it, so a maxDD that a sub-slice view spreads
 across several locally-shallow pieces can still be pinned to its real,
 possibly cross-boundary, peak-to-trough span. Both flags require
 `--independent`. See "Current state" for the first `--sub-slice` and
-`--drawdown` results on window 5.
+`--drawdown` results on window 5. `--independent --anatomy
+[--sub-slice-window I]` (added 2026-08-27) runs the same already-tested
+`loop.engine.trade_anatomy` the plain `anatomy` command uses, scoped to
+window `I` instead of the full `[0,1]` history — the per-trade breakdown
+(entry agent, exit mechanism, regime, holding period, worst/best trades)
+none of the other window-5 flags provide. Also requires `--independent`.
+See "Current state" for the first result.
 
 `fold-dd-blindspot` explains the "-34.1% vs -46.5% maxDD" reproducibility question
 `universe-perturb` and `drawdown` kept raising: `loop.evolve.Evaluator._merge`
@@ -297,6 +303,56 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Shipped 2026-08-27 (3-hourly check, ~09:56 UTC): `history-perturb
+  --independent --anatomy`, the window-5 per-trade post-mortem flagged open
+  since the 2026-08-26 09:50 UTC entry.** (see
+  `runs/2026-08-27-0956-history-perturb-window5-anatomy.md`) New
+  `--anatomy [--sub-slice-window I]` flag, same precedent as
+  `--sub-slice`/`--drawdown`/`--boundary-shift` (reuses already-tested
+  `trade_anatomy` and `run_backtest`, no engine/constitution change, CLI-only
+  code so `tools/edit_bundle_module.py sync --check` stays a no-op). Result
+  on window 5 (2024-08-26 to 2026-08-27, 483 trades, -6.1% vs benchmark
+  +70.2%): **entries are not the problem in this window** — all three
+  consults' entry attribution is flat-to-positive — the loss concentrates in
+  **exits**: `consult_moderate`'s own exit call is the single largest loss
+  category (-$2,760/126 trades, 33% win), `circuit_breaker` second (-$2,463/
+  17 trades, 12% win, worst per-trade EV on the table), `consult_risky`
+  third (-$1,615/144, 15% win) — while the *mechanical* exits are strongly
+  profitable: `guardian` (stop-loss/take-profit/time-stop) is the best
+  category overall (+$4,960/176, 41% win), `consult_conservative`'s exit
+  role (already known system-wide, re-confirmed here at n=20) is second-best
+  (+$1,078, 90% win). Cuts the same way by holding period: 6-20 bar holds
+  (58% of all trades) are the only structurally negative bucket (-$3,734),
+  quick exits (1 bar, 2-5 bars) are both positive. 335/483 trades (69%) are
+  tagged `bear` and that bucket alone is -$2,623, more than the window's net
+  loss — reads as a genuinely harder regime, not a fixed defect, consistent
+  with the 2026-08-25 21:55 UTC regime characterization of this same window.
+  **One window, not yet a pattern**: this window was already flagged noisy
+  (the 2026-08-26 00:59 UTC boundary-shift entry flipped its verdict with a
+  1-day shift), so "discretionary consult exits underperform mechanical
+  exits in a bear-heavy window" is this session's read of one draw, not a
+  confirmed mechanism — needs checking against another regime-mixed window
+  (e.g. window 3) before it's treated as real. Also this session: found
+  local `main` had diverged from `origin/main` (stale detached-HEAD checkout
+  from a prior session's clone, not new work) — resolved per this file's own
+  run-protocol rule 2, `git reset --hard origin/main`, no force-push, nothing
+  lost. Verified safe: `py_compile` clean, `tools/edit_bundle_module.py sync
+  --check` clean, full suite 235 passed (125.68s, matches baseline, no new
+  pure function so no new test file), `git diff --stat` shows only
+  `evotrader_bundle.py` touched, `live_state.json` md5
+  `1add861014e44aa69e814491cbd22e00` unchanged (still tick 13, today's bar
+  already processed by the 00:20 UTC daily run, no double-trade),
+  `evotrader.manifest` md5 `0bf3a7d9411ee692d0a9f152a7533803` unchanged,
+  constitution verified `8b74865634b1db07` unchanged, no genome promotion (no
+  README Status change needed, no dashboard rebuild needed). **Next, if this
+  thread stays worth pursuing**: re-run `--anatomy` on window 3 (also
+  regime-mixed) to see whether the exit-mechanism pattern replicates or is
+  window-5-specific; if it replicates, whether tightening
+  `consult_moderate`/`consult_risky`'s own exit thresholds is worth
+  proposing as an actual gene change is genuinely untried, no code sketched.
+  The day-1-allocation-redesign question from the same 09:50 UTC entry is
+  still open and untouched by this session.
 
 - **Closed 2026-08-27 (3-hourly check, ~06:48 UTC): the lineage-age
   holdout-margin question the 04:05 UTC entry left open — answered with data

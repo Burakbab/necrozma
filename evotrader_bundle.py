@@ -1995,10 +1995,23 @@ def main():
         # draw, not a stable characterization of "window 5." Same guarantees
         # as `--sub-slice`/`--drawdown`: requires `--independent`, reuses its
         # `raw`/`windows`, one real run_backtest per shift, read-only.
+        #
+        # `--anatomy [--sub-slice-window I]` (added 2026-08-27 3-hourly check):
+        # the window-5 per-trade post-mortem the 2026-08-26 09:50 UTC
+        # boundary-shift entry flagged as still open -- every other window-5
+        # diagnostic in this thread (`--sub-slice`, `--drawdown`,
+        # `--boundary-shift`) reports aggregate stats or drawdown episodes,
+        # never which trades actually drove the -44.0% drawdown. Reuses the
+        # same already-tested `trade_anatomy` the plain `anatomy` command
+        # calls, just scoped to one independent window instead of the full
+        # [0,1] history -- same `run_backtest(..., log_detail=True)` call,
+        # no engine or constitution change, no new pure function. Requires
+        # `--independent`; target window same convention as `--drawdown`/
+        # `--sub-slice` (`--sub-slice-window I`, defaults to the most recent).
         import time
         import pandas as pd
         from core import market
-        from loop.engine import run_backtest, drawdown_episodes
+        from loop.engine import run_backtest, drawdown_episodes, trade_anatomy
         independent = "--independent" in sys.argv
         window_years = 2.0
         if "--window-years" in sys.argv:
@@ -2025,6 +2038,10 @@ def main():
             if not independent:
                 print("[history-perturb] --boundary-shift requires --independent")
                 sys.exit(1)
+        show_anatomy = "--anatomy" in sys.argv
+        if show_anatomy and not independent:
+            print("[history-perturb] --anatomy requires --independent")
+            sys.exit(1)
         trace_shifts = None
         if "--trace-diff" in sys.argv:
             _a, _b = sys.argv[sys.argv.index("--trace-diff") + 1].split(",")
@@ -2241,6 +2258,66 @@ def main():
                           f"{recov:<12s}")
                 if not episodes:
                     print("  no drawdown episodes (nav never fell below its own peak)")
+            if show_anatomy:
+                target_idx = sub_slice_window if sub_slice_window is not None else len(windows)
+                if not (1 <= target_idx <= len(windows)):
+                    print(f"  --anatomy target window {target_idx} out of range "
+                          f"(1-{len(windows)})")
+                    continue
+                an_start, an_end = windows[target_idx - 1]
+                data = {s: df[(df.index >= an_start) & (df.index < an_end)]
+                        for s, df in raw.items()}
+                data = {s: df for s, df in data.items() if len(df) > 0}
+                res = run_backtest(genome, data, 0.0, 1.0, log_detail=True)
+                print()
+                print(f"  TRADE ANATOMY within window {target_idx} "
+                      f"({str(an_start.date())} to {str(an_end.date())})")
+                if res.get("error"):
+                    print(f"  backtest failed: {res['error']}")
+                    continue
+                a = trade_anatomy(res)
+                if "error" in a:
+                    print(f"  {a['error']}")
+                    continue
+
+                def _money(x):
+                    return f"${x:,.0f}"
+
+                st, bench = res.get("stats", {}), res.get("benchmark", {})
+                edge = res.get("edge", {})
+                print(f"  {a['n_trades']} closed trades | win rate {a['win_rate']:.1%} | "
+                      f"profit factor {a['profit_factor']:.2f}")
+                print(f"  expectancy per trade {_money(a['expectancy'])} | "
+                      f"total {_money(a['total_pnl'])}")
+                print(f"  median win {_money(a['median_win'])} vs "
+                      f"median loss {_money(a['median_loss'])}   "
+                      f"(mean {_money(a['mean_win'])} / {_money(a['mean_loss'])})")
+                print(f"  top 5 losses are {a['top_loss_share_of_gross_loss']:.0%} "
+                      f"of all losses")
+                if bench:
+                    print(f"  strategy {st.get('total_return', 0):+.1%} vs "
+                          f"buy-and-hold {bench.get('total_return', 0):+.1%}  "
+                          f"-> excess {edge.get('excess_return', 0):+.1%}")
+                for title, key in (("BY ENTRY AGENT", "by_entry_agent"),
+                                   ("BY EXIT MECHANISM", "by_exit_reason"),
+                                   ("BY MARKET REGIME", "by_regime"),
+                                   ("BY HOLDING PERIOD", "by_holding_period")):
+                    print(f"  {title}")
+                    for k, g in a[key].items():
+                        print(f"    {k[:34]:<34s} {_money(g['pnl']):>12s}  "
+                              f"n={g['n']:<5d} win {g['win_rate']:.0%}")
+                print("  WORST 5 TRADES")
+                for t in a["largest_losses"]:
+                    print(f"    {t['symbol']:<10s} {_money(t['pnl']):>10s}  "
+                          f"{t['pnl_pct']:+7.1%}  {t['bars_held']:>3}d  "
+                          f"{t['entry_ts']}  {t['exit_reason']}")
+                print("  BEST 5 TRADES")
+                for t in a["largest_wins"]:
+                    print(f"    {t['symbol']:<10s} {_money(t['pnl']):>10s}  "
+                          f"{t['pnl_pct']:+7.1%}  {t['bars_held']:>3}d  "
+                          f"{t['entry_ts']}  {t['exit_reason']}")
+                print("  Worst symbols: " + ", ".join(
+                    f"{k} {_money(v['pnl'])}" for k, v in list(a["by_symbol"].items())[:5]))
             if boundary_shift_n:
                 target_idx = sub_slice_window if sub_slice_window is not None else len(windows)
                 if not (1 <= target_idx <= len(windows)):
