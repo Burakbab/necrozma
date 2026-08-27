@@ -298,6 +298,50 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-27 (3-hourly check, ~00:52 UTC): flipped fold-aggregate
+  candidates fail the sealed holdout anyway — the holdout gate backstops the
+  date-sensitivity, at least on the two draws checked so far.** (see
+  `runs/2026-08-27-0052-fold-date-flip-holdout-backstop.md`) Picked up both
+  open items from the 21:52 UTC entry: ran a second, fresh real generation's
+  worth of work (real `researcher_memory` resumed — 182 already-tested
+  proposals excluded against v3, stagnation 12, holdout_draws 13, real
+  `Researcher.propose`/`Evaluator.evaluate`, `n_blind=14`, 14 fresh
+  proposals, 196 cumulative). **Open item 1 (does the flip reproduce on a
+  different batch): yes** — 2 of 3 top candidates flip again (same 2-of-3
+  ratio, different specific candidates), both ACCEPT only at the same
+  anomalous shift-1 day (as-of 2026-08-26, champion fold-aggregate -1.652)
+  and reject at the other 6 shifts. **Open item 2 (does a flipped candidate
+  actually pass the sealed holdout on its accept-verdict day): no** — built
+  the real shifted "as-of" market window and called the real
+  `Evaluator.holdout_check()` for both flip candidates at their accept-verdict
+  shift; both fail decisively (challenger -0.259 and -0.373 vs champion 0.176
+  + margin 4.595, driven by 14 cumulative holdout draws against this specific
+  window). Reading: the two gates aren't independent in the way that matters
+  here — the sealed holdout's own accumulated-draws multiple-testing margin
+  is currently strong enough to catch what the fold-aggregate gate's
+  date-sensitivity would have let through, at least for these two (both
+  genuinely weak, not close-call) candidates. Important caveat: this margin
+  is itself a function of how many holdout draws this lineage has already
+  spent (14 here) — a younger lineage would have less protection from
+  exactly this mechanism, and neither flip candidate checked so far was a
+  close call on the holdout, so the backstop's actual margin under a close
+  call is still untested. Verified safe: no code changed (script lives only
+  in session scratch space, never touches any committed file, never calls
+  `Genome.promote()` or `acct.save()`, so no test suite run needed),
+  `live_state.json` untouched (md5 `1add861014e44aa69e814491cbd22e00`
+  unchanged, still tick 13 from the 00:20 UTC daily run), `evotrader.manifest`
+  md5 unchanged (`0bf3a7d9411ee692d0a9f152a7533803`), `tools/
+  edit_bundle_module.py sync --check` reports no drift, today's bar already
+  processed before this session started (no double-trade), no genome
+  promotion (no README Status change needed). **Next, if this thread stays
+  worth pursuing**: the stress-test case — keep drawing generations until a
+  flip candidate's holdout fitness lands close to the champion's, to see
+  whether the margin still holds or a close call gets through; whether
+  smoothing the champion's fold-aggregate baseline is still worth doing given
+  this backstop (weaker case now, not zero); the day-1-allocation-redesign
+  question and window-5 `anatomy` post-mortem from the 09:50 UTC (2026-08-26)
+  entry, still open and untouched by this thread.
+
 - **Confirmed 2026-08-26 (3-hourly check, ~21:52 UTC): the champion-score swing
   flips a real accept/reject verdict — confirmed, not hypothetical.** (see
   `runs/2026-08-26-2152-fold-date-sensitivity-verdict-flip.md`) Picked up the
