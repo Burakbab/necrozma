@@ -304,6 +304,29 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Checked 2026-08-27 (3-hourly check, ~21:48 UTC): `exit-role-test` against
+  v1 — third data point closes the risky-exit genome-dependence question.**
+  (see `runs/2026-08-27-2148-exit-role-test-v1.md`) Ran the 18:54 UTC entry's
+  flagged next step, `exit-role-test --also-version 1`. `consult_moderate`
+  exit suppression now confirmed to help all 3/3 real champions (v1
+  -inf→0.112, v2 0.169→0.396, v3 -inf→0.659) — the safe, generalizing target
+  for a real gene change, as the 18:54 UTC entry already concluded.
+  `consult_risky` exit suppression is now a confirmed **three-way split**
+  with no consistent sign: strongly helps v1 (-inf→0.379, its single best
+  lever), hurts v2 (0.169→-inf, maxDD to -43.4%), no-op on v3 (live).
+  Reinforces rather than changes the scoping conclusion: any real gene
+  change must target `consult_moderate`'s exit only, never bundle in
+  `consult_risky`. Verified safe: read-only, `git status` clean throughout,
+  `live_state.json` md5 `1add861014e44aa69e814491cbd22e00` and
+  `evotrader.manifest` md5 `0bf3a7d9411ee692d0a9f152a7533803` both
+  unchanged, today's bar already processed before this session (no
+  double-trade), no genome promotion. **Next**: the actual
+  `consult_moderate`-only exit-threshold gene sketch (narrower
+  `exit_trend_below`/`exit_rsi` range, or a "no discretionary exit" variant)
+  plus shadow-`evolve` validation against the unmodified champion — still
+  genuinely untried, no code sketched, bigger scope than one 3-hourly slot,
+  now with all three champions' exit-role data in hand to design against.
+
 - **Shipped 2026-08-27 (3-hourly check, ~18:54 UTC): `exit-role-test`,
   quantifying the exit-mechanism finding by suppressing the discretionary
   exit outright.** (see `runs/2026-08-27-1854-exit-role-test.md`) New
