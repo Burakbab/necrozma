@@ -298,6 +298,36 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Closed 2026-08-27 (3-hourly check, ~06:48 UTC): the lineage-age
+  holdout-margin question the 04:05 UTC entry left open — answered with data
+  already on hand, no new generations run.** (see
+  `runs/2026-08-27-0648-holdout-margin-never-binding-lineage-age-answer.md`)
+  Used two existing read-only diagnostics (`margin-curve`, `holdout-pressure`)
+  plus arithmetic: `holdout-pressure` lists all 12 real sealed-holdout draws
+  against live champion v3 since promotion, spanning `n_draws=2` (this
+  lineage's youngest-ever draw, margin only 0.094) through `n_draws=13`
+  (today, margin 4.530). Computed the raw (unmargined) holdout diff
+  (`challenger_holdout - champion_holdout`) for all 12: **never once
+  positive, including at `n_draws=2`** — every real rejection would have
+  happened at any margin, including zero. The margin has never actually been
+  the deciding factor in a real promotion attempt against v3, young lineage
+  or old; every case was decided by the raw holdout comparison itself
+  (6 of the 12 draws tied the champion's holdout score to three decimals,
+  the closest this lineage has come — still not a win). Combined with the
+  fold-date-flip thread's 19/19 rejections (all decisively bad on holdout,
+  closest gap 20x under margin), this closes the specific lineage-age
+  question: further probing of the margin's calibration is low-value given
+  it has never bound; the open question that remains is about challenger
+  quality (does any real search draw ever produce a holdout score genuinely
+  better than the champion's), not margin size, and that can only be
+  answered by future real search, not more re-derivation of existing data.
+  Verified safe: no code changed, only two existing read-only CLI commands
+  run; `live_state.json` md5 `1add861014e44aa69e814491cbd22e00` unchanged
+  (still tick 13), `evotrader.manifest` md5 `0bf3a7d9411ee692d0a9f152a7533803`
+  unchanged, `tools/edit_bundle_module.py sync --check` clean, today's bar
+  already processed before this session started (no double-trade), no
+  genome promotion.
+
 - **Confirmed 2026-08-27 (3-hourly check, ~04:05 UTC): stress-tested the
   holdout backstop with a much larger sample — 15 more flip candidates
   across 6 real generations, all rejected, closest gap 20x under the
