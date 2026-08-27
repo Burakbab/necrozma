@@ -21,6 +21,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py fold-dd-blindspot  # does the fold-merged maxDD gate see drawdowns that span a fold boundary?
     python evotrader_bundle.py succession-audit  # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
     python evotrader_bundle.py consult-role-test  # what if consult_conservative's buy intents were suppressed but its sell rule kept?
+    python evotrader_bundle.py exit-role-test   # what if consult_moderate/consult_risky's own exit rule were suppressed in favor of Guardian's mechanical stops?
 """
 import sys, types, json, os, math
 
@@ -2645,6 +2646,116 @@ def main():
               "not a fold-aggregate/holdout-gated result -- a positive delta "
               "here is a reason to build the real gene and let search decide, "
               "not itself a promotion case.")
+    elif cmd == "exit-role-test":
+        # Diagnostic: acts on the history-perturb --anatomy exit-mechanism
+        # finding, now confirmed 3/3 independent windows (2026-08-27 09:56/
+        # 12:54/15:49 UTC entries) -- consult_moderate's and consult_risky's
+        # OWN discretionary exit rules (the "held and (trend broke / rsi too
+        # high)" branch in each consider()) lose money while Guardian's
+        # mechanical exits (stop loss / trailing stop / take profit / time
+        # stop, unconditional and un-vetoable, `agents.trader.Guardian`) on
+        # the same genome profit heavily. The flagged next step was tightening
+        # those two consults' exit thresholds toward guardian-style mechanical
+        # stops via a real gene change + shadow evolve -- bigger than one
+        # session. This is the cheap version: what does the limit case look
+        # like? Suppress each consult's own sell intents outright (its buy
+        # rule is untouched) so any position it would have sold instead rides
+        # until Guardian's forced_exits catches it (Guardian runs every bar
+        # regardless of consult intents -- `loop.engine.Council.tick`, so no
+        # position is ever stuck unexited). Same "diagnostic only" precedent
+        # as consult-role-test immediately above: read-only, monkeypatches
+        # `{Moderate,Risky}Consult.consider` for the duration of a few extra
+        # `run_backtest` calls and restores them in `finally`, nothing
+        # persisted, no gene/mutation-range/constitution/live_state.json
+        # touch. Composes only already-tested `run_backtest`/
+        # `benchmark_buy_hold`/`fitness` plus `_reconstruct_champion_genome`.
+        # A positive delta here is evidence for the real gene change, not a
+        # promotion case and not itself the gene change.
+        from core import market
+        from loop.engine import run_backtest
+        from agents.consults import ModerateConsult, RiskyConsult
+        from core.types import Proposal
+
+        g0 = acct.genome
+        also_version = None
+        if "--also-version" in sys.argv:
+            also_version = int(sys.argv[sys.argv.index("--also-version") + 1])
+        g = g0 if also_version is None else _reconstruct_champion_genome(also_version, acct.lineage)
+
+        data = market.load_universe(g.universe, g.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+
+        print(f"[exit-role-test] replaying v{g.version} full history "
+              f"({len(data)} symbols) with consult_moderate/consult_risky's "
+              f"own exit rule suppressed ...", flush=True)
+
+        def _strip_sells(orig_consider):
+            def _buy_only_consider(self, b):
+                prop = orig_consider(self, b)
+                intents = tuple(i for i in prop.intents if i.side != "sell")
+                return Proposal(agent=prop.agent, ts=prop.ts, stance=prop.stance,
+                                intents=intents)
+            return _buy_only_consider
+
+        _orig_moderate = ModerateConsult.consider
+        _orig_risky = RiskyConsult.consider
+
+        baseline = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+
+        ModerateConsult.consider = _strip_sells(_orig_moderate)
+        try:
+            moderate_only = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+        finally:
+            ModerateConsult.consider = _orig_moderate
+
+        RiskyConsult.consider = _strip_sells(_orig_risky)
+        try:
+            risky_only = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+        finally:
+            RiskyConsult.consider = _orig_risky
+
+        ModerateConsult.consider = _strip_sells(_orig_moderate)
+        RiskyConsult.consider = _strip_sells(_orig_risky)
+        try:
+            both = run_backtest(g, data, 0.0, 1.0, log_detail=False)
+        finally:
+            ModerateConsult.consider = _orig_moderate
+            RiskyConsult.consider = _orig_risky
+
+        def _row(label, res):
+            if res.get("error"):
+                return [label, "error", "", "", "", ""]
+            st = res["stats"]
+            edge = res.get("edge") or {}
+            return [label, f"{res['fitness']:.3f}",
+                    f"{st.get('total_return', 0):+.1%}",
+                    f"{st.get('max_dd', 0):.1%}",
+                    str(st.get('trades', 0)),
+                    f"{edge['excess_return']:+.1%}" if edge else "n/a"]
+
+        cols = ["variant", "fitness", "return", "maxDD", "trades", "excess vs b&h"]
+        widths = [30, 10, 10, 9, 8, 14]
+        print()
+        print("".join(c.rjust(w) for c, w in zip(cols, widths)))
+        print("-" * sum(widths))
+        for label, res in (("baseline (as tuned)", baseline),
+                           ("moderate exit suppressed", moderate_only),
+                           ("risky exit suppressed", risky_only),
+                           ("both exit suppressed", both)):
+            print("".join(c.rjust(w) for c, w in zip(_row(label, res), widths)))
+        print()
+        print("exit suppressed: that consult's own sell intents are dropped "
+              "for this replay only; its buy rule is untouched, and every "
+              "position it would have sold instead still exits via Guardian's "
+              "unconditional stop loss / trailing stop / take profit / time "
+              "stop. Never persisted -- both classes' .consider are restored "
+              "immediately after this command runs. This measures ONE "
+              "genome's full-history replay, not a fold-aggregate/"
+              "holdout-gated result -- a positive delta here is a reason to "
+              "build the real exit-threshold gene and let search decide, not "
+              "itself a promotion case.")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)

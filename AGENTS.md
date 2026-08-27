@@ -304,6 +304,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-27 (3-hourly check, ~18:54 UTC): `exit-role-test`,
+  quantifying the exit-mechanism finding by suppressing the discretionary
+  exit outright.** (see `runs/2026-08-27-1854-exit-role-test.md`) New
+  read-only diagnostic (same monkeypatch-and-restore precedent as
+  `consult-role-test`): suppresses `consult_moderate`'s and
+  `consult_risky`'s own sell intents (buy rule untouched) so any position
+  they'd have sold instead rides until Guardian's unconditional mechanical
+  exit catches it, and reports the full-history backtest delta. This was the
+  cheap first slice of the 15:49 UTC entry's flagged next step (a real
+  gene/threshold change + shadow evolve, explicitly bigger than one slot).
+  **Result on v3 (live)**: suppressing `consult_moderate`'s exit alone flips
+  the champion from a hard-DD-gate failure (-46.5% maxDD, fitness -inf) to
+  fitness 0.659 (+190.3% excess vs benchmark, vs baseline's +90.1%) — the
+  strongest single lever this thread has found. Suppressing `consult_risky`'s
+  exit alone is a complete no-op on v3 (every stat identical to baseline).
+  **Checked against v2 too**: `consult_moderate` suppression helps there as
+  well (0.169 → 0.396), confirming it generalizes across the two champions
+  checked — but `consult_risky` suppression is the *opposite* of v3: it
+  actively hurts v2 (fitness 0.169 → -inf, maxDD to -43.4%). Same
+  "search already corrected it for this specific champion, don't assume it
+  generalizes" shape as the closed 2026-08-23 `consult-role-test` finding on
+  `consult_conservative`'s entries. **Narrows the original scope**: any real
+  gene change should target `consult_moderate`'s exit threshold only —
+  `consult_risky`'s exit does not belong in the same change given the v2/v3
+  disagreement. Verified safe: `py_compile` clean, `tools/edit_bundle_module.py
+  sync --check` clean (CLI-only code, no `_SRC` module touched), full suite
+  235 passed (136.14s, matches baseline, no new pure function so no new test
+  file), `git diff --stat` shows only `evotrader_bundle.py` touched (+111
+  lines), `live_state.json` md5 `1add861014e44aa69e814491cbd22e00` and
+  `evotrader.manifest` md5 `0bf3a7d9411ee692d0a9f152a7533803` both unchanged,
+  today's bar already processed before this session (no double-trade), no
+  genome promotion. **Next**: check v1 with `--also-version 1` for a third
+  data point on the risky-genome-dependence question, then sketch the actual
+  `consult_moderate` exit-threshold gene change (narrower
+  `exit_trend_below`/`exit_rsi` range, or a "no discretionary exit" variant)
+  and validate with a shadow `evolve` run against the unmodified champion on
+  the same folds — still genuinely untried, no gene code sketched, likely
+  another full slot given real-evolve cost.
+
 - **Checked 2026-08-27 (3-hourly check, ~15:49 UTC): window-4 anatomy —
   exit-mechanism pattern now confirmed 3/3 independent windows.** (see
   `runs/2026-08-27-1549-history-perturb-window4-anatomy.md`) Ran
