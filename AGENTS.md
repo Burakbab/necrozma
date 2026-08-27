@@ -304,6 +304,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Checked 2026-08-27 (3-hourly check, ~15:49 UTC): window-4 anatomy —
+  exit-mechanism pattern now confirmed 3/3 independent windows.** (see
+  `runs/2026-08-27-1549-history-perturb-window4-anatomy.md`) Ran
+  `history-perturb --independent --anatomy --sub-slice-window 4`, the third
+  window this thread named as the one to check for replication. Window 4
+  (2022-08-27 to 2024-08-27, 497 trades) is a mixed case — +129.6% absolute
+  return but -5.5% excess vs a +135.2% benchmark (`beat_bench: false`),
+  neither window 3's clean net win nor window 5's outright loss. Same
+  exit-mechanism ranking shows up again: `circuit_breaker` -$3,668/15 (7%
+  win), `consult_risky` -$2,322/107 (32% win), `consult_moderate` -$2,173/159
+  (40% win) all lose; `consult_conservative` +$1,733/22 (95% win) and
+  `guardian` +$20,784/194 (52% win) both profit. **Now 3/3 independent
+  2-year windows (3, 4, 5) agree**, across three different outcome shapes
+  (net winner, mixed, net loser) and three different regime compositions —
+  the strongest evidence yet that discretionary consult exits
+  (`consult_moderate`/`consult_risky`/`circuit_breaker`) underperforming
+  mechanical exits (`guardian`/`consult_conservative`) is a structural
+  property of the current genome's exit logic, not a regime artifact.
+  Holding-period stays dropped as a lead: 6-20 bars is profitable here too
+  (+$10,649/302, matching window 3), 2/3 windows now disagree with window
+  5's negative reading. Regime sign also doesn't hold a consistent
+  direction across windows (window 4's `bear` bucket is profitable, unlike
+  window 5's) — read as window-specific, not general. Verified safe:
+  read-only, no code needed (the `--anatomy` flag already existed from the
+  09:56 UTC entry), `git status` clean, `live_state.json` md5
+  `1add861014e44aa69e814491cbd22e00` and `evotrader.manifest` md5
+  `0bf3a7d9411ee692d0a9f152a7533803` both unchanged, today's bar already
+  processed before this session (no double-trade), no genome promotion.
+  **Next**: with 3/3 windows agreeing, the higher-value move is no longer
+  another read-only window check (1 and 2 remain, if wanted) but attempting
+  the actual gene/threshold sketch — tightening
+  `consult_moderate`/`consult_risky`'s exit conditions toward `guardian`-
+  style mechanical stops, validated with a shadow `evolve` run against the
+  unmodified champion on the same folds — genuinely untried, no code
+  sketched, needs to preserve these same consults' flat-to-positive entry
+  role. Bigger scope than one 3-hourly slot; flagged for whoever picks it
+  up next.
+
 - **Checked 2026-08-27 (3-hourly check, ~12:54 UTC): window-3 anatomy —
   exit-mechanism pattern replicates, holding-period pattern doesn't.** (see
   `runs/2026-08-27-1254-history-perturb-window3-anatomy.md`) Ran the same
