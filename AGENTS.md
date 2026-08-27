@@ -304,6 +304,36 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Checked 2026-08-27 (3-hourly check, ~12:54 UTC): window-3 anatomy —
+  exit-mechanism pattern replicates, holding-period pattern doesn't.** (see
+  `runs/2026-08-27-1254-history-perturb-window3-anatomy.md`) Ran the same
+  `history-perturb --independent --anatomy --sub-slice-window 3` the 09:56
+  UTC entry flagged as the next check. Window 3 (2020-08-27 to 2022-08-27,
+  554 trades) is net **profitable** (+527.2% vs benchmark +303.8%, unlike
+  window 5's net loss), but the same exit-mechanism split shows up:
+  `consult_moderate`/`consult_risky`/`circuit_breaker` exits all lose money
+  (-$15,026/-$4,956/-$4,561) while `guardian`/`consult_conservative` exits
+  both profit heavily (+$77,883/+$4,031) — same ranking as window 5, now
+  confirmed on a second, opposite-regime window. **Does not replicate**:
+  window 5's "6-20 bar holds are the only negative holding-period bucket"
+  finding — here that same bucket is the second-most profitable
+  (+$29,557/320), so that claim was window-5-specific, not a general
+  holding-period defect; drop it as a lead. Reading: the exit-mechanism
+  ranking now looks like a real, regime-independent property of the current
+  genome's exit logic (2/2 windows checked), worth a third window (1, 2, or
+  4) before calling it universal, and eventually a real gene/threshold
+  proposal for `consult_moderate`/`consult_risky` exits — still untried,
+  no code sketched, would need a real `evolve` run to validate net of those
+  same consults' flat-to-positive entry role. Verified safe: read-only, no
+  code/state/constitution touched, `live_state.json` md5
+  `1add861014e44aa69e814491cbd22e00` and `evotrader.manifest` md5
+  `0bf3a7d9411ee692d0a9f152a7533803` both unchanged, today's bar already
+  processed before this session (no double-trade), no genome promotion.
+  Also noted in passing: `history-perturb --help` isn't a real flag (no
+  argparse help handler) and silently runs the default nested-years mode
+  instead of erroring — harmless (still read-only) but worth a one-line fix
+  someday, not chased this session.
+
 - **Shipped 2026-08-27 (3-hourly check, ~09:56 UTC): `history-perturb
   --independent --anatomy`, the window-5 per-trade post-mortem flagged open
   since the 2026-08-26 09:50 UTC entry.** (see
