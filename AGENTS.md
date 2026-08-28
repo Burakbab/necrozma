@@ -304,6 +304,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-28 (3-hourly check, ~09:45 UTC): `guardian-gene-test
+  [--also-version N]` — the fold-3-mechanism fix `fold3-anatomy`'s own
+  trailing note named as the real next step, and the first Guardian-gene
+  patch to actually clear the fold-aggregate gate on 3 champions at once.**
+  (see `runs/2026-08-28-0945-guardian-gene-test.md`) `fold3-anatomy` found
+  fold 3's worst trades exit via Guardian's *mechanical* stop-loss/trailing
+  stop/time stop, never a discretionary consult; `exit-gene-test` confirmed
+  patching the discretionary exit can't touch fold 3. This new diagnostic
+  builds real `Genome.child()` patches to the actual genes that fire there
+  (`risk.stop_loss`, `risk.trailing_stop`, `risk.max_bars_held`), each
+  halved in magnitude relative to whichever champion is under test (clamped
+  to `agents.researcher.GENE_SPACE`'s bounds), through the identical
+  acceptance-gate machinery `exit-gene-test` used. **Finding**: 11 of 12
+  variant/champion combinations (v1/v2/v3, 4 variants each) clear the
+  fold-aggregate gate — gate max_dd drops from -46.8%/-45.3%/-41.8% down to
+  as low as -29.5%-38.3%, well past the -40% `MAX_DD_HARD_FAIL` line, the
+  first time any gene patch tried in this thread has cleared it at all.
+  **Every one still fails the sealed holdout**, several by a wide margin —
+  same "clears fold gate, loses at holdout" shape `exit-gene-test` found
+  once for v2; now reproduced 11 times with a structurally different,
+  correctly-targeted patch. Verified safe: `py_compile` clean, `sync
+  --check` clean (CLI-only, no `_SRC` module touched), full suite 235
+  passed (134.02s, matches baseline), `git diff --stat` shows only
+  `evotrader_bundle.py` touched (+180 lines), `live_state.json` md5
+  `0fa0731311baab0508f959f79a01214e` and `evotrader.manifest` md5
+  `0bf3a7d9411ee692d0a9f152a7533803` both unchanged across all three
+  `--also-version` runs, today's bar already processed before this session
+  (no double-trade), no genome promotion. Also this session: found local
+  `main` behind a stale shallow-clone snapshot again (same expected
+  artifact prior entries this cycle already named) — realigned with `git
+  reset --hard origin/main`, no force-push, nothing lost. **Next**: whether
+  a smaller (not halved) tightening trades away less upside and holds the
+  holdout, or whether this is the same lucky-holdout-draw entrenchment
+  `holdout-pressure`/2026-08-18 already documented for discretionary
+  changes now showing up for mechanical ones too — in which case the real
+  test is a genuine `evolve()` search seeded in this gene sub-space, not
+  more hand-picked single patches. See run note for the full 12-row table.
+
 - **Shipped 2026-08-28 (3-hourly check, ~06:56 UTC): `exit-gene-test
   --also-version N` — wires the researcher_memory limitation the 00:56/04:04
   UTC entries both flagged, and turns up the first fold-gate clear either
