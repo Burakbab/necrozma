@@ -304,6 +304,36 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-28 (3-hourly check, ~21:53 UTC): the champion's own
+  fold/holdout comparison score isn't fixed either — it's silently
+  recomputed every `evolve()` invocation as the search/holdout windows
+  slide forward, and the swing is large enough to matter.** (see
+  `runs/2026-08-28-2153-champion-anchor-drift.md`) Read-only: grouped every
+  real recorded holdout draw against live champion v3
+  (`loop.evolve.summarize_holdout_pressure`, same function
+  `holdout-pressure`/`holdout-margin-audit` use) by `holdout_champion`
+  value. **Finding**: the same, unchanged v3 genome has scored three
+  different values across its own reign so far (-1.172, -0.881, 0.763 on
+  the holdout fitness scale; 1.389, 1.396, -1.612 on the fold-aggregate
+  scale) — not from any code or genome change, just from being re-backtested
+  on a later day's calendar-shifted window. Max swing: 1.644 (holdout),
+  ~3.01 (fold-aggregate) — the fold-aggregate swing alone is ~10x the fold
+  gate's typical `required_margin()` value (0.1-0.3 at realistic n), and
+  neither `MULTIPLE_TESTING_SIGMA` nor `HOLDOUT_SIGMA` was calibrated against
+  this noise source (`holdout-noise`'s block-bootstrap resamples one fixed
+  price path; it can't see window drift). Doesn't change the standing
+  conclusion (still a constitution-amendment-level design question,
+  deserving more scrutiny than a 3-hourly session, not attempted here) but
+  sharpens direction (a) from the 18:46 UTC entry below: "periodically
+  refresh the champion's holdout score" isn't a new mechanism to add, it's
+  *already happening* uncontrolled, with its own unmeasured noise. Flags a
+  concrete, scoped follow-up: a `--champion-only` mode on
+  `history-perturb`/`holdout-noise` that re-scores one fixed genome at
+  several "as-of" dates, to turn this session's one-off 3-point observation
+  into a real calibrated number. Verified safe: `live_state.json`/
+  `evotrader.manifest` md5 unchanged throughout, no backtest run, no
+  `evolve`/`tick` call, today's bar already processed before this session.
+
 - **Shipped 2026-08-28 (3-hourly check, ~18:46 UTC): `holdout-margin-audit` —
   the same "raw beat but margin-rejected" pattern the 16:32 UTC shadow-evolve
   session found on 361 freshly-generated candidates also shows up in the real,
