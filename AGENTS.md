@@ -304,6 +304,58 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-28 (3-hourly check, ~06:56 UTC): `exit-gene-test
+  --also-version N` — wires the researcher_memory limitation the 00:56/04:04
+  UTC entries both flagged, and turns up the first fold-gate clear either
+  exit-gene variant has ever gotten.** (see `runs/2026-08-28-0656-exit-gene-test-also-version.md`)
+  Refactored `exit-gene-test` to loop over a `champions` list (live champion
+  plus an optional `_reconstruct_champion_genome(also_version, ...)` entry,
+  the same pattern every other `--also-version` diagnostic here already
+  uses) instead of a single hardcoded `g0`. `live_state.json`'s
+  `researcher_memory` only ever holds cumulative counts for whichever
+  version is champion *right now* (reset on every promotion), so a
+  reconstructed past champion always takes the `n_tested_before=0`/
+  `holdout_draws_before=0` branch the command already had for a
+  champion_version mismatch — documented explicitly in the code and the
+  command's own trailing explanation as an optimistic upper bound, not a
+  replay of that version's real historical margin. Ran against v1 and v2:
+  v1 rejects the same way v3 does (both candidates hard-fail the dd-corrected
+  drawdown gate before ever reaching a champion comparison, fold-agg fitness
+  -2.959/-2.832 vs its own -2.787). **v2 is the first champion where a
+  candidate clears the fold gate at all**: "narrower exit (harder to
+  trigger)" scores -0.129 against v2's own -2.575 fold-agg fitness — a real
+  champion-relative pass, unlike v1/v3's immediate hard-gate rejection — but
+  then fails the sealed holdout (-1.301, well short of what
+  `holdout_accepts()` requires). Net: three real champions now checked, and
+  every one still rejects both variants, but for two structurally different
+  reasons (v1/v3: challenger itself hard-fails the drawdown gate before any
+  comparison; v2: challenger clears the fold gate and loses at the holdout
+  instead) — the "let search decide" question from exit-role-test's own
+  next-step note is now answered with real per-champion gate data on all
+  three, not just the live one. Verified safe: `py_compile` clean,
+  `tools/edit_bundle_module.py sync --check` clean (CLI-only code, no `_SRC`
+  module touched), full suite 235 passed (127.06s, matches baseline, no new
+  pure function so no new test file), `git diff --stat` shows only
+  `evotrader_bundle.py` touched, `live_state.json` md5
+  `0fa0731311baab0508f959f79a01214e` and `evotrader.manifest` md5
+  `0bf3a7d9411ee692d0a9f152a7533803` both unchanged before and after every
+  run, today's bar already processed before this session (no double-trade,
+  confirmed via `live_state.json`'s `updated` timestamp and `runs/`), no
+  genome promotion. Also this session: found local `main` behind a stale
+  shallow-clone snapshot of `origin/main` again (same expected artifact the
+  00:56/04:04 UTC entries already named, confirmed via `git rev-parse
+  --is-shallow-repository` and `git merge-base --all` returning no common
+  ancestor within the shallow window, not a force-push) — realigned with
+  `git reset --hard origin/main` per the Run protocol, no force-push,
+  nothing lost. **Next**: fold 3's drawdown mechanism (Guardian's mechanical
+  stop-loss/time-stop and the circuit breaker, not any discretionary
+  consult) is still the open thread from the 04:04 UTC entry — a real fix
+  would target those mechanisms directly; separately, v2's fold-gate clear
+  is one data point on one champion, not validated against whether a
+  genuinely evolved (not hand-patched) `exit_trend_below`/`exit_rsi` value
+  could do better against v2 specifically, which `evolve` itself would be
+  needed to check.
+
 - **Shipped 2026-08-28 (3-hourly check, ~04:04 UTC): `fold3-anatomy` — the
   fold-3-scoped drawdown pass the 00:56 UTC entry flagged, and it clears up
   which of two problems the exit gene actually is (and isn't).** (see
