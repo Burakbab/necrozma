@@ -304,6 +304,55 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-28 (3-hourly check, ~00:56 UTC): `exit-gene-test` — the
+  real gene patch + real acceptance-gate check the 21:48 UTC entry flagged,
+  and it rejects both candidates for a reason nobody had checked yet.** (see
+  `runs/2026-08-28-0056-exit-gene-test.md`) New diagnostic replaces
+  exit-role-test's monkeypatch with two actual `Genome.child()` patches on
+  `consult_moderate` ("no discretionary exit": `exit_trend_below=-1.0`,
+  `exit_rsi=999`; "narrower exit": `exit_trend_below=-0.05`, `exit_rsi=90`),
+  run through the exact machinery `EvolutionRun.generation()` uses for a
+  real top-3 candidate — `Evaluator.evaluate()`, `dd_corrected_stats()`,
+  `constitution.accepts()`, then (only for whichever clears that gate)
+  `constitution.holdout_accepts()` — using champion v3's real cumulative
+  `researcher_memory` counts (224 tested, 22 holdout draws) for the margin.
+  **Both candidates rejected, and not by losing to the champion**: fold 3
+  (`[0.567, 0.85]`, the same fold the fold-dd-blindspot/succession-audit
+  thread already named) hard-fails `MAX_DD_HARD_FAIL` (0.40) for the
+  champion (-46.80% dd-corrected max_dd) *and* for both candidates (-45.76%
+  for "no discretionary exit" — real improvement, ~1 point, nowhere near
+  enough). `constitution.accepts()`'s very first check
+  (`fitness(challenger) == -inf`) rejects before ever comparing to the
+  champion, before the multiple-testing margin, before the holdout. A
+  different failure mode than the `vacuous-regression-check` pattern item 2
+  has tracked since 2026-08-22 (there the *champion's* -inf fitness makes a
+  later comparison vacuous; here the *challenger* itself hard-fails first).
+  Net: exit-role-test's full-history-replay win (fitness -inf → 0.659) does
+  not survive contact with the fold-merged, dd-corrected metric the real
+  gate scores on — "let search decide" cannot decide anything for either of
+  these two specific gene values, because neither ever reaches a
+  champion-relative comparison. Verified safe: `py_compile` clean,
+  `tools/edit_bundle_module.py sync --check` clean (CLI-only code, no `_SRC`
+  module touched), full suite 235 passed (136.08s, matches baseline, no new
+  pure function so no new test file), `git diff --stat` shows only
+  `evotrader_bundle.py` touched (+150 lines), `live_state.json` md5
+  `0fa0731311baab0508f959f79a01214e` and `evotrader.manifest` md5
+  `0bf3a7d9411ee692d0a9f152a7533803` both unchanged, today's bar already
+  processed before this session (no double-trade), no genome promotion.
+  Also this session: found local `main` stuck at a stale 2026-08-22
+  shallow-clone snapshot while `origin/main` had genuinely advanced to
+  today's daily-trading commit — confirmed the local work was already
+  upstream, working tree clean, realigned with `git checkout -B main
+  origin/main`, no force-push, nothing lost. **Next**: whether a fold-3-
+  specific fix (not this exit gene) is what's actually needed before any
+  candidate can clear v3's real gate right now — needs a `drawdown`/
+  `anatomy` pass scoped to fold 3's window, genuinely untried. Separately,
+  `exit-gene-test --also-version N` against v1/v2 (neither known to
+  hard-fail fold 3 the way v3 does) would show whether this gene idea
+  clears the real gate against a less drawdown-marginal champion — the
+  diagnostic doesn't support `--also-version` yet (researcher_memory lookup
+  is only wired for the live champion).
+
 - **Checked 2026-08-27 (3-hourly check, ~21:48 UTC): `exit-role-test` against
   v1 — third data point closes the risky-exit genome-dependence question.**
   (see `runs/2026-08-27-2148-exit-role-test-v1.md`) Ran the 18:54 UTC entry's

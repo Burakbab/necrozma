@@ -22,6 +22,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py succession-audit  # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
     python evotrader_bundle.py consult-role-test  # what if consult_conservative's buy intents were suppressed but its sell rule kept?
     python evotrader_bundle.py exit-role-test   # what if consult_moderate/consult_risky's own exit rule were suppressed in favor of Guardian's mechanical stops?
+    python evotrader_bundle.py exit-gene-test   # the real consult_moderate exit-gene patch (not a monkeypatch), run through the actual fold+holdout acceptance gate
 """
 import sys, types, json, os, math
 
@@ -2756,6 +2757,155 @@ def main():
               "holdout-gated result -- a positive delta here is a reason to "
               "build the real exit-threshold gene and let search decide, not "
               "itself a promotion case.")
+    elif cmd == "exit-gene-test":
+        # Diagnostic: the "let search decide" step exit-role-test's own
+        # docstring named as the next move (2026-08-27 18:54/21:48 UTC
+        # entries; see AGENTS.md's Current state / Next steps item on
+        # consult_moderate's exit-role asymmetry). exit-role-test measured
+        # a MONKEYPATCH (sell intents stripped in Python) on one full-history
+        # replay -- informative but not something the real promotion
+        # pipeline could ever accept, since nothing was proposed as an
+        # actual genome patch or run through the acceptance gates. This
+        # builds the real gene patch(es) -- consult_moderate's own
+        # `exit_trend_below`/`exit_rsi` -- as genuine Genome.child() diffs,
+        # then runs each through the SAME machinery EvolutionRun.generation()
+        # uses for a real top-3 candidate: Evaluator.evaluate() for
+        # fold-aggregate fitness, dd_corrected_stats() (the 2026-08-22
+        # fold-dd-blindspot fix) before constitution.accepts(), and --
+        # only for whichever candidate clears that gate, in ranked order,
+        # matching generation()'s own sequential short-circuit -- the sealed
+        # holdout via constitution.holdout_accepts(). Both gates use this
+        # champion's REAL cumulative researcher_memory counts (tested
+        # candidates, holdout draws) from live_state.json, so the
+        # multiple-testing margin is the one a real candidate would actually
+        # face, not an artificially easy n=1. Two hand-designed candidates,
+        # not a blind Researcher-driven search -- cheaper than a real
+        # `evolve` invocation because nothing is proposed or mutated, only
+        # the two hypotheses the Next-steps entry already named are tried.
+        # Read-only: never calls Genome.save()/promote(), never writes
+        # lineage.jsonl or live_state.json. Composes only already-tested
+        # Evaluator.evaluate/dd_corrected_stats/Genome.child plus
+        # constitution.accepts/holdout_accepts, same precedent as every
+        # other diagnostic in this file.
+        from loop.evolve import Evaluator, dd_corrected_stats
+        from constitution import accepts, holdout_accepts
+        from core import market
+
+        g0 = acct.genome
+        mem = acct.researcher_memory or {}
+        if mem.get("champion_version") == g0.version:
+            n_tested_before = len(mem.get("tested", []))
+            holdout_draws_before = int(mem.get("holdout_draws", 0))
+        else:
+            n_tested_before, holdout_draws_before = 0, 0
+
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+
+        cur = g0.genes("consult_moderate")
+        print(f"[exit-gene-test] champion v{g0.version} ({len(data)} symbols), "
+              f"consult_moderate exit genes now: "
+              f"exit_trend_below={cur.get('exit_trend_below', 0.0)}, "
+              f"exit_rsi={cur.get('exit_rsi', 80)}", flush=True)
+        print(f"real cumulative candidates already tried against v{g0.version}: "
+              f"{n_tested_before}; real cumulative holdout draws: "
+              f"{holdout_draws_before}")
+
+        variants = [
+            ("no discretionary exit",
+             [("agents.consult_moderate.genes.exit_trend_below", -1.0),
+              ("agents.consult_moderate.genes.exit_rsi", 999.0)]),
+            ("narrower exit (harder to trigger)",
+             [("agents.consult_moderate.genes.exit_trend_below", -0.05),
+              ("agents.consult_moderate.genes.exit_rsi", 90.0)]),
+        ]
+        # Both candidates are one proposal batch, exactly like the mutations
+        # EvolutionRun.generation() proposes together in step 2 -- they share
+        # one n_candidates for the fold-gate margin, not an incrementing count
+        # per candidate (generation() computes n_tested once, before its loop).
+        n_candidates = n_tested_before + len(variants)
+
+        evaluator = Evaluator(data)
+        champ_eval = evaluator.evaluate(g0, log_detail=False)
+        champ_fit = champ_eval["aggregate_fitness"]
+        champ_gate_stats = dd_corrected_stats(evaluator, g0, champ_eval["stats"])
+        champ_holdout = evaluator.holdout_check(g0)
+        champ_ho_fit = champ_holdout.get("fitness", float("-inf"))
+
+        holdout_draws_running = holdout_draws_before
+        accepted_label = None
+        rows = []
+        for label, patch in variants:
+            child = g0.child(patch, note=f"exit-gene-test: {label}")
+            complexity_delta = child.complexity() - g0.complexity()
+            ev = evaluator.evaluate(child, log_detail=False)
+            fold_fit = ev["aggregate_fitness"]
+            chal_gate_stats = dd_corrected_stats(evaluator, child, ev["stats"])
+            fold_ok, fold_why = accepts(champ_gate_stats, chal_gate_stats,
+                                        n_candidates=n_candidates,
+                                        complexity_delta=complexity_delta,
+                                        champion_score=champ_fit,
+                                        challenger_score=fold_fit)
+            ho_fit, ho_ok = None, False
+            if not fold_ok:
+                ho_why = "not reached (failed fold gate)"
+            elif accepted_label is not None:
+                ho_why = ("not reached (an earlier-ranked candidate this "
+                          "generation already accepted)")
+            else:
+                chal_holdout = evaluator.holdout_check(child)
+                holdout_draws_running += 1
+                if chal_holdout.get("error"):
+                    ho_fit = float("-inf")
+                    ho_ok, ho_why = False, (
+                        f"challenger holdout errored: {chal_holdout['error']}")
+                else:
+                    ho_fit = chal_holdout.get("fitness", float("-inf"))
+                    ho_ok, ho_why = holdout_accepts(
+                        champ_ho_fit, ho_fit, n_draws=holdout_draws_running)
+                if ho_ok:
+                    accepted_label = label
+            verdict = "WOULD PROMOTE" if (fold_ok and ho_ok) else "rejected"
+            rows.append((label, fold_fit, fold_ok, fold_why, ho_fit, ho_ok,
+                        ho_why, verdict))
+
+        cols = ["variant", "fold-agg fit", "fold gate", "holdout fit",
+                "holdout gate", "verdict"]
+        widths = [32, 12, 36, 12, 44, 14]
+        print()
+        print("".join(c.rjust(w) for c, w in zip(cols, widths)))
+        print("-" * sum(widths))
+        for label, fold_fit, fold_ok, fold_why, ho_fit, ho_ok, ho_why, verdict in rows:
+            row = [
+                label,
+                f"{fold_fit:.3f}" if math.isfinite(fold_fit) else "-inf",
+                ("OK: " if fold_ok else "NO: ") + fold_why[:32],
+                "-" if ho_fit is None else (
+                    f"{ho_fit:.3f}" if math.isfinite(ho_fit) else "-inf"),
+                ("OK: " if ho_ok else "NO: ") + ho_why[:40] if ho_fit is not None
+                else ho_why[:40],
+                verdict,
+            ]
+            print("".join(c.rjust(w) for c, w in zip(row, widths)))
+        print()
+        print(f"champion v{g0.version}: fold-agg fitness {champ_fit:.3f}, "
+              f"sealed-holdout fitness "
+              f"{champ_ho_fit if math.isfinite(champ_ho_fit) else float('-inf'):.3f}.")
+        print("fold gate: constitution.accepts() on dd-corrected merged stats -- "
+              "the identical function and dd_corrected_stats() fix "
+              "EvolutionRun.generation() applies to a real top-3 candidate. "
+              "holdout gate: constitution.holdout_accepts() against the sealed "
+              "holdout, only reached (in ranked order, stopping at the first "
+              "acceptance) for whichever candidate(s) clear the fold gate -- "
+              f"both using this champion's real researcher_memory counts "
+              f"({n_tested_before} tested, {holdout_draws_before} holdout draws "
+              "before this run) so the multiple-testing margin matches what a "
+              "real candidate would face. Never persisted -- no genome file, "
+              "lineage.jsonl, or live_state.json write. 'WOULD PROMOTE' means "
+              "what the real gate would have said about this exact patch, not "
+              "that anything was promoted.")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)
