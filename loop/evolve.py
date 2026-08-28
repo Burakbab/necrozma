@@ -750,3 +750,44 @@ def summarize_holdout_pressure(lineage: list[dict], champion_version: int) -> di
         "accepted_generations": accepted_generations,
         "holdout_draws": draws,
     }
+
+
+def raw_holdout_beats(holdout_draws: list[dict]) -> dict[str, Any]:
+    """How many of `summarize_holdout_pressure`'s recorded rejections were
+    only margin failures -- the challenger's raw sealed-holdout score already
+    exceeded the champion's, just not by `required_margin()`'s additive
+    amount.
+
+    Exists to put a real, historical number on the entrenchment tension the
+    2026-08-28 guardian-weighted shadow-evolve session quantified on 361
+    freshly-generated shadow candidates (23% beat the champion's raw holdout
+    score and were still rejected): this answers the same question using
+    `live_state.json`'s own recorded lineage against the real v3 champion,
+    no new search required. `holdout_draws` is `summarize_holdout_pressure`'s
+    own `"holdout_draws"` list for one champion reign, in the chronological
+    (append) order `EvolutionRun` recorded them.
+
+    This is a lower-bound diagnostic, not a proposed replacement rule: a
+    "raw beat" ignores multiple-testing risk entirely (`required_margin`
+    exists precisely because the best of many noisy draws beats an equal
+    champion by luck alone often enough to manufacture a lineage out of
+    noise), so treat `n_raw_beats` as "how much of the rejection was the
+    margin, not the sign" rather than "how many of these should have been
+    promoted."
+
+    `first_flip_index` only marks the first draw a naive zero-margin rule
+    would have accepted -- every later draw in the same list was evaluated
+    against the *actual* (unpromoted) champion, so once a real promotion had
+    happened the champion, the fold ranking, and every subsequent draw would
+    differ. Draws after the first flip are not independent counterfactuals;
+    they are included in `flips` for completeness but should not be summed
+    into a "this many promotions were missed" count.
+    """
+    flips = [d["holdout_challenger"] > d["holdout_champion"] for d in holdout_draws]
+    first_flip_index = next((i for i, f in enumerate(flips) if f), None)
+    return {
+        "n_draws": len(holdout_draws),
+        "n_raw_beats": sum(flips),
+        "first_flip_index": first_flip_index,
+        "flips": flips,
+    }

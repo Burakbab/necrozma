@@ -118,7 +118,8 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-@pytest.mark.parametrize("cmd", ["summary", "signals", "holdout-pressure"])
+@pytest.mark.parametrize("cmd", ["summary", "signals", "holdout-pressure",
+                                 "holdout-margin-audit"])
 def test_run_from_files_matches_bundle_output(cmd):
     before = (REPO_ROOT / "live_state.json").read_bytes()
 

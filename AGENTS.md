@@ -304,6 +304,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-28 (3-hourly check, ~18:46 UTC): `holdout-margin-audit` —
+  the same "raw beat but margin-rejected" pattern the 16:32 UTC shadow-evolve
+  session found on 361 freshly-generated candidates also shows up in the real,
+  already-recorded live lineage, no new search needed.** New read-only
+  diagnostic (`evotrader_bundle.py holdout-margin-audit`, mirrored verbatim in
+  `run_from_files.py`, proven byte-identical between the two by a new
+  parametrize case in `tests/test_run_from_files_matches_bundle.py`) plus a
+  new pure function `loop.evolve.raw_holdout_beats()` (4 new tests in
+  `tests/test_holdout_pressure.py`) built on top of the existing
+  `summarize_holdout_pressure()` — reads `acct.lineage` only, no market data,
+  no backtest, never touches `live_state.json`, same guarantee as
+  `holdout-pressure`. For every past champion reign, it separates
+  sealed-holdout rejections into "the challenger was actually worse" vs. "the
+  challenger's raw holdout score beat the champion's but not by
+  `required_margin()`'s additive amount." **Finding on the real v3 lineage
+  (20 recorded holdout draws)**: 3 of them (cumulative draws 15, 19, 21) beat
+  champion v3's holdout score of 0.763 outright (up to 1.636, +114%) and were
+  still rejected — the first, at cumulative draw 15, needed +4.655 margin
+  and missed by nothing on sign, only on magnitude. v1 and v2 have 0 recorded
+  holdout draws (nothing ever reached that gate during their reigns). This is
+  a lower-bound diagnostic, not a proposed fix — see the tool's own printed
+  caveat and the function's docstring for why a raw beat ignoring
+  multiple-testing risk is not the same as "should have promoted," and why
+  only the *first* flip in a reign is a valid counterfactual. Does not change
+  the open design question from the 16:32 UTC entry below (still a
+  constitution-amendment-level decision, still not attempted here) — it adds
+  a second, independent, real-data confirmation of the same tension using
+  history that was already sitting in `live_state.json`, rather than a new
+  25-generation search. Verified safe: `md5sum live_state.json
+  evotrader.manifest` unchanged (`0fa0731311baab0508f959f79a01214e` /
+  `0bf3a7d9411ee692d0a9f152a7533803`) before and after every manual run of the
+  new command, `tools/edit_bundle_module.py sync --check`/`verify` both clean,
+  full test suite green, today's bar (00:20 UTC) already processed before
+  this session started, no `tick` run. Also this session: local `main` was
+  detached from `origin/main` at start (same history-rewrite artifact as
+  every recent entry) — realigned with `git checkout -B main origin/main`,
+  no force-push, nothing lost.
+
 - **Shipped 2026-08-28 (3-hourly check, ~16:32 UTC): the multi-generation Guardian-weighted
   shadow `evolve()` search the 13:00 UTC entry flagged as the only untried lever —
   25 generations, 361 candidates, no promotion, but a sharper answer than

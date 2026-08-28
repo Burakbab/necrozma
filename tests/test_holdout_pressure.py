@@ -7,7 +7,7 @@ fold-superior challengers) as "worth watching for on the live 1d account
 too" -- this is the tool that watches for it, reading lineage already in
 live_state.json."""
 from constitution import holdout_accepts
-from loop.evolve import summarize_holdout_pressure
+from loop.evolve import raw_holdout_beats, summarize_holdout_pressure
 
 
 def _rejection(why, fold_fitness):
@@ -144,3 +144,57 @@ def test_real_champion_v3_lineage_shows_the_entrenchment_pattern():
     assert len(summary["holdout_draws"]) == 3
     assert all(d["holdout_challenger"] <= d["holdout_champion"] + d["margin"]
               for d in summary["holdout_draws"])
+
+
+def test_raw_holdout_beats_empty_draws_is_empty():
+    result = raw_holdout_beats([])
+    assert result == {"n_draws": 0, "n_raw_beats": 0, "first_flip_index": None,
+                       "flips": []}
+
+
+def test_raw_holdout_beats_finds_a_raw_beat_that_still_lost_on_margin():
+    """Real shape from live_state.json's v3 lineage: a challenger's raw
+    sealed-holdout score beat the champion's outright, but not by
+    `required_margin()`'s additive amount, so `holdout_accepts` still
+    rejected it -- `raw_holdout_beats` must surface that as a raw beat."""
+    _, why = holdout_accepts(champion_holdout=0.763, challenger_holdout=1.636,
+                              n_draws=15)
+    assert why.startswith("failed sealed holdout")  # rejected on margin, not sign
+    lineage = [{"champion_version": 3, "n_candidates": 14,
+                "rejections": [_rejection(why, 1.0205)]}]
+    draws = summarize_holdout_pressure(lineage, champion_version=3)["holdout_draws"]
+    result = raw_holdout_beats(draws)
+    assert result == {"n_draws": 1, "n_raw_beats": 1, "first_flip_index": 0,
+                       "flips": [True]}
+
+
+def test_raw_holdout_beats_no_flip_when_challenger_never_beats_champion_raw():
+    _, why = holdout_accepts(champion_holdout=-1.172, challenger_holdout=-2.296,
+                              n_draws=2)
+    lineage = [{"champion_version": 3, "n_candidates": 14,
+                "rejections": [_rejection(why, 1.7106)]}]
+    draws = summarize_holdout_pressure(lineage, champion_version=3)["holdout_draws"]
+    result = raw_holdout_beats(draws)
+    assert result == {"n_draws": 1, "n_raw_beats": 0, "first_flip_index": None,
+                       "flips": [False]}
+
+
+def test_raw_holdout_beats_first_flip_index_ignores_later_draws():
+    """Later draws in the same reign were evaluated against the champion
+    that a real promotion at the first flip would have replaced -- they are
+    not independent counterfactuals, so `first_flip_index` must point at the
+    earliest one and not be recomputed from a later, larger raw beat."""
+    _, why_no_beat = holdout_accepts(0.763, -1.172, n_draws=14)
+    _, why_first_flip = holdout_accepts(0.763, 1.636, n_draws=15)
+    _, why_second_flip = holdout_accepts(0.763, 1.613, n_draws=21)
+    lineage = [{"champion_version": 3, "n_candidates": 14, "rejections": [
+        _rejection(why_no_beat, 1.0),
+        _rejection(why_first_flip, 1.02),
+        _rejection(why_second_flip, 0.8),
+    ]}]
+    draws = summarize_holdout_pressure(lineage, champion_version=3)["holdout_draws"]
+    result = raw_holdout_beats(draws)
+    assert result["n_draws"] == 3
+    assert result["n_raw_beats"] == 2
+    assert result["first_flip_index"] == 1
+    assert result["flips"] == [False, True, True]

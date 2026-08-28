@@ -21,19 +21,20 @@ Unlike evotrader_bundle.py's main(), this does not touch
 `constitution.checksum()` takes its file-based branch and hashes the real
 `constitution/__init__.py` and `core/portfolio.py` on disk instead.
 
-Beyond `summary`/`signals`, this also wires up three of the diagnostic
+Beyond `summary`/`signals`, this also wires up four of the diagnostic
 commands AGENTS.md's own command table already documents as never touching
-live_state.json or the champion: `holdout-pressure` (reads acct.lineage
-only, no market data or backtest -- the cheapest diagnostic in the bundle),
-`regime` (one market load, equal-weight buy-and-hold per fold/holdout
-window, no genome or Council involved), and `fold-dd-blindspot` (one
-Evaluator.evaluate() call plus two continuous run_backtest replays per
-genome -- same cost class as `regime`, ~1-2 minutes). All three are
-transcribed here verbatim from their evotrader_bundle.py implementation,
-not reimplemented -- see tools/edit_bundle_module.py for the module-level
-equivalent of that discipline. The remaining diagnostics (`anatomy`,
-`consults`, `costs`, `succession-audit`, ...) are heavier (a full backtest
-or more, sometimes several) and not attempted in this pass.
+live_state.json or the champion: `holdout-pressure` and `holdout-margin-audit`
+(both read acct.lineage only, no market data or backtest -- the cheapest
+diagnostics in the bundle), `regime` (one market load, equal-weight
+buy-and-hold per fold/holdout window, no genome or Council involved), and
+`fold-dd-blindspot` (one Evaluator.evaluate() call plus two continuous
+run_backtest replays per genome -- same cost class as `regime`, ~1-2
+minutes). All four are transcribed here verbatim from their
+evotrader_bundle.py implementation, not reimplemented -- see
+tools/edit_bundle_module.py for the module-level equivalent of that
+discipline. The remaining diagnostics (`anatomy`, `consults`, `costs`,
+`succession-audit`, ...) are heavier (a full backtest or more, sometimes
+several) and not attempted in this pass.
 
 `tick-dry-run` is the first piece of the actual `tick`/`evolve` cutover
 AGENTS.md item 7 has flagged as the riskier remainder across five prior
@@ -120,7 +121,8 @@ import sys
 from constitution import verify
 from core.live import LiveAccount
 
-SUPPORTED_COMMANDS = ("summary", "signals", "holdout-pressure", "regime",
+SUPPORTED_COMMANDS = ("summary", "signals", "holdout-pressure",
+                      "holdout-margin-audit", "regime",
                       "fold-dd-blindspot", "tick-dry-run", "evolve-dry-run",
                       "tick", "evolve")
 
@@ -192,6 +194,59 @@ def _cmd_holdout_pressure(acct) -> None:
               "holdout draw -- the more of these\n  accumulate, the likelier this "
               "champion is entrenched by holdout luck rather than\n  by being "
               "the best genome the search has actually found.")
+
+
+def _cmd_holdout_margin_audit(acct) -> None:
+    from loop.evolve import raw_holdout_beats, summarize_holdout_pressure
+    versions = sorted(set(e.get("champion_version") for e in acct.lineage
+                          if e.get("champion_version") is not None))
+    print()
+    print("HOLDOUT MARGIN AUDIT — raw beats vs. margin-adjusted rejections, "
+          "by champion reign")
+    print("=" * 72)
+    any_draws = False
+    for v in versions:
+        summary = summarize_holdout_pressure(acct.lineage, v)
+        draws = summary["holdout_draws"]
+        if not draws:
+            print(f"  champion v{v}: 0 sealed-holdout draws recorded (nothing "
+                  f"reached holdout, or it was promoted away before anything did)")
+            continue
+        any_draws = True
+        audit = raw_holdout_beats(draws)
+        print(f"  champion v{v}: {audit['n_draws']} sealed-holdout draws, "
+              f"{audit['n_raw_beats']} beat the champion's raw holdout score "
+              f"and were still rejected on margin")
+        if audit["first_flip_index"] is not None:
+            d = draws[audit["first_flip_index"]]
+            print(f"    first raw beat: draw #{audit['first_flip_index'] + 1} "
+                  f"(cumulative draw {d['cumulative_draws']}), holdout "
+                  f"{d['holdout_challenger']:.3f} vs champion "
+                  f"{d['holdout_champion']:.3f} (needed +{d['margin']:.3f} margin)")
+        for i, (d, flipped) in enumerate(zip(draws, audit["flips"])):
+            mark = " <- raw beat" if flipped else ""
+            print(f"    {'n/a' if d['fold_fitness'] is None else format(d['fold_fitness'], '7.3f')} "
+                  f"fold-fit  holdout {d['holdout_challenger']:>7.3f}  "
+                  f"champ {d['holdout_champion']:>7.3f}  "
+                  f"margin {d['margin']:>6.3f}{mark}")
+    print()
+    if any_draws:
+        print("  Reading it: every row already failed `holdout_accepts()` today, so "
+              "none of\n  this changed a real decision. 'raw beat' rows are where the "
+              "rejection came\n  entirely from the additive margin, not from the "
+              "challenger actually being\n  worse -- only the FIRST raw beat in a "
+              "reign is a valid counterfactual\n  ('would this have promoted under a "
+              "zero-margin rule'); later raw beats in\n  the same reign were tested "
+              "against a champion a real promotion would have\n  already replaced, so "
+              "they are shown for completeness, not summed into a\n  missed-promotion "
+              "count. This does not recommend removing the margin --\n  `required_margin()` "
+              "exists because the best of many noisy draws beats an\n  equal champion "
+              "by luck alone often enough on its own; it quantifies how\n  much of the "
+              "historical rejection record is margin, not sign, using real\n  recorded "
+              "lineage instead of a new search.")
+    else:
+        print("  No champion reign in this account's real lineage has ever had a "
+              "fold-aggregate\n  winner reach the sealed holdout yet.")
 
 
 def _cmd_regime(acct) -> None:
@@ -473,6 +528,8 @@ def main() -> None:
         print(json.dumps(acct.summary(), indent=2, default=str))
     elif cmd == "holdout-pressure":
         _cmd_holdout_pressure(acct)
+    elif cmd == "holdout-margin-audit":
+        _cmd_holdout_margin_audit(acct)
     elif cmd == "regime":
         _cmd_regime(acct)
     elif cmd == "fold-dd-blindspot":
