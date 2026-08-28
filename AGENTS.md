@@ -304,6 +304,50 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-28 (3-hourly check, ~16:32 UTC): the multi-generation Guardian-weighted
+  shadow `evolve()` search the 13:00 UTC entry flagged as the only untried lever —
+  25 generations, 361 candidates, no promotion, but a sharper answer than
+  "champion holds."** (see `runs/2026-08-28-1632-guardian-weighted-shadow-evolve.md`)
+  Standalone script (not committed, same discipline as every prior shadow-evolve
+  session), not wired into any CLI: `loop.evolve.EvolutionRun` against the real
+  `core/agents/loop/constitution` files, seeded from live champion v3 and the
+  account's real cumulative `holdout_draws=22`, with `Researcher.perturb()`
+  subclassed so every blind proposal includes one of the 3 Guardian genes
+  (`risk.stop_loss`/`trailing_stop`/`max_bars_held`) *combined* with genes from
+  the full `GENE_SPACE` — not restricted to the 3-gene subspace
+  `guardian-gene-test` already hand-swept. `acct.save()` never called;
+  `live_state.json` opened read-only once. 1d bars run ~1.5-2.3 min/generation
+  (vs 4h shadow work's 6-27 min), so 25 generations took 38.2 min.
+  **Finding**: 69 of 361 candidates cleared the fold-aggregate gate (best fold
+  fitness 1.582 vs champion's -1.612) and reached the sealed holdout — roughly
+  5-6x more than the two hand-picked guardian-gene-test sessions found combined.
+  **All 69 failed the sealed holdout — but 16 of them (23%) beat the champion's
+  own holdout draw outright in raw terms**, up to +2.754 vs champion's +0.597
+  (4.6x), and were rejected anyway because `holdout_accepts()` requires beating
+  champion **+ margin** (5.6-6.0 at these draw counts, `HOLDOUT_SIGMA *
+  sqrt(2*ln(draws))`), not just beating champion. Sharpens the entrenchment
+  finding from "maybe search intensity would find something" to: **genuinely
+  better challengers exist and keep turning up (~20% of holdout-tested
+  candidates), the additive-over-one-lucky-draw margin is what keeps rejecting
+  them, and more search does not fix this — it can only ever compound the same
+  draw count the margin scales against.** Verified safe: `md5sum live_state.json
+  evotrader.manifest` unchanged (`0fa0731311baab0508f959f79a01214e` /
+  `0bf3a7d9411ee692d0a9f152a7533803`), `git status --short` clean throughout,
+  no promotion (`final_version == 3`), today's bar already processed before this
+  session, no double-trade. Also this session: local `main` diverged from
+  `origin/main` again (expected artifact) — realigned with `git reset --hard
+  origin/main`, no force-push, nothing lost. **Next**: this reads as a real
+  design tension in `required_margin()`/`holdout_accepts()`, not a bug to patch
+  casually — the margin is additive over the champion's own single noisy
+  holdout draw rather than an absolute/percentile bar, so a lucky champion draw
+  can entrench indefinitely. Two directions worth a full design session (not
+  attempted here): (a) periodically refreshing the champion's own holdout score
+  instead of anchoring to one historical draw forever, or (b) an
+  absolute/percentile holdout bar instead of the additive margin. Either is a
+  constitution amendment (checksummed, needs an `AMENDMENTS.md` row) and
+  deserves more scrutiny than a 3-hourly session, given how central
+  `holdout_accepts()` is to the promote-to-live-money safety story.
+
 - **Shipped 2026-08-28 (3-hourly check, ~13:00 UTC): `guardian-gene-test --pct N`
   plus a required-margin print — the magnitude question the 09:45 UTC entry
   left open has an answer, and it's that the margin, not the magnitude, is
