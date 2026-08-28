@@ -23,6 +23,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py consult-role-test  # what if consult_conservative's buy intents were suppressed but its sell rule kept?
     python evotrader_bundle.py exit-role-test   # what if consult_moderate/consult_risky's own exit rule were suppressed in favor of Guardian's mechanical stops?
     python evotrader_bundle.py exit-gene-test   # the real consult_moderate exit-gene patch (not a monkeypatch), run through the actual fold+holdout acceptance gate
+    python evotrader_bundle.py fold3-anatomy    # which actual trades drive fold 3's hard-fail drawdown episode, champion vs the no-discretionary-exit candidate
 """
 import sys, types, json, os, math
 
@@ -2906,6 +2907,132 @@ def main():
               "lineage.jsonl, or live_state.json write. 'WOULD PROMOTE' means "
               "what the real gate would have said about this exact patch, not "
               "that anything was promoted.")
+    elif cmd == "fold3-anatomy":
+        # Diagnostic: the fold-3-specific-fix question the 2026-08-28 00:56 UTC
+        # exit-gene-test entry left open (see AGENTS.md Current state / Next
+        # steps). exit-gene-test found both consult_moderate exit-gene
+        # candidates hard-fail MAX_DD_HARD_FAIL because of fold 3
+        # ([0.567, 0.85] of history) -- champion v3 itself already fails it
+        # (-46.80% dd-corrected max_dd) before any candidate is even compared
+        # to it. dd_corrected_stats() takes min(fold-merged max_dd, continuous
+        # max_dd), and an initial version of this diagnostic assumed the
+        # continuous (boundary-free) replay was always the binding one --
+        # checking against dd_corrected_stats() directly on champion v3 and
+        # the "no discretionary exit" candidate showed that's backwards here:
+        # for both, fold-merged is the worse (binding) number, and _merge()'s
+        # max_dd is literally the min() across each fold's OWN
+        # independently-reset backtest -- fold 3's own local run alone
+        # reproduces the merged number exactly for both. So this replays each
+        # of the 3 folds independently (fresh broker, fresh cash at each
+        # fold's own start -- exactly what Evaluator.evaluate()'s per-fold
+        # loop does) plus the continuous span for comparison, confirms which
+        # one actually equals the corrected (binding) number, then lists every
+        # closed trade in THAT specific replay -- the actual positions
+        # responsible, not just the aggregate percentage. Repeats this for
+        # exit-gene-test's "no discretionary exit" candidate, to show directly
+        # whether suppressing consult_moderate's exit changes which trades
+        # fire inside fold 3's own reset window and by how much it moves that
+        # fold's depth. Read-only: only calls
+        # Evaluator.folds/evaluate/continuous_max_dd,
+        # constitution.dd_corrected_stats, run_backtest, drawdown_episodes and
+        # Genome.child -- never Genome.save()/promote(), never writes
+        # lineage.jsonl or live_state.json.
+        from loop.evolve import Evaluator, dd_corrected_stats
+        from loop.engine import run_backtest, drawdown_episodes
+        from core import market
+
+        g0 = acct.genome
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+
+        ev = Evaluator(data)
+        folds = ev.folds()
+        search_start, search_end = folds[0][0], folds[-1][1]
+
+        no_exit_patch = [
+            ("agents.consult_moderate.genes.exit_trend_below", -1.0),
+            ("agents.consult_moderate.genes.exit_rsi", 999.0),
+        ]
+        variants = [
+            ("champion", g0),
+            ("no discretionary exit",
+             g0.child(no_exit_patch, note="fold3-anatomy: no discretionary exit")),
+        ]
+
+        print(f"[fold3-anatomy] champion v{g0.version} ({len(data)} symbols, "
+              f"{g0.bar_interval} bars), folds={folds}", flush=True)
+
+        for label, g in variants:
+            fold_eval = ev.evaluate(g, log_detail=False)
+            fold_merged_dd = fold_eval["stats"].get("max_dd", 0.0)
+            cont_dd = ev.continuous_max_dd(g, folds)
+            corrected = dd_corrected_stats(ev, g, fold_eval["stats"], folds)
+            gate_dd = corrected.get("max_dd", 0.0)
+
+            # per-fold local max_dd, to find which single replay reproduces
+            # the fold-merged number (min() across folds means exactly one
+            # fold's own local backtest equals it, absent a tie).
+            per_fold_dd = []
+            for a, b in folds:
+                r = run_backtest(g, data, a, b, log_detail=False)
+                per_fold_dd.append(r["stats"].get("max_dd", 0.0) if "error" not in r else None)
+
+            print()
+            print(f"{label.upper()} -- fold-merged max_dd {fold_merged_dd:.1%}, "
+                  f"continuous max_dd {cont_dd:.1%}, dd-corrected (gate) "
+                  f"{gate_dd:.1%} (MAX_DD_HARD_FAIL is -40%)")
+            print("  per-fold local max_dd: " + ", ".join(
+                f"fold {i+1}={d:.1%}" if d is not None else f"fold {i+1}=error"
+                for i, d in enumerate(per_fold_dd)))
+
+            # pick the replay that actually equals the binding (gate) number:
+            # a specific fold's own local backtest, or the continuous one.
+            if math.isclose(gate_dd, cont_dd, abs_tol=1e-9):
+                a, b, replay_label = search_start, search_end, "continuous"
+            else:
+                worst_i = min(range(len(per_fold_dd)),
+                              key=lambda i: per_fold_dd[i] if per_fold_dd[i] is not None else 0.0)
+                a, b = folds[worst_i]
+                replay_label = f"fold {worst_i + 1} (own reset window)"
+            res = run_backtest(g, data, a, b, log_detail=False)
+            if "error" in res:
+                print(f"  binding replay ({replay_label}) failed: {res['error']}")
+                continue
+            nav_history = res.get("nav_history", [])
+            episodes = drawdown_episodes(nav_history, top_n=1)
+            trades = res.get("closed_trades", [])
+            print(f"  binding replay: {replay_label} -- max_dd here "
+                  f"{res['stats'].get('max_dd', 0):.1%}")
+            if not episodes:
+                print("  no drawdown episode in this replay")
+                continue
+            e = episodes[0]
+            print(f"  deepest episode: {e['dd_pct']:.1%}  "
+                  f"{e['peak_ts'][:10]} -> {e['trough_ts'][:10]} "
+                  f"({e['peak_to_trough_bars']} bars)")
+            in_window = [
+                t for t in trades
+                if (e["peak_ts"] <= str(t.get("entry_ts", "")) <= e["trough_ts"] or
+                    e["peak_ts"] <= str(t.get("exit_ts", "")) <= e["trough_ts"])
+            ]
+            print(f"  {len(in_window)} closed trades overlap this window "
+                  f"(sorted worst-first):")
+            for t in sorted(in_window, key=lambda t: float(t.get("pnl", 0.0)))[:10]:
+                print(f"    {str(t.get('symbol', '')):<10s} "
+                      f"{float(t.get('pnl', 0.0)):>10,.0f}  "
+                      f"{float(t.get('pnl_pct', 0.0)):+7.1%}  "
+                      f"{t.get('bars_held', 0):>3}d  "
+                      f"{str(t.get('entry_ts', ''))[:10]} -> "
+                      f"{str(t.get('exit_ts', ''))[:10]}  "
+                      f"{str(t.get('exit_reason', ''))[:40]}")
+        print()
+        print("Reading it: if the same symbols/dates dominate both variants' "
+              "binding windows and the depth barely moves, the exit gene and "
+              "fold 3's problem are different levers -- a fold-3-scoped fix "
+              "(e.g. sizing, a regime filter) is a genuinely separate next "
+              "step, not a restatement of exit-gene-test.")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)

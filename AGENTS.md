@@ -304,6 +304,47 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-28 (3-hourly check, ~04:04 UTC): `fold3-anatomy` — the
+  fold-3-scoped drawdown pass the 00:56 UTC entry flagged, and it clears up
+  which of two problems the exit gene actually is (and isn't).** (see
+  `runs/2026-08-28-0404-fold3-anatomy.md`) New read-only diagnostic; caught
+  and fixed a real bug in its own first draft before shipping: `dd_corrected_
+  stats()` takes `min(fold-merged, continuous)`, and this diagnostic first
+  assumed continuous always binds — checking directly showed the opposite for
+  both champion v3 and the "no discretionary exit" candidate, where
+  fold-merged (driven entirely by fold 3's own independently-reset replay) is
+  the more negative, binding number. The continuous-only version would have
+  wrongly reported the candidate at -34.7% (clearing the gate); the real,
+  fixed version reproduces exit-gene-test's own -46.80%/-45.76% exactly.
+  **Finding**: fold 3's own replay's 10 worst closed trades are virtually
+  identical between champion and the exit-suppressed candidate (same
+  symbols, same dates, same P&L) — every one exits via Guardian's mechanical
+  stop-loss, time-stop, or the circuit breaker, none via `consult_moderate`'s
+  own discretionary sell. Suppressing that exit therefore can't touch these
+  positions at all, which is exactly why it only buys ~1 point of depth
+  (-46.8% → -45.8%) against a ~7-point gap to clear 0.40. **The exit-gene
+  finding and fold 3's hard-fail are two different problems that share a
+  champion, not the same lever restated.** Verified safe: `py_compile` clean,
+  `tools/edit_bundle_module.py sync --check` clean (CLI-only code, no `_SRC`
+  module touched), full suite 235 passed (210.06s, no new pure function so no
+  new test file), `git diff --stat` shows only `evotrader_bundle.py` touched
+  (+127 lines), `live_state.json` md5 `0fa0731311baab0508f959f79a01214e` and
+  `evotrader.manifest` md5 `0bf3a7d9411ee692d0a9f152a7533803` both unchanged,
+  today's bar already processed before this session (no double-trade), no
+  genome promotion. Also this session: found local `main` behind a stale
+  shallow-clone snapshot of `origin/main`; confirmed via `git rev-parse
+  --is-shallow-repository` this was the expected shallow-clone-window
+  artifact (not a force-push/history-rewrite), working tree clean, realigned
+  with `git reset --hard origin/main`, no force-push, nothing lost. **Next**:
+  fold 3's drawdown is driven by Guardian's mechanical stop-loss/time-stop
+  and one circuit-breaker flatten across a cluster of positions, not by any
+  discretionary consult — a real fix would have to target those mechanisms
+  (thresholds, sizing, correlation limits) or accept v3 is structurally
+  exposed on this window; genuinely untried, and possibly a different
+  regression than the ones `fold-dd-blindspot`/`succession-audit` already
+  track. Separately, `exit-gene-test --also-version N` against v1/v2 is still
+  unwired (researcher_memory lookup only supports the live champion).
+
 - **Shipped 2026-08-28 (3-hourly check, ~00:56 UTC): `exit-gene-test` — the
   real gene patch + real acceptance-gate check the 21:48 UTC entry flagged,
   and it rejects both candidates for a reason nobody had checked yet.** (see
