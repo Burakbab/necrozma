@@ -3103,7 +3103,7 @@ def main():
         # constitution.accepts/holdout_accepts, same precedent as
         # exit-gene-test and every other diagnostic in this file.
         from loop.evolve import Evaluator, dd_corrected_stats
-        from constitution import accepts, holdout_accepts
+        from constitution import accepts, holdout_accepts, required_margin, HOLDOUT_SIGMA
         from agents.researcher import GENE_SPACE
         from core import market
 
@@ -3123,15 +3123,29 @@ def main():
             print("no market data")
             sys.exit(1)
 
+        # --pct N: how far toward the tight side to move (default 50, i.e.
+        # halved, byte-identical to the original 2026-08-28 09:45 UTC
+        # invocation). The 09:45 UTC run's own trailing note flagged halving
+        # as "a fairly blunt first probe" that overshot into holdout failure
+        # on 11/12 combinations -- --pct lets a smaller tightening (e.g. 25)
+        # be tried without duplicating this command.
+        pct = 50.0
+        if "--pct" in sys.argv:
+            pct = float(sys.argv[sys.argv.index("--pct") + 1])
+            if not (0.0 < pct < 100.0):
+                print("[guardian-gene-test] --pct must be between 0 and 100 (exclusive)")
+                sys.exit(1)
+        pct_label = "halved" if pct == 50.0 else f"{pct:.0f}% tighter"
+
         def _tighten(path: str, cur: float) -> float:
             lo, hi, kind = GENE_SPACE[path]
             # "tighter" means smaller magnitude: stop_loss/trailing_stop move
             # toward 0 (their GENE_SPACE hi bound, since both are negative),
-            # max_bars_held moves toward its GENE_SPACE lo bound -- halving
-            # the raw value does both, since all three bounds bracket 0/lo
-            # on the "loose" side and the champion's current value on the
-            # other.
-            v = max(lo, min(hi, cur / 2.0))
+            # max_bars_held moves toward its GENE_SPACE lo bound -- scaling
+            # the raw value by (1 - pct/100) does both, since all three
+            # bounds bracket 0/lo on the "loose" side and the champion's
+            # current value on the other.
+            v = max(lo, min(hi, cur * (1.0 - pct / 100.0)))
             return int(round(v)) if kind == "int" else round(float(v), 4)
 
         evaluator = Evaluator(data)
@@ -3159,9 +3173,9 @@ def main():
                   f"holdout draws: {holdout_draws_before}")
 
             variants = [
-                ("tighter stop-loss (halved)", [("risk.stop_loss", tight_stop)]),
-                ("tighter trailing stop (halved)", [("risk.trailing_stop", tight_trail)]),
-                ("shorter time stop (halved)", [("risk.max_bars_held", tight_bars)]),
+                (f"tighter stop-loss ({pct_label})", [("risk.stop_loss", tight_stop)]),
+                (f"tighter trailing stop ({pct_label})", [("risk.trailing_stop", tight_trail)]),
+                (f"shorter time stop ({pct_label})", [("risk.max_bars_held", tight_bars)]),
                 ("combined tighter exits", [("risk.stop_loss", tight_stop),
                                             ("risk.trailing_stop", tight_trail),
                                             ("risk.max_bars_held", tight_bars)]),
@@ -3237,6 +3251,14 @@ def main():
                   f"(gate max_dd {champ_gate_stats.get('max_dd', 0.0):.1%}, "
                   f"MAX_DD_HARD_FAIL -40%), sealed-holdout fitness "
                   f"{champ_ho_fit if math.isfinite(champ_ho_fit) else float('-inf'):.3f}.")
+            if math.isfinite(champ_ho_fit):
+                first_margin = required_margin(holdout_draws_before + 1, 0, sigma=HOLDOUT_SIGMA)
+                print(f"sealed-holdout bar at this draw count: a challenger "
+                      f"needs holdout fitness > {champ_ho_fit + first_margin:.3f} "
+                      f"to pass (champion {champ_ho_fit:.3f} + required margin "
+                      f"{first_margin:.3f} at {holdout_draws_before + 1} cumulative "
+                      f"draws, HOLDOUT_SIGMA={HOLDOUT_SIGMA}) -- grows slightly "
+                      f"with each further draw this run makes.")
 
         print("Same gates as exit-gene-test (constitution.accepts() on "
               "dd-corrected merged stats, constitution.holdout_accepts() on "
@@ -3244,8 +3266,11 @@ def main():
               "candidate(s) clear the fold gate first), applied to Guardian's "
               "own mechanical exit genes instead of a consult's discretionary "
               "one. 'WOULD PROMOTE' means what the real gate would have said "
-              "about this exact patch, not that anything was promoted. Never "
-              "persisted -- no genome file, lineage.jsonl, or "
+              "about this exact patch, not that anything was promoted. "
+              f"Tightening magnitude this run: --pct {pct:.0f} "
+              f"({pct_label}) -- default 50 matches the original 2026-08-28 "
+              "09:45 UTC run; pass e.g. --pct 25 to test a smaller move. "
+              "Never persisted -- no genome file, lineage.jsonl, or "
               "live_state.json write.")
     else:
         print(f"unknown command: {cmd}")

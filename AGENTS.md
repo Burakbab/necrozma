@@ -304,6 +304,51 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-28 (3-hourly check, ~13:00 UTC): `guardian-gene-test --pct N`
+  plus a required-margin print — the magnitude question the 09:45 UTC entry
+  left open has an answer, and it's that the margin, not the magnitude, is
+  the real constraint.** (see `runs/2026-08-28-1300-guardian-gene-test-pct-margin.md`)
+  Added `--pct N` (default 50, byte-identical to the original halved
+  behavior) so the Guardian-gene tightening magnitude is a parameter instead
+  of hardcoded halving, plus a new print line computing
+  `constitution.required_margin(holdout_draws_before + 1, 0,
+  sigma=HOLDOUT_SIGMA)` directly — the table's own `holdout gate` column
+  truncates `holdout_accepts()`'s reason string at 38 chars, which was
+  hiding the actual margin number in every row of the 09:45 UTC table.
+  **Finding**: `--pct 25` (milder than halving) against v3 is
+  non-monotonic vs. the halved variants — stop-loss holds the holdout
+  better (0.646 vs 0.476, now barely above champion's 0.644) but time-stop
+  and combined do worse (-0.819/-0.896 vs 0.174/-0.676) — a real result,
+  not noise, but irrelevant next to the margin: at 23 cumulative holdout
+  draws, `HOLDOUT_SIGMA=2.0` sets the bar at champion + 5.008 = **5.652**.
+  Every hand-picked variant tried across both sessions scores in the -0.9 to
+  +0.6 range — the gap between 25%-tighter and halved (≤0.15 fitness
+  points) is two orders of magnitude smaller than the gap to the actual
+  bar. **No single-gene or few-gene hand-picked patch, at any magnitude,
+  could plausibly clear this gate right now.** This sharpens the 09:45 UTC
+  "lucky holdout draw entrenchment" hypothesis into something more precise:
+  v3's own holdout draw (0.644) isn't an outlier — the multiple-testing
+  correction itself, at the account's current cumulative draw count, demands
+  more improvement than a hand-picked fold-tuning patch can plausibly
+  produce. Verified safe: `py_compile` clean, `sync --check` clean
+  (CLI-only), full suite 235 passed (163.93s, matches baseline),
+  `git diff --stat` shows only `evotrader_bundle.py` touched (+36/-11),
+  `live_state.json` md5 `0fa0731311baab0508f959f79a01214e` and
+  `evotrader.manifest` md5 `0bf3a7d9411ee692d0a9f152a7533803` both unchanged
+  across every run, today's bar already processed before this session (no
+  double-trade), no genome promotion. Also this session: found local `main`
+  behind a stale shallow-clone snapshot again (same expected artifact prior
+  entries this cycle already named, confirmed no force-push) — realigned
+  with `git reset --hard origin/main`, no force-push, nothing lost.
+  **Next**: the only genuinely untried lever left is a real `evolve()`
+  shadow search seeded from v3 with mutation weight toward the Guardian risk
+  genes, run for enough generations that fold-aggregate selection compounds
+  many candidates before any one reaches the (heavily-taxed) holdout gate —
+  the same shape behind every real holdout-clearing promotion this project
+  has seen (the 4h-shadow generation-N promotions in
+  `runs/2026-08-1{6,7}-*`). A multi-generation, time-boxed exercise for a
+  future session, not a single-invocation diagnostic.
+
 - **Shipped 2026-08-28 (3-hourly check, ~09:45 UTC): `guardian-gene-test
   [--also-version N]` — the fold-3-mechanism fix `fold3-anatomy`'s own
   trailing note named as the real next step, and the first Guardian-gene
