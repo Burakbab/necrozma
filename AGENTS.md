@@ -5357,6 +5357,19 @@ every `evolve` call.
    `consult-role-test` at that point is a one-line check for whether the
    problem has come back.
 
+9. **Don't wrap a backgrounded `evolve`/long-running command in `nohup ... &`
+   inside a single tool call.** Flagged in
+   `runs/2026-08-28-0020-daily-trading.md`: doing that detaches the real
+   process from the tool call's own lifecycle — the wrapper script returns
+   (and the tool reports "completed") almost immediately, while the actual
+   `python3 evotrader_bundle.py evolve N` keeps running orphaned under
+   `nohup`. Harmless once you know to poll the real PID with `kill -0`
+   instead of trusting the tool's completion signal, but it wastes a run's
+   attention rediscovering that. Just background the `python3
+   evotrader_bundle.py evolve N` command directly — no `nohup`/`&` combo —
+   so the tool's own completion notification lines up with the process
+   actually exiting.
+
 ---
 
 ## Measured 2026-08-16 — read before proposing more genes
