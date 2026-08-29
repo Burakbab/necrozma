@@ -306,6 +306,33 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-29 (3-hourly check, ~19:12 UTC): the 16:28 UTC session's
+  own flagged confound checked — both the 63.3% fold-stage disagreement
+  rate and the near-tie holdout disagreements are substantially as-of-drift
+  artifacts, not fixed properties of champion v3.** (see
+  `runs/2026-08-29-1913-favorable-window-disagreement-check.md`) Same
+  sandbox-only shadow-search discipline, same real `researcher_memory`
+  seeding, 15 generations, `n_blind=14` — but this time each symbol's
+  loaded data was truncated to its first 90% of bars before evaluation, so
+  the existing 85/15 fold/holdout split lands on an earlier, friendlier
+  window (ending 2026-04-04) where champion v3's own fold-aggregate fitness
+  is +1.398 instead of today's -1.695. Result: fold-stage disagreements
+  fell from 63.3% to **8.6%** (18/210, still skewed 77.8% risky but on a
+  much thinner sample), and sealed-holdout disagreements — 15.0% and 8.9%
+  on the two unfavorable-window sessions — fell to **0.0%** (0/4; only 4
+  candidates even reached that gate, since the stronger champion dominated
+  192/210 candidates outright on both metrics at once). Reads as evidence
+  *for* patience on the still-open "redefine the selection metric" question
+  rather than against it: the apparent disagreement problem shrinks a great
+  deal once the champion isn't fighting a hostile calendar window, which is
+  itself temporary and drifting, not a fixed flaw in raw fitness. One
+  truncation point, one seed, one champion — not a `keep_frac` sweep, not
+  repeated with a second seed, not yet tried against a different champion.
+  Read-only: no file written by the shadow script (deleted after
+  extraction), `md5sum live_state.json` unchanged
+  (`bf360fc7f86f6bae2bc46bb6f6dc6026`), `python3 -m pytest -q` 240/240,
+  `tools/edit_bundle_module.py sync --check` clean.
+
 - **Found 2026-08-29 (3-hourly check, ~16:26 UTC): the 10:17 UTC session's
   open "is the disagreement direction mixed or one-sided?" question is
   answered — it's heavily one-sided, at both stages.** (see
