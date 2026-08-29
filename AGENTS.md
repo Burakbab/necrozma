@@ -306,6 +306,32 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-29 (3-hourly check, ~16:26 UTC): the 10:17 UTC session's
+  open "is the disagreement direction mixed or one-sided?" question is
+  answered — it's heavily one-sided, at both stages.** (see
+  `runs/2026-08-29-1628-candidate-excess-disagreement-direction.md`)
+  Same sandbox-only discipline (nothing written to disk, script deleted
+  after extracting results), same seeding (live champion v3's real
+  `researcher_memory`), 15 generations, but this time every candidate's
+  fitness-vs-excess-return comparison is classified by *direction*, not
+  just counted as agree/disagree. Fold-aggregate: 210 candidates, 133
+  disagreements (63.3%, matching the 10:17 UTC session's 66.2% on a
+  different random seed) — of those, **118 (88.7%) are the "risky"
+  direction** (raw fitness ranks the challenger above the champion while
+  excess return ranks it below), only 15 (11.3%) the reverse.
+  Sealed-holdout (the gate a real promotion is decided at): 40 candidates
+  reached it, 6 disagreements (15.0%) — **5 (83.3%) risky**, 1 (16.7%)
+  reverse, matching the 10:17 UTC session's own qualitative description
+  of its 4 holdout disagreements. Read together with that session's
+  finding that every holdout-stage disagreement so far is a *near-tie*
+  on excess return (0.1-1.1pp): raw fitness's blind spot is real,
+  systematic, and consistently one-sided, but every real instance found
+  so far is a near-miss, not a lopsided flip that would have driven a
+  bad promotion. One 15-generation sample against one champion on one
+  calendar window — not validated across champions or fold windows yet.
+  Does not touch the still-open "should the selection metric be
+  redefined" question, which stays the owner's call.
+
 - **Built 2026-08-29 (3-hourly check, ~12:54 UTC): new `live-benchmark`
   diagnostic answers the fitness-vs-excess-return question with the live
   paper account's own real fills for the first time — not a backtest, not a
