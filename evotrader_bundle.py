@@ -2079,6 +2079,35 @@ def main():
         # no engine or constitution change, no new pure function. Requires
         # `--independent`; target window same convention as `--drawdown`/
         # `--sub-slice` (`--sub-slice-window I`, defaults to the most recent).
+        #
+        # `--champion-only N [--as-of-step-days D]` (added 2026-08-29 3-hourly
+        # check): the 2026-08-28 21:53 UTC "champion anchor drift" Current-state
+        # entry found the SAME unchanged v3 genome scoring three different
+        # sealed-holdout fitness values (-1.172, -0.881, 0.763) across its
+        # reign, purely from `evolve()`'s HOLDOUT_FRAC split recomputing as the
+        # 4y-ending-"now" history grows by one bar a day -- and flagged this
+        # exact follow-up as the way to turn that one-off 3-point real-lineage
+        # observation into a controlled, calibrated number. This is a
+        # different window scheme than every mode above: `--independent`/
+        # `--boundary-shift`/etc. all tile *fixed-width* windows, but the real
+        # sealed holdout is always "the newest HOLDOUT_FRAC of however much
+        # history exists" -- a width that itself grows over time. So this
+        # mode does not touch the windows/raw machinery above at all: it
+        # loads history generously (12y, same as `--independent`), then for N
+        # as-of dates D days apart walking back from "now" (default D=14),
+        # truncates every symbol's frame to `index <= as_of` and runs
+        # `run_backtest(genome, data, 1 - HOLDOUT_FRAC, 1.0)` on the truncated
+        # data -- exactly the split `Evaluator.holdout_check()` computes
+        # inside `evolve()`, just against a controlled series of as-of points
+        # instead of whatever real `evolve()` invocations happened to log.
+        # Same guarantees as every mode above: real run_backtest per as-of
+        # date, read-only, never touches live_state.json, `evolve()`, or the
+        # champion. Reports the fitness spread/mean/std across as-of dates
+        # next to `MULTIPLE_TESTING_SIGMA`/`HOLDOUT_SIGMA`, the same
+        # comparison `holdout-noise` makes for resampling noise -- this
+        # measures the *other* noise source that diagnostic's own docstring
+        # says it can't see ("one fixed price path; it can't see window
+        # drift").
         import time
         import pandas as pd
         from core import market
@@ -2120,6 +2149,18 @@ def main():
             if not boundary_shift_n:
                 print("[history-perturb] --trace-diff requires --boundary-shift")
                 sys.exit(1)
+        champion_only_n = None
+        if "--champion-only" in sys.argv:
+            champion_only_n = int(sys.argv[sys.argv.index("--champion-only") + 1])
+            if independent:
+                print("[history-perturb] --champion-only cannot combine with "
+                      "--independent (different window scheme: --champion-only always "
+                      "uses the sealed holdout's own HOLDOUT_FRAC split of all "
+                      "available history, not a fixed-width tiled window)")
+                sys.exit(1)
+        as_of_step_days = 14
+        if "--as-of-step-days" in sys.argv:
+            as_of_step_days = int(sys.argv[sys.argv.index("--as-of-step-days") + 1])
         g0 = acct.genome
         genomes = [(f"v{g0.version} (live)", g0)]
         if "--also-version" in sys.argv:
@@ -2130,7 +2171,11 @@ def main():
                 print(f"[history-perturb] {e}")
                 sys.exit(1)
             genomes.append((f"v{also_version} (reconstructed)", g_other))
-        if independent:
+        if champion_only_n:
+            print(f"[history-perturb] replaying {len(genomes)} genome(s) over "
+                  f"{champion_only_n} sealed-holdout as-of dates, "
+                  f"{as_of_step_days}d apart ...", flush=True)
+        elif independent:
             print(f"[history-perturb] replaying {len(genomes)} genome(s) over independent "
                   f"non-overlapping {window_years:.1f}y windows ...", flush=True)
         else:
@@ -2138,6 +2183,62 @@ def main():
                   f"{len(years_list)} history lengths ({years_list}) ...", flush=True)
         for label, genome in genomes:
             print()
+            if champion_only_n:
+                from constitution import HOLDOUT_FRAC, MULTIPLE_TESTING_SIGMA, HOLDOUT_SIGMA
+                print(f"SEALED-HOLDOUT AS-OF DRIFT -- {label}")
+                print("=" * 100)
+                raw = market.load_universe(genome.universe, genome.bar_interval, 12.0)
+                if not raw:
+                    print("  no market data")
+                    continue
+                now_ts = pd.Timestamp(int(time.time() * 1000), unit="ms", tz="UTC")
+                print(f"  {'as-of':>6s} {'as-of date':>12s} {'bars':>6s} "
+                      f"{'holdout start':>14s} {'fitness':>8s} {'return':>9s} "
+                      f"{'sharpe':>7s} {'maxDD':>7s} {'trades':>7s} {'excess ret':>11s} "
+                      f"{'beat bench':>10s}")
+                rows = []
+                for k in range(champion_only_n):
+                    as_of = now_ts - pd.Timedelta(days=k * as_of_step_days)
+                    data = {s: df[df.index <= as_of] for s, df in raw.items()}
+                    data = {s: df for s, df in data.items() if len(df) > 0}
+                    if not data:
+                        print(f"  {k:>6d} {str(as_of.date()):>12s}  no market data")
+                        continue
+                    res = run_backtest(genome, data, 1.0 - HOLDOUT_FRAC, 1.0, log_detail=False)
+                    if res.get("error"):
+                        print(f"  {k:>6d} {str(as_of.date()):>12s}  "
+                              f"backtest failed: {res['error']}")
+                        continue
+                    st, edge, win = res["stats"], res.get("edge", {}), res["window"]
+                    fit = res["fitness"]
+                    rows.append((k, fit, edge.get("beat_benchmark")))
+                    fit_str = f"{fit:>8.3f}" if math.isfinite(fit) else f"{'-inf':>8s}"
+                    print(f"  {k:>6d} {str(as_of.date()):>12s} {win['bars']:>6d} "
+                          f"{win['start'][:10]:>14s} {fit_str} "
+                          f"{st.get('total_return', 0):>8.1%} {st.get('sharpe', 0):>7.2f} "
+                          f"{st.get('max_dd', 0):>7.1%} {st.get('trades', 0):>7d} "
+                          f"{edge.get('excess_return', 0):>10.1%} "
+                          f"{str(edge.get('beat_benchmark')):>10s}", flush=True)
+                finite = [(k, f) for k, f, _ in rows if math.isfinite(f)]
+                beats = [b for _, _, b in rows if b is not None]
+                if finite:
+                    fits_only = [f for _, f in finite]
+                    n = len(fits_only)
+                    mean_f = sum(fits_only) / n
+                    std_f = (math.sqrt(sum((f - mean_f) ** 2 for f in fits_only) / n)
+                             if n > 1 else 0.0)
+                    print(f"  -> {len(finite)}/{len(rows)} finite-fitness, range "
+                          f"[{min(fits_only):.3f}, {max(fits_only):.3f}], spread "
+                          f"{max(fits_only) - min(fits_only):.3f}, mean {mean_f:.3f}, "
+                          f"std {std_f:.3f}; beats benchmark in "
+                          f"{sum(1 for b in beats if b)}/{len(beats)} of the as-of "
+                          f"dates that reported it")
+                    if std_f > 0:
+                        print(f"  -> empirical as-of-drift sigma {std_f:.3f} vs "
+                              f"MULTIPLE_TESTING_SIGMA ({MULTIPLE_TESTING_SIGMA}): "
+                              f"{std_f / MULTIPLE_TESTING_SIGMA:.2f}x, vs HOLDOUT_SIGMA "
+                              f"({HOLDOUT_SIGMA}): {std_f / HOLDOUT_SIGMA:.2f}x")
+                continue
             if not independent:
                 print(f"START-DATE SENSITIVITY -- {label}")
                 print("=" * 100)

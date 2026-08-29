@@ -304,6 +304,41 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-29 (3-hourly check, ~00:56 UTC): `history-perturb
+  --champion-only N [--as-of-step-days D]` — the follow-up the 2026-08-28
+  21:53 UTC champion-anchor-drift entry flagged, turning its one-off 3-point
+  real-lineage observation into a controlled, calibrated number.** (see
+  `runs/2026-08-29-0056-champion-only-as-of-drift.md`) New mode, CLI-only
+  (no new pure function, no constitution/engine change): unlike every other
+  `history-perturb` mode, which tiles fixed-width windows, this replicates
+  the sealed holdout's own definition ("newest `HOLDOUT_FRAC` of however
+  much history exists") at N as-of dates D days apart walking back from
+  "now" — truncate history to `index <= as_of`, run
+  `run_backtest(genome, data, 1 - HOLDOUT_FRAC, 1.0)`, exactly the split
+  `Evaluator.holdout_check()` computes inside `evolve()`. Mutually exclusive
+  with `--independent` (different window scheme). **Finding (10 as-of
+  points, 21 days apart, live champion v3)**: 7/10 finite (3 hit the maxDD
+  hard gate outright), fitness range [-0.824, 1.167], spread 1.991, mean
+  0.149, **empirical std 0.613** — 7.66x `MULTIPLE_TESTING_SIGMA` (0.08,
+  confirming the fold-aggregate margin has no defense against this noise)
+  but only 0.31x `HOLDOUT_SIGMA` (2.0, so the sealed-holdout margin as
+  calibrated already comfortably covers this specific noise source alone).
+  **Open, not resolved here**: `HOLDOUT_SIGMA` was calibrated from
+  `holdout-noise`'s block-bootstrap *resampling* noise (~2.04 for v3, a
+  different, independent noise source from this session's as-of-drift
+  noise) — whether the two should combine (e.g. in quadrature, ≈2.13, a
+  modest ~4% increase) or already overlap enough that 2.04 covers both is
+  an open statistical question for whoever next touches `HOLDOUT_SIGMA`.
+  Read-only throughout: `md5sum live_state.json evotrader.manifest`
+  unchanged across every run including with `--also-version`, full test
+  suite green (240/240, no regressions), `tools/edit_bundle_module.py sync
+  --check` clean (this command lives only in the bundle's CLI dispatch, not
+  a `_SRC` module), today's bar (00:20 UTC) already processed before this
+  session, no `tick`/`evolve` call. Does not change the still-open
+  constitution-amendment-level design question from 2026-08-28 (refresh the
+  champion's holdout score periodically, vs. an absolute/percentile holdout
+  bar) — sharpens it with a real number, doesn't resolve it.
+
 - **Found 2026-08-28 (3-hourly check, ~21:53 UTC): the champion's own
   fold/holdout comparison score isn't fixed either — it's silently
   recomputed every `evolve()` invocation as the search/holdout windows
