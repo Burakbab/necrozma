@@ -26,6 +26,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py exit-gene-test   # the real consult_moderate exit-gene patch (not a monkeypatch), run through the actual fold+holdout acceptance gate
     python evotrader_bundle.py fold3-anatomy    # which actual trades drive fold 3's hard-fail drawdown episode, champion vs the no-discretionary-exit candidate
     python evotrader_bundle.py guardian-gene-test  # real patches to Guardian's own stop-loss/trailing-stop/time-stop genes, run through the actual fold+holdout acceptance gate
+    python evotrader_bundle.py promotion-excess-check  # did either real promotion depend on raw fitness vs. excess-return disagreeing?
 """
 import sys, types, json, os, math
 
@@ -2734,6 +2735,155 @@ def main():
         print("Descriptive only -- does not decide whether any version should "
               "replace the live champion. That stays the owner's call "
               "(AGENTS.md item 2).")
+    elif cmd == "promotion-excess-check":
+        # Diagnostic: the 2026-08-29 06:00 UTC weekend all-hands entry found
+        # sealed-holdout fitness is almost entirely explained by a
+        # challenger's own market-beta-driven absolute return, not by
+        # excess-over-benchmark, and flagged (not attempted) a "sharper open
+        # question": since promotion decisions are gated on raw Sortino
+        # fitness(), does an excess-return-based selection criterion ever
+        # actually disagree with what a real historical promotion picked?
+        # That question had never been checked against the two real
+        # promotions this account has ever made (v1->v2, v2->v3) -- this
+        # answers it directly, on a same-basis replay of both champion and
+        # challenger against today's data so the two sides of each promotion
+        # are judged on identical footing (their real promotion-time numbers
+        # used different, smaller, sliding windows and -- for v1->v2 -- were
+        # recorded before this codebase tracked "edge" data at all, so they
+        # are not directly comparable to each other; see the recorded-value
+        # cross-check printed below for what IS available from the actual
+        # promotion time).
+        #
+        # Composes only already-tested _reconstruct_champion_genome/
+        # Evaluator.evaluate/Evaluator.holdout_check (same precedent as
+        # succession-audit, fold-scheme, holdout-pressure). No new pure
+        # function, no constitution or live_state.json touch, no genome file,
+        # lineage.jsonl write. Does not propose or decide a new selection
+        # metric -- that stays the owner's call per the weekend entry's own
+        # framing ("deserves its own dedicated design pass").
+        from loop.evolve import Evaluator
+        from core import market
+        from core.genome import Genome
+
+        g0 = acct.genome
+        promotions = [e for e in acct.lineage if e.get("accepted")]
+        if not promotions:
+            print("no real promotions recorded in lineage")
+            sys.exit(0)
+
+        data = market.load_universe(g0.universe, g0.bar_interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        print(f"[promotion-excess-check] replaying {len(data)} symbols against "
+              f"{len(promotions)} real promotion(s) ...", flush=True)
+        print()
+
+        genome_cache = {1: Genome.champion()}
+
+        def _genome(v):
+            if v not in genome_cache:
+                genome_cache[v] = _reconstruct_champion_genome(v, acct.lineage)
+            return genome_cache[v]
+
+        any_disagreement = False
+        for e in promotions:
+            v_champ = e["champion_version"]
+            v_chal = e["accepted"]["new_version"]
+            g_champ = _genome(v_champ)
+            g_chal = _genome(v_chal)
+            ev = Evaluator(data)
+            fold_champ = ev.evaluate(g_champ, log_detail=False)
+            fold_chal = ev.evaluate(g_chal, log_detail=False)
+            ho_champ = ev.holdout_check(g_champ)
+            ho_chal = ev.holdout_check(g_chal)
+
+            fit_champ_fold = fold_champ["aggregate_fitness"]
+            fit_chal_fold = fold_chal["aggregate_fitness"]
+            edge_champ_fold = fold_champ.get("edge") or {}
+            edge_chal_fold = fold_chal.get("edge") or {}
+            excess_champ_fold = edge_champ_fold.get("excess_return")
+            excess_chal_fold = edge_chal_fold.get("excess_return")
+
+            fit_champ_ho = ho_champ.get("fitness") if "error" not in ho_champ else None
+            fit_chal_ho = ho_chal.get("fitness") if "error" not in ho_chal else None
+            excess_champ_ho = (ho_champ.get("edge") or {}).get("excess_return") if "error" not in ho_champ else None
+            excess_chal_ho = (ho_chal.get("edge") or {}).get("excess_return") if "error" not in ho_chal else None
+
+            def _fmt(x, pct=False):
+                if x is None or not math.isfinite(x):
+                    return "n/a"
+                return f"{x:+.1%}" if pct else f"{x:+.3f}"
+
+            def _verdict(champ, chal):
+                if champ is None or chal is None:
+                    return "n/a"
+                return "challenger" if chal > champ else "champion"
+
+            fold_fit_verdict = _verdict(fit_champ_fold, fit_chal_fold)
+            fold_excess_verdict = _verdict(excess_champ_fold, excess_chal_fold)
+            ho_fit_verdict = _verdict(fit_champ_ho, fit_chal_ho)
+            ho_excess_verdict = _verdict(excess_champ_ho, excess_chal_ho)
+
+            print(f"== promotion v{v_champ} -> v{v_chal} "
+                  f"(replayed against TODAY's {len(data)}-symbol, 4y window, "
+                  "not the actual promotion-time window) ==")
+            print(f"  fold-aggregate fitness:  champion {_fmt(fit_champ_fold)}  "
+                  f"challenger {_fmt(fit_chal_fold)}  -> {fold_fit_verdict} wins on raw fitness")
+            print(f"  fold-aggregate excess return (mean across {ev.n_folds} folds vs "
+                  f"equal-weight buy&hold):  champion {_fmt(excess_champ_fold, pct=True)}  "
+                  f"challenger {_fmt(excess_chal_fold, pct=True)}  -> "
+                  f"{fold_excess_verdict} wins on excess return")
+            print(f"  sealed-holdout fitness:  champion {_fmt(fit_champ_ho)}  "
+                  f"challenger {_fmt(fit_chal_ho)}  -> {ho_fit_verdict} wins on raw fitness")
+            print(f"  sealed-holdout excess return:  champion {_fmt(excess_champ_ho, pct=True)}  "
+                  f"challenger {_fmt(excess_chal_ho, pct=True)}  -> "
+                  f"{ho_excess_verdict} wins on excess return")
+
+            disagree = ((fold_fit_verdict != fold_excess_verdict and fold_fit_verdict != "n/a"
+                         and fold_excess_verdict != "n/a") or
+                        (ho_fit_verdict != ho_excess_verdict and ho_fit_verdict != "n/a"
+                         and ho_excess_verdict != "n/a"))
+            if disagree:
+                any_disagreement = True
+                print("  DISAGREEMENT: raw fitness and excess return do not pick the "
+                      "same side at at least one of the two gates above.")
+            else:
+                print("  agree: raw fitness and excess return pick the same side at "
+                      "both gates above.")
+
+            recorded_edge = e.get("champion_edge")
+            recorded_chal_edge = e["accepted"].get("edge")
+            recorded_chal_ho_edge = e["accepted"].get("holdout_edge")
+            if recorded_edge or recorded_chal_edge or recorded_chal_ho_edge:
+                print("  (cross-check: actual promotion-time recorded values, smaller "
+                      "sliding window, not the replay above)")
+                if recorded_edge:
+                    print(f"    recorded champion fold-agg excess return: "
+                          f"{_fmt(recorded_edge.get('excess_return'), pct=True)}")
+                if recorded_chal_edge:
+                    print(f"    recorded challenger fold-agg excess return: "
+                          f"{_fmt(recorded_chal_edge.get('excess_return'), pct=True)}")
+                if recorded_chal_ho_edge:
+                    print(f"    recorded challenger holdout excess return: "
+                          f"{_fmt(recorded_chal_ho_edge.get('excess_return'), pct=True)}  "
+                          f"beat_benchmark={recorded_chal_ho_edge.get('beat_benchmark')}")
+            else:
+                print("  (no promotion-time edge data recorded for this promotion -- "
+                      "predates edge tracking; the replay above is the only comparison "
+                      "available)")
+            print()
+
+        if any_disagreement:
+            print("Overall: at least one real promotion shows raw fitness and "
+                  "excess return picking different sides (on this same-basis replay).")
+        else:
+            print("Overall: both real promotions agree under raw-fitness and "
+                  "excess-return criteria (on this same-basis replay).")
+        print("Read-only throughout -- no genome file, lineage.jsonl, or "
+              "live_state.json write. Does not propose or decide a new selection "
+              "metric; see AGENTS.md 'Current state' 2026-08-29 for the open "
+              "question this measures.")
     elif cmd == "consult-role-test":
         # Diagnostic: acts on the 2026-08-16 "Measured" section's role-asymmetry
         # finding (`anatomy`'s by_entry_agent/by_exit_reason breakdown against

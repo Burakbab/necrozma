@@ -90,6 +90,7 @@ python3 evotrader_bundle.py correlation-universe  # full-universe pairwise retur
 python3 evotrader_bundle.py holdout-noise         # block-bootstrap sigma of a sealed-holdout fitness score
 python3 evotrader_bundle.py fold-dd-blindspot     # does the fold-merged maxDD gate see drawdowns spanning a fold boundary?
 python3 evotrader_bundle.py succession-audit      # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
+python3 evotrader_bundle.py promotion-excess-check  # did either real promotion depend on raw fitness vs. excess-return disagreeing?
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -303,6 +304,30 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Answered 2026-08-29 (3-hourly check, ~06:59 UTC): checked the weekend
+  all-hands entry's flagged question against real data for the first time —
+  no, an excess-return-based selection criterion has never actually
+  disagreed with raw Sortino `fitness()` on either of this account's two
+  real promotions.** (see `runs/2026-08-29-0659-promotion-excess-check.md`)
+  New diagnostic `promotion-excess-check` reconstructs champion and
+  challenger for each real promotion (v1→v2, v2→v3) and replays both on
+  identical footing against today's data (`Evaluator.evaluate` +
+  `Evaluator.holdout_check`), comparing fold-aggregate and sealed-holdout
+  fitness against fold-aggregate and sealed-holdout excess return. Both
+  promotions: challenger wins on all four measures, no disagreement. For
+  v2→v3 the actual promotion-time recorded `champion_edge`/`edge`/
+  `holdout_edge` (only promotion with edge data — v1→v2 predates edge
+  tracking) point the same direction as the same-basis replay. Two data
+  points only, not proof the two criteria are equivalent in general — this
+  answers "has this ever been checked" (no, until now), not "should the
+  selection metric be redefined" (still open, still an owner-level design
+  question, not attempted here — see the weekend entry below for why).
+  Read-only: composes only already-tested `_reconstruct_champion_genome`/
+  `Evaluator.evaluate`/`Evaluator.holdout_check`, no new pure function, no
+  constitution or `live_state.json` touch (`md5sum` unchanged), `python3 -m
+  pytest -q` 240/240, `tools/edit_bundle_module.py sync --check` clean (the
+  new code is in the bundle's own CLI dispatch, not a `_SRC` module).
 
 - **Resolved 2026-08-29 (weekend all-hands): the 03:56 UTC entry's "actual
   driver still unidentified" flag is closed — the driver is market beta, not
