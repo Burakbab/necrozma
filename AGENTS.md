@@ -304,6 +304,91 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-29 (weekend all-hands): the 03:56 UTC entry's "actual
+  driver still unidentified" flag is closed — the driver is market beta, not
+  calendar recency, and it settles the open `HOLDOUT_SIGMA` quadrature
+  question with a firm no.** (see
+  `runs/2026-08-29-0600-weekend-all-hands.md`) Re-ran `history-perturb
+  --champion-only 30 --as-of-step-days 14` against all three real champions
+  this account has ever had (v3 live, v1/v2 reconstructed via
+  `--also-version`), this time keeping the full per-row table instead of just
+  the summary stats, and reconstructed each row's benchmark buy-and-hold
+  return as `total_return - excess_return` (both already printed per row).
+  Three findings, all confirmed on all three champions independently
+  (`bench_ret` reconstruction itself matched to 0.1pp across all three, as it
+  must — same fixed universe, genome-independent):
+  1. **Fitness (Sortino-shaped) is almost entirely explained by the
+     challenger's own absolute return, not by excess-over-benchmark.**
+     Pearson(fitness, own return) = 0.96 (v3) / 0.99 (v1) / 0.99 (v2).
+     Pearson(fitness, excess_return) is weak-positive for v3 (0.21) and
+     **negative** for v1 (-0.52) and v2 (-0.59) — for two of three real
+     champions, scoring *better* on the sealed holdout is mildly anti-
+     correlated with actually beating the benchmark more.
+  2. **The champion's own return correlates strongly with the benchmark's own
+     return over the same window** (Pearson 0.71-0.77 across all three) —
+     expected, since every real champion so far is long-only and net-long
+     biased, so it inherits a large chunk of the underlying crypto market's
+     own beta. Older as-of dates (idx 15-29, holdout windows starting
+     2024-05 through 2024-11) land inside 2024's crypto bull run — mean
+     benchmark return **+67.7% to +67.8%** across all three champions, nearly
+     identical — while newer as-of dates (idx 0-14, holdout windows starting
+     2024-11 through 2025-04) land inside a much weaker/negative 2025 stretch
+     — mean benchmark return **-9.3%** across all three, again nearly
+     identical. This is the actual mechanism behind the recency correlation
+     the 03:56 UTC entry found (Pearson(idx, fitness) 0.69-0.77 across the
+     three) — recency is a proxy for which calendar-fixed regime the sliding
+     `HOLDOUT_FRAC` window happens to land on, not a driver in its own right.
+  3. **This is the same mechanism the 2026-08-17 `regime` diagnostic already
+     named generically** (fold 2's permanent +200% melt-up outlier structurally
+     favoring/penalizing a genome by its own beta, independent of skill) —
+     this session shows it recurring in the as-of-drift dimension too, and
+     confirms it on all three champions rather than one fold on one genome.
+
+  **What this settles.** The 00:56/03:56 UTC entries left open whether to
+  combine this session's as-of-drift std with `holdout-noise`'s block-
+  bootstrap resampling std "in quadrature." **No** — not because the number
+  is small, but because this isn't a noise source at all: it's explained
+  variance (market beta, mechanistically identified above), not an
+  independent zero-mean perturbation around the champion's true score. A
+  quantity that is *negatively* correlated with genuine skill-over-benchmark
+  for two of three real champions is not a candidate for folding into a
+  safety-margin sigma via quadrature-sum, regardless of its empirical std.
+  `HOLDOUT_SIGMA` (2.0), calibrated 2026-08-21 purely from `holdout-noise`'s
+  resampling of one fixed realized price path — a genuinely different,
+  cleaner, closer-to-iid noise source — is **not adjusted by this finding**.
+  This closes the specific quadrature-combination question the last two
+  3-hourly sessions left open; it does not touch `HOLDOUT_SIGMA` itself.
+
+  **New, sharper open question this surfaces, not acted on here**: since the
+  sealed-holdout fitness that gates every real promotion is dominated by a
+  challenger's own market-beta-driven absolute return rather than its skill
+  relative to a passive benchmark, a promotion decision's outcome depends
+  materially on which slice of calendar history the ever-growing,
+  fixed-fraction holdout window happens to be sitting on at evaluation time —
+  not only on whether the challenger's policy is actually better. This is the
+  same root concern as "Measured 2026-08-16" finding #1 (the system
+  underperforms buy-and-hold) and the fold-2-outlier finding, now shown to
+  reach directly into the sealed-holdout *promotion gate* itself, not just
+  into reported diagnostics. Whether the holdout/fold selection metrics
+  should be redefined around excess return rather than raw Sortino-shaped
+  fitness is a real, larger design question — flagged here, explicitly not
+  attempted this session (a metric redefinition touches the checksummed
+  constitution and every acceptance gate built on `fitness()`, and deserves
+  its own dedicated design pass and evidence base the way the
+  correlation-penalty item got, not a same-session follow-on to a
+  measurement run).
+
+  Verified safe throughout: three full 30-point sweeps (one per champion, one
+  already-run v3 sweep from the 03:56 UTC entry reused, two new
+  `--also-version` runs for v1/v2), all read-only — `md5sum live_state.json
+  evotrader.manifest` unchanged across every run
+  (`bf360fc7f86f6bae2bc46bb6f6dc6026` / `0bf3a7d9411ee692d0a9f152a7533803`),
+  `python3 -m pytest -q` 240/240 (no code changed, no new tests needed —
+  pure data analysis of existing CLI output), `tools/edit_bundle_module.py
+  sync --check` clean, today's bar (00:20 UTC) already processed before this
+  session (confirmed via `runs/2026-08-29-0020-daily-trading.md` existing),
+  no `tick`/`evolve` call.
+
 - **Found 2026-08-29 (3-hourly check, ~03:56 UTC): the 00:56 UTC entry's
   as-of-drift std was an underestimate of the plateau value, and — more
   important — the spread isn't symmetric noise, it's a trend.** (see
