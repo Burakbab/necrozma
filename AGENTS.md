@@ -304,6 +304,34 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-29 (3-hourly check, ~03:56 UTC): the 00:56 UTC entry's
+  as-of-drift std was an underestimate of the plateau value, and — more
+  important — the spread isn't symmetric noise, it's a trend.** (see
+  `runs/2026-08-29-0356-champion-only-span-and-trend.md`) Ran
+  `history-perturb --champion-only` three times against live champion v3 at
+  increasing span (10pts/189d, 20pts/266d, 30pts/406d, no code changes):
+  empirical std went 0.613 -> 0.830 -> 0.832 — genuinely plateaus by ~266
+  days, but at ~0.83, ~35% higher than the first run's 0.613 (0.42x
+  `HOLDOUT_SIGMA` now, not 0.31x). Bigger finding: Pearson r = 0.686 between
+  as-of recency and fitness on the 30-point run — the older half of the as-of
+  range (idx 15-29, holdout windows ending 2025-07 through 2026-02) scores a
+  full point higher on average (mean 1.829, std 0.326) than the recent half
+  (idx 0-14, mean 0.464, std 0.613), and the recent half accounts for nearly
+  all the internal spread. Checked and ruled out one candidate mechanism (the
+  known fold-2 melt-up episode falling inside the older windows' holdout
+  slice) — the elevation starts at a holdout window that begins three months
+  after that episode's own recovery date, so it isn't that. Actual driver
+  still unidentified. **Matters for the still-open `HOLDOUT_SIGMA`
+  combination question**: "combine in quadrature" assumes independent
+  zero-mean noise sources; a real trend/regime-split inside this sample means
+  that assumption doesn't hold as cleanly as the 00:56 UTC entry's framing
+  implied, regardless of the exact std number. Doesn't touch `HOLDOUT_SIGMA`
+  or propose a value — still a constitution-amendment-level decision, out of
+  scope for a 3-hourly session. Read-only throughout: `md5sum
+  live_state.json evotrader.manifest` unchanged across all three runs,
+  today's bar (00:20 UTC) already processed before this session, no
+  `tick`/`evolve` call.
+
 - **Shipped 2026-08-29 (3-hourly check, ~00:56 UTC): `history-perturb
   --champion-only N [--as-of-step-days D]` — the follow-up the 2026-08-28
   21:53 UTC champion-anchor-drift entry flagged, turning its one-off 3-point
