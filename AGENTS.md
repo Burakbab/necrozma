@@ -338,8 +338,35 @@ is no brokerage account in this design and there does not need to be one.
   itself lives in `loop/evolve.py`, synced into the bundle's `_SRC` the
   normal way). A real 15-generation sweep at `--keep-fracs 0.95,0.85` was
   kicked off in the same session to extend today's existing 1.00/0.90 data
-  points — see the next entry (or its absence, if this write lands before
-  that run finishes) for the result.
+  points — see the next entry for the result.
+
+- **Found 2026-08-29 (3-hourly check, ~22:50 UTC): the keep_frac sweep ran
+  for real, and the driver isn't keep_frac itself — it's the champion's own
+  fold-fitness on the window.** (see
+  `runs/2026-08-29-2250-disagreement-sweep.md`) `disagreement-sweep
+  --keep-fracs 0.95,0.85 --generations 15` (new tool, previous entry) adds
+  two real data points to today's existing 1.00 (two sessions, 63.3%/66.2%
+  fold-stage disagreement) and 0.90 (8.6%) readings: 0.95 -> 21.0%, 0.85 ->
+  20.4%. Sorted by `keep_frac` this looks noisy (66%, 21%, 8.6%, 20%); sorted
+  by the champion's own fold-aggregate fitness on each window instead
+  (-1.695, 0.949, 1.263, 1.398) the disagreement rate decreases
+  monotonically (66.2%, 21.0%, 20.4%, 8.6%) — `keep_frac=0.90` just happens
+  to land on an unusually favorable window (champion fold-fit 1.398, higher
+  than the less-truncated 0.95's 0.949), which is why one data point looked
+  like a smooth keep_frac trend. Holdout-stage disagreement shows the same
+  split more starkly: 8.9-15.0% on the two windows where the champion is
+  underwater, 0.0-4.2% on the three where it dominates. The risky-direction
+  skew persists at every point (61-89% risky, never conservative-majority).
+  Reads as a sharper version of the 19:12 UTC entry's own conclusion, not a
+  contradiction of it: the apparent disagreement problem tracks how much the
+  champion is already struggling on raw fitness, which is also the situation
+  where a promotion decision is least likely to hinge on excess return
+  specifically — more evidence for patience on the still-open "redefine the
+  selection metric" question, not for urgency. 5 points, 2 seeds, 1 champion
+  (v3 real `researcher_memory`, independent per point) — a pattern, not a
+  proven law. `md5sum live_state.json` unchanged throughout,
+  `python3 -m pytest -q` 243/243, `tools/edit_bundle_module.py sync --check`
+  clean.
 
 - **Found 2026-08-29 (3-hourly check, ~19:12 UTC): the 16:28 UTC session's
   own flagged confound checked — both the 63.3% fold-stage disagreement
