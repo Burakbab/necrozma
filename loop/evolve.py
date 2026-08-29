@@ -791,3 +791,156 @@ def raw_holdout_beats(holdout_draws: list[dict]) -> dict[str, Any]:
         "first_flip_index": first_flip_index,
         "flips": flips,
     }
+
+
+def disagreement_scan(champion: Genome, evaluator: "Evaluator", researcher: "Researcher",
+                       generations: int = 15, n_blind: int = 14,
+                       initial_tested: set | None = None,
+                       initial_stagnation: int = 0,
+                       initial_holdout_draws: int = 0) -> dict[str, Any]:
+    """Research-only instrumented replay of `EvolutionRun.generation()`'s exact
+    proposal/gating pipeline, measuring how often raw `ranking_fitness` and
+    excess-over-benchmark return disagree about which of champion/challenger
+    is better -- at both the fold-aggregate stage (every candidate proposed
+    each generation) and the sealed-holdout stage (only candidates that clear
+    the fold-aggregate acceptance gate, the rarer and more consequential
+    disagreement since it's the gate a real promotion is decided at).
+
+    Formalises what four separate one-off throwaway shadow scripts measured
+    by hand on 2026-08-29 (see AGENTS.md "Current state" 06:00, 10:17, 16:28,
+    19:12 entries -- each classified "risky" (raw fitness favors the
+    challenger, excess return doesn't) vs "conservative" (the reverse) by the
+    same reasoning coded here) into one reusable, tested function instead of
+    a fifth throwaway script.
+
+    Mirrors `generation()`'s own calls exactly (`Researcher.propose`,
+    `Evaluator.evaluate`, `dd_corrected_stats`, `constitution.accepts`,
+    `Evaluator.holdout_check`, `constitution.holdout_accepts`, the same
+    cumulative-tested-set and stagnation/boldness bookkeeping) but never
+    calls `Genome.save()`/`.promote()`/`EvolutionRun._record()` -- an
+    in-generation "would-promote" only swaps `champion` for a later
+    generation's own diagnosis and proposals, exactly like the shadow
+    scripts' own documented discipline of never persisting anything to disk.
+    The caller decides what data the champion is scored against (a
+    truncated/sandboxed `Evaluator` for a shadow calendar window, or the live
+    one for the real thing) and whether `researcher`/`initial_tested`/
+    `initial_stagnation`/`initial_holdout_draws` carry a champion's real
+    `researcher_memory` or start blind.
+    """
+    tested: set = set(initial_tested or ())
+    tested_version = champion.version
+    stagnation = int(initial_stagnation)
+    holdout_draws = int(initial_holdout_draws)
+    fold_directions: list[str] = []
+    holdout_directions: list[str] = []
+    shadow_promotions = 0
+
+    def _direction(champ_val: float, chal_val: float,
+                    champ_excess: float | None, chal_excess: float | None) -> str | None:
+        if champ_excess is None or chal_excess is None:
+            return None
+        fitness_favors_chal = chal_val > champ_val
+        excess_favors_chal = chal_excess > champ_excess
+        if fitness_favors_chal == excess_favors_chal:
+            return "agree"
+        return "risky" if fitness_favors_chal else "conservative"
+
+    for _ in range(generations):
+        diag_run = run_backtest(champion, evaluator.data, 0.0, evaluator.search_end,
+                                log_detail=True)
+        diag = diagnose(diag_run)
+        champ_eval = evaluator.evaluate(champion)
+        champ_fit = champ_eval["aggregate_fitness"]
+        champ_excess = (champ_eval.get("edge") or {}).get("excess_return")
+
+        if tested_version != champion.version:
+            tested = set()
+            tested_version = champion.version
+            stagnation = 0
+
+        mutations = researcher.propose(champion, diag, n_blind=n_blind,
+                                        exclude=tested, boldness=float(stagnation))
+        for m in mutations:
+            tested.add(researcher.key(m))
+        if not mutations:
+            stagnation += 1
+            continue
+        n_tested = len(tested)
+
+        results = []
+        for m in mutations:
+            child = champion.child(list(m.patch.items()), note=m.hypothesis)
+            ev = evaluator.evaluate(child)
+            results.append((ev["aggregate_fitness"], m, child, ev))
+        results.sort(key=lambda x: (-np.inf if not np.isfinite(x[0]) else -x[0]))
+
+        for fit, m, child, ev in results:
+            if not np.isfinite(fit):
+                continue
+            chal_excess = (ev.get("edge") or {}).get("excess_return")
+            direction = _direction(champ_fit, fit, champ_excess, chal_excess)
+            if direction is not None:
+                fold_directions.append(direction)
+
+        champ_gate_stats = None
+        promoted_this_gen = False
+        for fit, m, child, ev in results[:3]:
+            if not np.isfinite(fit):
+                continue
+            if champ_gate_stats is None:
+                champ_gate_stats = dd_corrected_stats(evaluator, champion, champ_eval["stats"])
+            chal_gate_stats = dd_corrected_stats(evaluator, child, ev["stats"])
+
+            ok, _why = accepts(champ_gate_stats, chal_gate_stats, n_candidates=n_tested,
+                               complexity_delta=max(0, m.complexity_delta),
+                               champion_score=champ_fit, challenger_score=fit)
+            if not ok:
+                continue
+
+            ho_champ = evaluator.holdout_check(champion)
+            ho_chal = evaluator.holdout_check(child)
+            holdout_draws += 1
+            if ho_chal.get("error") or ho_champ.get("error"):
+                continue
+            ho_champ_fit = ho_champ.get("fitness", float("-inf"))
+            ho_chal_fit = ho_chal.get("fitness", float("-inf"))
+            ho_champ_excess = (ho_champ.get("edge") or {}).get("excess_return")
+            ho_chal_excess = (ho_chal.get("edge") or {}).get("excess_return")
+            direction = _direction(ho_champ_fit, ho_chal_fit, ho_champ_excess, ho_chal_excess)
+            if direction is not None:
+                holdout_directions.append(direction)
+
+            ho_ok, _ho_why = holdout_accepts(ho_champ_fit, ho_chal_fit, n_draws=holdout_draws)
+            if not ho_ok:
+                continue
+
+            champion = child   # in-memory only -- never .promote()'d, never saved
+            shadow_promotions += 1
+            promoted_this_gen = True
+            break
+
+        if not promoted_this_gen:
+            stagnation += 1
+
+    def _tally(directions: list[str]) -> dict[str, Any]:
+        n = len(directions)
+        disagreements = [d for d in directions if d != "agree"]
+        risky = sum(1 for d in disagreements if d == "risky")
+        conservative = sum(1 for d in disagreements if d == "conservative")
+        return {
+            "n": n,
+            "disagreements": len(disagreements),
+            "disagreement_rate": (len(disagreements) / n) if n else None,
+            "risky": risky,
+            "conservative": conservative,
+        }
+
+    return {
+        "fold_stage": _tally(fold_directions),
+        "holdout_stage": _tally(holdout_directions),
+        "generations_run": generations,
+        "final_champion_version": champion.version,
+        "shadow_promotions": shadow_promotions,
+        "final_stagnation": stagnation,
+        "final_holdout_draws": holdout_draws,
+    }

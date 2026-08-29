@@ -306,6 +306,41 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Built 2026-08-29 (3-hourly check, ~22:00 UTC): the keep_frac sweep the
+  19:12 UTC entry's own "Next" flagged is now a real, tested, reusable tool
+  instead of a fifth throwaway shadow script.** New `loop.evolve.
+  disagreement_scan` (tested, `tests/test_disagreement_scan.py`, 3 new tests,
+  full suite 243 passed up from 240) mirrors `EvolutionRun.generation()`'s
+  exact proposal/gating pipeline (`Researcher.propose`, `Evaluator.evaluate`,
+  `dd_corrected_stats`, `constitution.accepts`, `Evaluator.holdout_check`,
+  `constitution.holdout_accepts`) but never calls
+  `Genome.save()`/`.promote()`/`EvolutionRun._record()` — an in-generation
+  "would-promote" only swaps the champion in memory for the rest of the scan,
+  the same no-disk-writes discipline every throwaway script this project has
+  run today already followed by hand. Classifies every candidate's
+  fold-stage (and, for candidates that clear the fold gate, holdout-stage)
+  verdict as "agree"/"risky"/"conservative", the same terms the 16:28/19:12
+  UTC run notes already used. New CLI `disagreement-sweep [--keep-fracs
+  1.0,0.90,...] [--generations 15] [--n-blind 14] [--fresh]` truncates each
+  symbol's loaded history to its first `keep_frac` of bars (same trick the
+  19:12 UTC session used by hand to shift the 85/15 fold/holdout split onto
+  an earlier, friendlier calendar window) and runs `disagreement_scan` at
+  each point, seeded from the live champion's real `researcher_memory` by
+  default. Smoke-tested against real data at `keep_frac=1.0`,
+  `--generations 1`: champion fold-fitness -1.695 (matches the 16:28/10:17
+  UTC sessions' own reading of today's window exactly), 14 fold-stage
+  candidates (10 risky, 1 conservative), 3 holdout-stage (0 disagreements) —
+  consistent with, not identical to (different random proposal batch), those
+  two sessions' full 15-generation numbers. Read-only, verified safe:
+  `md5sum live_state.json` unchanged, `tools/edit_bundle_module.py sync
+  --check` clean (the CLI dispatch lives in the bundle's own `main()`, same
+  precedent as `promotion-excess-check`/`live-benchmark`; `disagreement_scan`
+  itself lives in `loop/evolve.py`, synced into the bundle's `_SRC` the
+  normal way). A real 15-generation sweep at `--keep-fracs 0.95,0.85` was
+  kicked off in the same session to extend today's existing 1.00/0.90 data
+  points — see the next entry (or its absence, if this write lands before
+  that run finishes) for the result.
+
 - **Found 2026-08-29 (3-hourly check, ~19:12 UTC): the 16:28 UTC session's
   own flagged confound checked — both the 63.3% fold-stage disagreement
   rate and the near-tie holdout disagreements are substantially as-of-drift
