@@ -305,6 +305,39 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-29 (3-hourly check, ~10:17 UTC): among real generated
+  candidates (not just the two real promotions), raw fitness and
+  excess-return DO disagree sometimes, including at the sealed-holdout gate
+  — but every disagreement found is a near-tie on excess return, not a
+  lopsided flip.** (see `runs/2026-08-29-1017-candidate-excess-shadow-check.md`)
+  A sandboxed 15-generation shadow search against live champion v3 (seeded
+  from its real `researcher_memory`, same discipline as the 2026-08-28
+  guardian-weighted-shadow-evolve session but touching *zero* files on disk
+  this time — no `Genome.save()`/`.promote()`/`EvolutionRun.run()`
+  anywhere, the whole loop carries the champion `Genome` object in memory)
+  compared every candidate's raw-fitness verdict against its excess-return
+  verdict at both stages. Fold-aggregate: 210 candidates, 139 disagreements
+  (66.2%) — but this replay's fold window has the champion's own
+  fold-aggregate fitness deeply negative (-1.695, an unfavorable calendar
+  window, same as-of-drift mechanism the weekend entry identified), so this
+  number is more evidence for that mechanism, not an independent one.
+  Sealed-holdout (the gate a real promotion is decided at): 45 candidates
+  that cleared the fold gate, 4 disagreements (8.9%) — the first time this
+  account has seen the two criteria disagree at the gate that matters, vs.
+  0/2 on the two real promotions the 06:59 UTC check looked at. All 4 cases:
+  the challenger clearly beat the champion's holdout fitness (0.503 baseline
+  vs. 0.521-1.070) while its holdout excess return was marginally *below*
+  the champion's own 23.12% (within 0.1-1.1pp) — none were actually
+  promoted (multiple-testing margin rejected all 4 on raw fitness terms
+  alone, the same "raw beat, margin rejected" pattern 2026-08-28's
+  `holdout-margin-audit` already quantified), so no real decision changed.
+  Sharpens, doesn't settle, the weekend entry's question: disagreement is
+  real and reaches the promotion gate, but only as a near-tie so far, not
+  evidence of a case where the two criteria would pick opposite winners by
+  a wide margin. Redefining the selection metric itself remains the
+  owner-level design decision the weekend entry and today's 09:00 UTC daily
+  discussion already flagged it as — not attempted here.
+
 - **Answered 2026-08-29 (3-hourly check, ~06:59 UTC): checked the weekend
   all-hands entry's flagged question against real data for the first time —
   no, an excess-return-based selection criterion has never actually
