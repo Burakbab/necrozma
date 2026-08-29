@@ -91,6 +91,7 @@ python3 evotrader_bundle.py holdout-noise         # block-bootstrap sigma of a s
 python3 evotrader_bundle.py fold-dd-blindspot     # does the fold-merged maxDD gate see drawdowns spanning a fold boundary?
 python3 evotrader_bundle.py succession-audit      # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
 python3 evotrader_bundle.py promotion-excess-check  # did either real promotion depend on raw fitness vs. excess-return disagreeing?
+python3 evotrader_bundle.py live-benchmark        # the live account's own real return vs. equal-weight buy-and-hold, same real window
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -304,6 +305,40 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Built 2026-08-29 (3-hourly check, ~12:54 UTC): new `live-benchmark`
+  diagnostic answers the fitness-vs-excess-return question with the live
+  paper account's own real fills for the first time — not a backtest, not a
+  shadow search — and it trails buy-and-hold by 7.9pp so far.** (see
+  `runs/2026-08-29-1254-live-benchmark-diagnostic.md`) Every earlier session
+  on this question today (06:00, 06:59, 10:17) replayed backtests. New
+  `evotrader_bundle.py live-benchmark` instead reads
+  `acct.broker.nav_history` (the account's real, already-executed NAV path)
+  and compares it to an equal-weight buy-and-hold of the same universe over
+  the identical real calendar window (`core.market.load_universe` +
+  `loop.engine.benchmark_buy_hold`, both already-tested primitives — no new
+  pure function). First real numbers, 2026-08-14 to 2026-08-28 (14 daily
+  bars): live account +12.27% vs. buy-and-hold +20.15%, excess **-7.88%** —
+  directionally consistent with the weekend all-hands' mechanistic finding
+  and today's 10:17 UTC shadow-check, but this is the account's own genuine
+  track record, not a replay. Important caveat the diagnostic prints
+  automatically: this window is NOT a clean single-genome test — the real
+  journal shows the account traded under v1 (day 1), v2 (day 2), then v3
+  (days 3-15), two promotions happened mid-window, so this measures "how has
+  the account actually done" (including transition costs), not "how has
+  champion v3 done" specifically. Only 14 bars, far too short to be a
+  verdict — but it grows for free every day, and re-running this
+  periodically as real history accumulates is a genuinely different signal
+  from anything a backtest or shadow search can produce. Read-only: never
+  touches `live_state.json` (`md5sum` unchanged), `python3 -m pytest -q`
+  full suite green, `tools/edit_bundle_module.py sync --check` clean (new
+  code lives in the bundle's own CLI dispatch, same precedent as
+  `succession-audit`/`promotion-excess-check`). Not wired into the
+  dashboard this session — would add a network fetch to every dashboard
+  rebuild, which happens far more often than this is worth recomputing;
+  flagged as a cheap follow-up if this stays valuable. Does not touch the
+  still-open "should the selection metric be redefined" question, which
+  stays the owner's call.
 
 - **Found 2026-08-29 (3-hourly check, ~10:17 UTC): among real generated
   candidates (not just the two real promotions), raw fitness and

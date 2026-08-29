@@ -27,6 +27,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py fold3-anatomy    # which actual trades drive fold 3's hard-fail drawdown episode, champion vs the no-discretionary-exit candidate
     python evotrader_bundle.py guardian-gene-test  # real patches to Guardian's own stop-loss/trailing-stop/time-stop genes, run through the actual fold+holdout acceptance gate
     python evotrader_bundle.py promotion-excess-check  # did either real promotion depend on raw fitness vs. excess-return disagreeing?
+    python evotrader_bundle.py live-benchmark   # the live paper account's own real return vs. equal-weight buy-and-hold, same real window
 """
 import sys, types, json, os, math
 
@@ -3590,6 +3591,100 @@ def main():
               "09:45 UTC run; pass e.g. --pct 25 to test a smaller move. "
               "Never persisted -- no genome file, lineage.jsonl, or "
               "live_state.json write.")
+    elif cmd == "live-benchmark":
+        # Diagnostic: every fitness-vs-excess-return check so far (weekend
+        # all-hands 06:00, promotion-excess-check 06:59, candidate-excess-
+        # shadow-check 10:17, all 2026-08-29) replayed *backtests* -- real
+        # champions or real shadow candidates re-run against history. None of
+        # them looked at the one number that isn't a replay at all: what the
+        # live paper account's own real, already-executed fills actually
+        # returned since inception, next to an equal-weight buy-and-hold of
+        # the same universe over the identical real calendar window. The
+        # dashboard's own "Honest caveats" panel asserts "it has lost less
+        # than the market did over the same stretch" as static hand-written
+        # prose -- this is the first time anything in the codebase actually
+        # computes that comparison from real data rather than asserting it.
+        # Read-only: only reads acct.broker.nav_history (already on disk) and
+        # fetches/caches market data the same way every other diagnostic
+        # does (core.market.load_universe) -- no write to live_state.json,
+        # no genome save, no promotion logic touched at all.
+        from core import market
+        from core.market import Replay
+        from loop.engine import benchmark_buy_hold
+        import pandas as pd
+        import numpy as np
+
+        g0 = acct.genome
+        navh = acct.broker.nav_history
+        if len(navh) < 2:
+            print("[live-benchmark] not enough nav_history yet (need >= 2 points)")
+            sys.exit(1)
+        start_cash = float(acct.broker.start_cash)
+        navs = [float(v) for _, v in navh]
+        live_start_date = pd.Timestamp(navh[0][0])
+        live_end_date = pd.Timestamp(navh[-1][0])
+
+        # The account's real journal, for the honest caveat below: has every
+        # bar actually run under the CURRENT champion, or did the account
+        # live through one or more promotions along the way?
+        versions_seen = sorted({int(e.get("genome_version"))
+                                for e in acct.journal if e.get("genome_version") is not None})
+
+        interval = g0.bar_interval
+        print(f"[live-benchmark] loading {len(g0.universe)}-symbol universe "
+              f"({interval} bars) ...", flush=True)
+        data = market.load_universe(g0.universe, interval, 4.0)
+        if not data:
+            print("no market data")
+            sys.exit(1)
+        replay = Replay({s: df for s, df in data.items() if s in g0.universe})
+        idx = replay.index
+        start_i = int(idx.get_indexer([live_start_date], method="nearest")[0])
+        end_i = int(idx.get_indexer([live_end_date], method="nearest")[0])
+        bpy = market.BARS_PER_YEAR.get(interval, 365.25)
+        bench = benchmark_buy_hold(replay, g0.universe, start_i, end_i + 1,
+                                   start_cash, bars_per_year=bpy)
+        if not bench:
+            print("[live-benchmark] benchmark window too short / no data")
+            sys.exit(1)
+
+        a = np.array(navs)
+        rets = np.diff(a) / np.maximum(a[:-1], 1e-9)
+        peaks = np.maximum.accumulate(a)
+        live_stats = {
+            "total_return": float(a[-1] / a[0] - 1),
+            "max_dd": float(np.min(a / peaks - 1)),
+            "sharpe": (float(np.mean(rets) / np.std(rets, ddof=1) * math.sqrt(bpy))
+                      if len(rets) > 2 and np.std(rets, ddof=1) > 1e-9 else 0.0),
+        }
+        excess_return = live_stats["total_return"] - bench["total_return"]
+
+        print()
+        print(f"LIVE ACCOUNT vs. EQUAL-WEIGHT BUY-AND-HOLD, {str(live_start_date)[:10]} "
+              f"to {str(live_end_date)[:10]} ({len(navh) - 1} {interval} bar(s), "
+              f"real executed fills, not a replay)")
+        print("=" * 92)
+        print(f"  {'':<22s}{'return':>10s}{'sharpe':>9s}{'maxDD':>9s}")
+        print(f"  {'live paper account':<22s}{live_stats['total_return']:>+9.2%} "
+              f"{live_stats['sharpe']:>8.2f} {live_stats['max_dd']:>8.1%}")
+        print(f"  {'buy & hold (universe)':<22s}{bench['total_return']:>+9.2%} "
+              f"{bench['sharpe']:>8.2f} {bench['max_dd']:>8.1%}")
+        print(f"  {'excess (live - b&h)':<22s}{excess_return:>+9.2%}")
+        print()
+        beat = "beats" if excess_return > 0 else ("ties" if excess_return == 0 else "trails")
+        print(f"Reading: the live account {beat} an equal-weight buy-and-hold of its "
+              f"own {len(g0.universe)}-symbol universe over its real trading life so far "
+              f"by {excess_return:+.2%}.")
+        if len(versions_seen) > 1:
+            print(f"Caveat: this window is NOT a clean single-genome test -- the real "
+                  f"journal shows the account traded under genome version(s) "
+                  f"{versions_seen} across these bars (promotions happened mid-window), "
+                  f"not only the current champion v{g0.version}.")
+        print(f"Caveat: only {len(navh) - 1} {interval} bar(s) of real history -- far too "
+              f"short to be a verdict on the system, and the benchmark carries no ongoing "
+              f"fees (a single buy-and-hold has none to charge) while the live account's "
+              f"return is already net of every real fee and slippage cost it paid.")
+        print("Descriptive only -- does not feed any gate or promotion decision.")
     else:
         print(f"unknown command: {cmd}")
         sys.exit(2)
