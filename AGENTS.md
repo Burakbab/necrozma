@@ -306,6 +306,49 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Closed 2026-08-30 (weekend all-hands, 06:00 UTC): the fitness-vs-excess-return
+  selection-metric thread's measurement phase is done — full design pass written,
+  recommendation is status quo (no constitution change), with three explicit
+  revisit triggers.** (see "Next steps" item 0 and
+  `runs/2026-08-30-0600-weekend-all-hands.md`) Seven independent angles measured
+  across ten sessions since 2026-08-16 (original underperformance finding, the
+  06:00 UTC as-of-drift mechanism, the 16:26 UTC direction/disagreement study, the
+  19:12 UTC favorable-window control, the 22:50 UTC keep_frac sweep, the
+  selection-noise winner's-curse test, this morning's gene-pairing counterfactual)
+  converge on the same shape: real, mechanistically understood (long-only
+  champions inherit market beta, so Sortino-shaped fitness rewards absolute
+  return far more than skill-over-benchmark), largest exactly when the champion
+  is already losing on raw terms — and, the load-bearing fact, **never once shown
+  to flip a real promotion decision**. Both real promotions this account has ever
+  made (v1→v2, v2→v3) agree under fitness and excess-return criteria alike
+  (`promotion-excess-check`, re-run fresh this session: v2→v3's recorded
+  challenger fold-agg excess +6.8% vs champion −35.1%, holdout excess +21.7%,
+  `beat_benchmark=True` — never in tension). Every real sealed-holdout-stage
+  disagreement found so far (6/40 in the 16:26 UTC sample) is a near-tie on
+  excess return (0.1-1.1pp), not a lopsided flip. Considered and rejected:
+  (A) redefining `fitness()` around excess return — same overfitting-the-scoreboard
+  objection as 2026-08-16, sharpened by this session's finding that the
+  disagreement itself tracks the champion's *current* window fitness, i.e. an
+  excess-return objective would likely just overfit to a different window
+  instead. (B) a hard `beat_benchmark` gate at the sealed holdout — narrower, but
+  would not have changed either real promotion and has no measured false-reject
+  rate of its own, the same gap `HOLDOUT_SIGMA` closed with real measurement
+  before that gate was touched. (C) status quo, recommended: the monitoring this
+  question would ask for already exists and runs (`edge_vs_benchmark()` on every
+  fold/holdout, `beat_benchmark` on every generation record, `live-benchmark` CLI,
+  the dashboard's buy-and-hold panel) — there is no visibility gap for code to
+  close, only a policy question, which stays explicitly the owner's call per this
+  file's own repeated framing, not something this session enacts. Fresh
+  `live-benchmark` re-run this session: live account now −8.42% excess over 15
+  real bars (was −7.88%/14 bars two weeks ago) — still the single most important,
+  least gameable number in this thread, and the first of the three concrete
+  revisit triggers the write-up names (60 more real trading days still negative
+  with no narrowing; a real, not shadow, promotion where the two criteria
+  disagree at holdout; or a fourth real champion). None has fired yet. No code
+  changed, no `AMENDMENTS.md` row (explicit no-change, not a calibration),
+  `md5sum live_state.json` unchanged (`81922c6011c986449f635dbf43553d0e`),
+  `python3 -m pytest -q` 243/243 confirmed at session start.
+
 - **Measured 2026-08-30 (3-hourly check, ~05:18 UTC): weak evidence against
   the 00:46 UTC entry's flagged hypothesis — clamping `lone_voice_scale` down
   to `two_agree_bonus` did not meaningfully shrink the disagreement-sweep
@@ -4617,7 +4660,24 @@ every `evolve` call.
   review is the thing this infrastructure was built for, not more tooling
   around it.
 
-0. **Resolved 2026-08-30 (3-hourly check, ~00:46 UTC): tick 16's hard-call
+0. **Closed 2026-08-30 (weekend all-hands, 06:00 UTC): the fitness-vs-excess-return
+   selection-metric question — the thing every entry below this line kept
+   deferring as "the owner's call" — now has a full design pass with a
+   recommendation.** See "Current state" above and
+   `runs/2026-08-30-0600-weekend-all-hands.md`. Recommendation: status quo, no
+   constitution change — the disagreement between raw fitness and excess return
+   is real but has never once flipped a real promotion, and both alternatives
+   considered (redefining fitness around excess return, or a hard
+   `beat_benchmark` gate at holdout) have their own well-argued problems.
+   **Future sessions: do not re-measure this question from scratch.** Point to
+   the write-up instead, unless one of its three named revisit triggers has
+   actually fired (live account's trailing excess return still negative after
+   60 more real trading days with no narrowing; a real, non-shadow promotion
+   where fitness and excess return disagree at the sealed holdout; or a fourth
+   real champion promoted) — check `live-benchmark`'s current bar count/excess
+   figure against that first trigger before starting any new angle on this.
+
+   **Resolved 2026-08-30 (3-hourly check, ~00:46 UTC): tick 16's hard-call
    flag reviewed, verdict `approve`.** See "Current state" above and
    `runs/2026-08-30-0046-hard-call-review-tick16.md` for the full
    reconstruction (v3's evolved `lone_voice_scale` > `two_agree_bonus`
