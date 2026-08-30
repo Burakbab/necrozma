@@ -306,6 +306,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Closed 2026-08-30 (3-hourly check, ~09:15 UTC): the narrow "does
+  `lone_voice_scale > two_agree_bonus` contribute to the disagreement-sweep
+  thread's risky-direction skew" side-question, tried against real
+  champions instead of a hand-built clamp — recommend treating it as
+  exhausted for now.** (see "Next steps" item 0 and
+  `runs/2026-08-30-0915-lone-voice-real-champion-check.md`) The 05:18 UTC
+  session's own flagged follow-up ("compare against a second real champion
+  ... rather than a hand-built counterfactual that also moves fitness")
+  attempted: this account's real lineage splits 2-vs-1 on the inequality
+  (v1/v2 both `lone=0.6<two=1.2`, only live v3 has `lone=1.4791>two=1.2`), a
+  genuine natural experiment. `disagreement_scan` against all three real
+  champions (fresh `Evaluator`, same `Researcher(seed=4242)`,
+  `generations=15, n_blind=14`, blank memory) found a much bigger swing than
+  the clamp test — risky share 58.1% (v1), 28.2% (v2, the first-ever
+  conservative-majority point in this thread), 90.9% (v3) — but sorted by
+  fold-fitness instead (+0.112, -0.151, -1.669) the same three points line
+  up exactly as monotonically: fitness and the gene inequality covary in the
+  same direction across every real champion this account has ever had, so
+  three uncontrolled real points can't separate "the gene pairing drives the
+  skew" from "worse fold-fitness drives it" (the keep_frac sweep's own
+  established pattern) any better than the clamp test could — if anything,
+  worse, since the real lineage never offers a case where the two
+  explanations disagree. One incidental resolution: the 05:18 UTC clamp
+  test's anomalous reversal of the fitness-predicts-disagreement-rate
+  pattern did not replicate here (rate tracks fitness monotonically again,
+  16.9%→26.8%→44.8%), reading as a hand-clamp-specific artifact, not a
+  general genome-perturbation property. Three independent looks at this
+  narrow side-question (clamp, real-champion comparison, the underlying
+  fitness-decomposition work) now land on the same structural problem —
+  recommend the same "exhausted, not wrong to revisit, not worth another
+  data point without a genuinely constructed fitness-held-fixed
+  counterfactual" standing as the fold-scheme windowing chain's own
+  2026-08-21 exhaustion finding. Does not touch the broader
+  selection-metric-redefinition question, which stays closed per the 06:00
+  UTC weekend all-hands write-up. `md5sum live_state.json` unchanged
+  (`81922c6011c986449f635dbf43553d0e`), no code changed, `python3 -m
+  pytest -q` 243/243 confirmed at session start.
+
 - **Closed 2026-08-30 (weekend all-hands, 06:00 UTC): the fitness-vs-excess-return
   selection-metric thread's measurement phase is done — full design pass written,
   recommendation is status quo (no constitution change), with three explicit
@@ -4705,6 +4743,25 @@ every `evolve` call.
    settled — see the run note's "Next" for what a real follow-up would need
    (hold fold-fitness constant across the comparison). Does not touch the
    still-open selection-metric-redefinition question.
+
+   **Closed 2026-08-30 (3-hourly check, ~09:15 UTC): tried the flagged
+   follow-up (real champions instead of a hand-built clamp), and it settles
+   into the same confound, harder to escape than before — recommend
+   treating this narrow side-question as exhausted.** See "Current state"
+   above and `runs/2026-08-30-0915-lone-voice-real-champion-check.md`.
+   `disagreement_scan` against all three real champions (v1/v2 both
+   `lone<two`, live v3 `lone>two`) found a much bigger risky-share swing
+   than the clamp test (58.1%/28.2%/90.9%, v2 the thread's first-ever
+   conservative-majority point) — but fold-fitness covaries with the gene
+   inequality across every real champion this account has ever had, so the
+   same three points sort just as monotonically by fitness as by the gene,
+   and three uncontrolled real points can't separate the two explanations
+   any better than the clamp could. **Do not pick this narrow side-question
+   back up without a genuinely constructed fitness-held-fixed
+   counterfactual** (re-tune some other gene after the clamp to restore the
+   champion's original fold-fitness) — a real-champion comparison and a
+   single-gene clamp have both now been tried and both hit the same wall.
+   Does not touch the still-open selection-metric-redefinition question.
 
 1. **Accumulate live forward-test data** — the only track record not contaminated
    by hindsight. This happens on its own; just don't break it.
