@@ -306,6 +306,41 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Closed 2026-08-30 (3-hourly check, ~18:51 UTC): the v3 demotion/rollback
+  question — raised 2026-08-22, reaffirmed unresolved in every daily
+  discussion since — now has a full design pass with a recommendation,
+  same closure pattern the 06:00 UTC weekend all-hands used for the
+  fitness-vs-excess-return question.** See
+  `runs/2026-08-30-1851-demotion-rollback-design-pass.md`. Fresh
+  `succession-audit`: v3 (live) and v1 both hard-fail the corrected
+  drawdown gate outright (-46.5%/-54.4% continuous maxDD); v2 doesn't
+  hard-fail but only marginally (dd-corr fitness 0.234, and its
+  full-history maxDD passing the 40% line looks more like an artifact of
+  `dd_corrected_stats()`'s one-directional `min()` blind spot than a clean
+  pass, per the 2026-08-24 two-sided-diagnostic finding). New fact this
+  session adds: v3's full-history excess return over buy-and-hold is
+  **+68.2%**, the only positive number of the three (v1 -115.7%, v2
+  -73.8%) — whichever selection metric you prefer, v3 is the best of the
+  three real champions on both, despite being the only one that hard-fails
+  drawdown. **Recommendation: status quo, no demotion mechanism, no
+  constitution change** — `MAX_DD_HARD_FAIL` is a prospective gate on new
+  candidates (its job, per every amendment-log entry that touches it, is
+  stopping the search from mining noise into a false promotion), not a
+  retroactive license revocation for a sitting champion whose own past
+  performance looks worse under a later-discovered measurement correction;
+  and no real champion this account has ever had is both closer to
+  clearing the gate cleanly and better on excess return than v3, so an
+  automatic mechanism would have nowhere better to send the champion.
+  Three named revisit triggers (a real `evolve()` challenger that actually
+  clears `accepts()`/`holdout_accepts()` against v3 — already automatic,
+  no new code needed; `succession-audit` ever showing a candidate that beats
+  v3 on both drawdown-gate-closeness and excess return; the live paper
+  account realizing a real drawdown near `CIRCUIT_BREAKER_DD` (0.25)).
+  None has fired. `md5sum live_state.json` unchanged
+  (`81922c6011c986449f635dbf43553d0e`), `python3 -m pytest -q` 243/243
+  confirmed at session start, no code or constitution changed, no
+  `AMENDMENTS.md` row needed.
+
 - **Corrected 2026-08-30 (3-hourly check, ~13:01 UTC): the 09:51 UTC short-selling
   design pass's Phase 1 scoping was wrong about who can ship it — `core/portfolio.py`
   is not "under the constitution in spirit," it is one of exactly two files
@@ -5382,6 +5417,20 @@ every `evolve` call.
    missing case" loose end the 2026-08-22 entry named, but does not restart
    or resolve the demotion/rollback design question itself, which remains
    the owner's call, unchanged.
+
+   **Closed 2026-08-30 (3-hourly check, ~18:51 UTC): the demotion/rollback
+   design question this sub-thread flagged as unstarted across every entry
+   above finally has a design pass and a recommendation.** See "Current
+   state" above and
+   `runs/2026-08-30-1851-demotion-rollback-design-pass.md`. Recommendation:
+   status quo, no demotion mechanism — a fresh `succession-audit` shows v3
+   is the best of the three real champions on both drawdown-gate-closeness
+   and full-history excess return (+68.2%, the only positive one of the
+   three), so there is nothing better to demote *to*. Same closure pattern
+   as the 06:00 UTC weekend all-hands used for the fitness-vs-excess-return
+   question, with three named revisit triggers. **Future sessions: do not
+   re-open this from scratch — point to the write-up unless one of its
+   three triggers has actually fired.**
 
    **Measured 2026-08-24 (3-hourly check, ~16:15 UTC): a first number on the
    "harder, unquantified" selection-noise question the 2026-08-21
