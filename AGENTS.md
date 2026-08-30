@@ -306,6 +306,38 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Written 2026-08-30 (3-hourly check, ~09:51 UTC): a design pass for item 5
+  (short selling), which had zero history before this — every other open
+  item had prior sessions behind it, this one didn't.** See "Next steps"
+  item 5 and `runs/2026-08-30-0951-short-selling-design-pass.md`. Traced
+  "long-only" to five independent places that would each need real work,
+  not a relabeling: `core.portfolio.PaperBroker` (docstring says it
+  outright; `buy`/`sell`/`equity` all assume `qty` moves one direction),
+  `core.types.Intent`/`Order`'s `side` vocabulary (`"sell"` means "close a
+  long" everywhere it's read, there's no "open a short"), all three
+  `agents.consults` modules (every `Intent` construction is `"buy"` or
+  `"sell"`, none propose opening a short), `agents.judges.RiskJudge.rule`
+  (buys/sells are two structurally different code paths, a short needs its
+  own entry+exit logic, not a flag), and the risk gates themselves
+  (`mark()`'s circuit breaker assumes bounded long-only downside; a short's
+  loss is unbounded). Borrow cost: no public keyless lending-rate feed
+  exists (this project's `## No credentials, anywhere` design only covers
+  price data), but a modelled constant rate is the same *kind* of
+  approximation `fee_bps`/`slippage_bps` already are, not a new one.
+  Recommends a phased build — Phase 1 (`short()`/`cover()` + borrow accrual
+  on `PaperBroker`, tested in isolation, zero behavior change for existing
+  callers) is scoped concretely enough for a future session to actually
+  build; Phase 2 (genome/agent wiring + the two constitution questions this
+  write-up surfaces but doesn't answer: a short-exposure cap, and whether
+  `MAX_DD_HARD_FAIL` needs a short-specific instrument) and Phase 3 (shadow
+  evolution) come after, each needing their own `AMENDMENTS.md` argument
+  before touching promotion gates. No code changed this session — deliberate:
+  money-tracking-core correctness deserves the same measure-before-code
+  discipline already applied to `HOLDOUT_SIGMA` and the dd-corrected maxDD
+  fix, not both a design pass and a broker rewrite in one slot. `md5sum
+  live_state.json` unchanged, `python3 -m pytest -q` 243/243 confirmed at
+  session start, no genome or constitution touched.
+
 - **Closed 2026-08-30 (3-hourly check, ~09:15 UTC): the narrow "does
   `lone_voice_scale > two_agree_bonus` contribute to the disagreement-sweep
   thread's risky-direction skew" side-question, tried against real
@@ -5752,6 +5784,26 @@ every `evolve` call.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.
+
+   **Design pass done 2026-08-30 (3-hourly check, ~09:51 UTC), no code
+   shipped — see "Current state" above and
+   `runs/2026-08-30-0951-short-selling-design-pass.md`.** Traced long-only
+   to five independent places needing real work (`core.portfolio.PaperBroker`,
+   `core.types.Intent`/`Order`'s side vocabulary, all three
+   `agents.consults` modules, `agents.judges.RiskJudge.rule`, and the
+   circuit breaker's bounded-downside assumption), worked out the
+   borrow-cost approximation is the same *kind* as existing `fee_bps`/
+   `slippage_bps` constants, and flagged two constitution questions a real
+   proposal would need to resolve (a short-exposure cap; whether
+   `MAX_DD_HARD_FAIL` needs a short-specific instrument given the unbounded
+   downside). **Next, concretely scoped now**: Phase 1 —
+   `PaperBroker.short()`/`.cover()` + per-bar borrow accrual in `.mark()`,
+   tested in isolation (short→mark→cover round trips, borrow accrual,
+   a circuit-breaker trip mid-short), zero behavior change for every
+   existing caller since nothing calls the new methods yet. Phase 2
+   (genome/agent wiring + the constitution questions, each needing its own
+   `AMENDMENTS.md` row) and Phase 3 (shadow evolution) come after Phase 1,
+   not before.
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
