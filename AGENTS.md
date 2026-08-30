@@ -306,6 +306,34 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-08-30 (3-hourly check, ~05:18 UTC): weak evidence against
+  the 00:46 UTC entry's flagged hypothesis — clamping `lone_voice_scale` down
+  to `two_agree_bonus` did not meaningfully shrink the disagreement-sweep
+  thread's risky-direction skew.** (see "Next steps" item 0 and
+  `runs/2026-08-30-0518-lone-voice-counterfactual.md`) One-off scratch
+  script (same never-save discipline as every prior throwaway shadow script
+  in the disagreement-sweep thread), `loop.evolve.disagreement_scan` against
+  real champion v3 and an in-memory-only counterfactual (`g0.child([...
+  lone_voice_scale -> two_agree_bonus's own value ...])`, so `lone_voice_scale
+  == two_agree_bonus == 1.2`, everything else identical), same
+  `Researcher(seed=4242)`, same universe/window, both blank
+  `researcher_memory`. Risky share of fold-stage disagreements: 90.9% (real)
+  vs. 86.1% (counterfactual) — within noise for n=99/79, not the sharp
+  reduction the hypothesis predicted. Unplanned confound, itself worth
+  flagging: the clamp also changed the champion's own fold-fitness a lot
+  (-1.669 -> -2.637) and the fold-stage disagreement rate moved *opposite*
+  to what the 2026-08-29 22:50 UTC keep_frac sweep's monotonic
+  fitness-predicts-disagreement pattern would predict (worse fitness, lower
+  disagreement rate here) — the first case in this thread where that pattern
+  didn't hold, though that sweep only ever varied the calendar window, never
+  the genome, so it was never actually tested against this kind of
+  perturbation. One counterfactual, one seed, one champion — a first data
+  point, not settled. Does not touch the still-open "should the selection
+  metric be redefined" question, which remains the owner's call.
+  `md5sum live_state.json` unchanged, no code changed this session (pure
+  scratch-script measurement), baseline `python3 -m pytest -q` 243/243
+  confirmed at session start.
+
 - **Resolved 2026-08-30 (3-hourly check, ~00:46 UTC): tick 16's hard-call
   flag reviewed — the first real verdict this infrastructure has ever
   recorded.** (see `runs/2026-08-30-0046-hard-call-review-tick16.md`) Rather
@@ -4589,8 +4617,6 @@ every `evolve` call.
   review is the thing this infrastructure was built for, not more tooling
   around it.
 
-## Next steps (rough priority order)
-
 0. **Resolved 2026-08-30 (3-hourly check, ~00:46 UTC): tick 16's hard-call
    flag reviewed, verdict `approve`.** See "Current state" above and
    `runs/2026-08-30-0046-hard-call-review-tick16.md` for the full
@@ -4601,6 +4627,24 @@ every `evolve` call.
    about `lone_voice_scale`/`two_agree_bonus` is folded into the
    disagreement-sweep thread (item — see the selection-metric discussion
    in "Current state" above), not a separate action item.
+
+   **Checked 2026-08-30 (3-hourly check, ~05:18 UTC): the flagged
+   `lone_voice_scale`/`two_agree_bonus` observation, and it's weak evidence
+   against "this gene pairing is a contributor" to the disagreement-sweep
+   thread's risky-direction skew.** See "Current state" above and
+   `runs/2026-08-30-0518-lone-voice-counterfactual.md`. A counterfactual v3
+   with `lone_voice_scale` clamped to equal `two_agree_bonus` showed
+   essentially the same risky-direction skew share (86.1% vs. real v3's
+   90.9%, within noise at n=79/99) — not the sharp reduction the hypothesis
+   predicted. Surfaced an unplanned confound instead: the clamp changed the
+   champion's own fold-fitness a lot and, unlike the 2026-08-29 22:50 UTC
+   keep_frac sweep's monotonic fitness-predicts-disagreement pattern, the
+   disagreement rate moved the opposite way here — that sweep only ever
+   varied the calendar window, never the genome, so this is the first check
+   of that pattern against a genome-only perturbation. One data point, not
+   settled — see the run note's "Next" for what a real follow-up would need
+   (hold fold-fitness constant across the comparison). Does not touch the
+   still-open selection-metric-redefinition question.
 
 1. **Accumulate live forward-test data** — the only track record not contaminated
    by hindsight. This happens on its own; just don't break it.
