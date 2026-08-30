@@ -306,6 +306,33 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Resolved 2026-08-30 (3-hourly check, ~00:46 UTC): tick 16's hard-call
+  flag reviewed — the first real verdict this infrastructure has ever
+  recorded.** (see `runs/2026-08-30-0046-hard-call-review-tick16.md`) Rather
+  than taking the "lone-voice buy, agreement 0.33" flag at face value,
+  reconstructed `RiskJudge.rule`'s scoring arithmetic by hand against
+  champion v3's real evolved `risk_judge` genes and matched it to the actual
+  order to the cent: v3's evolved `lone_voice_scale` (1.4791) is *higher*
+  than `two_agree_bonus` (1.2), so LINKUSDT's solo-conviction score (0.938 ×
+  1.4791 = 1.387) legitimately outranked the bar's only multi-agree
+  candidate, UNIUSDT (0.794) — not a fluke. The evolved `cash_floor_pct`
+  (35.03%) left only 16.97% of equity deployable that bar, which LINK's
+  order consumed in full (`min(base_size_pct*score, max_position_pct)`
+  capped by `cash_avail` = $1915.45, exact match), correctly starving every
+  other candidate via `"no room"` rather than any processing-order bug.
+  Size (17.0%) sits within both position caps; the underlying signal was an
+  ordinary confirmed-trend read. **Verdict: `approve`**, recorded via
+  `review-hard-calls --tick 16 --verdict approve --notes '...'` —
+  `review-hard-calls` now reports 0 pending, 1 reviewed. Flags an open
+  observation for later, not actioned this cycle: v3's
+  `lone_voice_scale > two_agree_bonus` structurally favors solo conviction
+  over cross-consultant consensus, the same direction the disagreement-sweep
+  work (previous entries below) keeps finding a risky-direction skew in —
+  worth a future session checking whether this gene pairing is a
+  contributor. `md5sum live_state.json` changed only by the new
+  `hard_call_reviews` entry (expected — this is the one command that
+  intentionally writes state); everything else untouched.
+
 - **Built 2026-08-29 (3-hourly check, ~22:00 UTC): the keep_frac sweep the
   19:12 UTC entry's own "Next" flagged is now a real, tested, reusable tool
   instead of a fifth throwaway shadow script.** New `loop.evolve.
@@ -4564,18 +4591,16 @@ every `evolve` call.
 
 ## Next steps (rough priority order)
 
-0. **First real hard-call flag is pending review.** `review-hard-calls`
-   (no args) reports tick 16 (2026-08-29 bar) as flagged: a lone-voice
-   LINKUSDT buy, agreement 0.33, 0.94 conviction, 17.0% of equity, the only
-   order that bar. This is the first live tick to ever trip
-   `agents.judges.flag_hard_call` since the review infrastructure shipped
-   2026-08-18 (see "Current state" 2026-08-18 entry) — it shipped ahead of
-   a real case, and this is that case. A scheduled session should read the
-   tick 16 journal entry, reason about the trade, and record a verdict via
-   `evotrader_bundle.py review-hard-calls --tick 16 --verdict '...' [--notes
-   '...']`. See `runs/2026-08-30-0020-daily-trading.md` for why the daily
-   trading run itself left this unreviewed (out of scope for its fixed
-   protocol).
+0. **Resolved 2026-08-30 (3-hourly check, ~00:46 UTC): tick 16's hard-call
+   flag reviewed, verdict `approve`.** See "Current state" above and
+   `runs/2026-08-30-0046-hard-call-review-tick16.md` for the full
+   reconstruction (v3's evolved `lone_voice_scale` > `two_agree_bonus`
+   legitimately made LINKUSDT the bar's top-scored candidate; the evolved
+   cash floor left it as the only fillable order). `review-hard-calls`
+   reports 0 pending. Nothing else queued from this — the open observation
+   about `lone_voice_scale`/`two_agree_bonus` is folded into the
+   disagreement-sweep thread (item — see the selection-metric discussion
+   in "Current state" above), not a separate action item.
 
 1. **Accumulate live forward-test data** — the only track record not contaminated
    by hindsight. This happens on its own; just don't break it.

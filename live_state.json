@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
   "ticks": 16,
-  "updated": "2026-08-30T00:21:36+00:00",
+  "updated": "2026-08-30T00:48:35+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -17338,5 +17338,16 @@
     "stagnation": 15,
     "holdout_draws": 22
   },
-  "hard_call_reviews": []
+  "hard_call_reviews": [
+    {
+      "tick": 16,
+      "bar": "2026-08-29 00:00:00+00:00",
+      "reviewed_at": "2026-08-30T00:48:35+00:00",
+      "verdict": "approve",
+      "notes": "Reconstructed the RiskJudge arithmetic by hand against champion v3's real evolved genes and it matches the actual order to the cent: LINKUSDT's score (conviction 0.938 * lone_voice_scale 1.4791 = 1.387) was the single highest of all 9 buy candidates proposed this bar, including the only multi-agree candidate UNIUSDT (conv 0.662 * two_agree_bonus 1.2 = 0.794) -- v3's evolved lone_voice_scale (1.4791) exceeds two_agree_bonus (1.2), so a confident solo signal structurally outranks a weaker two-consultant agreement by design, not by accident. Deployable cash that bar was only cash_pct 52.0% minus the evolved cash_floor_pct 35.03% = 16.97% of equity ($1915.45), which the LINK order consumed in full -- explaining why every other buy (several with real conviction, e.g. XRP 0.904, ETH 0.892) was correctly vetoed 'no room' rather than by any processing-order bug. Size (17.0% of equity) sits within both max_position_pct (25%) and hard_max_position_pct (35%). Underlying signal was an ordinary confirmed-trend read (ma-spread +26.1%, slope +4.70%, rsi 71 in-band), not an outlier bet. Verdict: this was the evolved genome's own risk logic operating exactly as designed, not a fluke or a bug -- nothing to correct. Worth carrying forward as an open observation (not actioned this cycle): v3's lone_voice_scale > two_agree_bonus is a real, measurable design choice that structurally favors single-consultant conviction over cross-consultant consensus, which is the same direction the recent disagreement-sweep findings have been circling (risky-direction disagreement between raw fitness and excess return skews heavily one-sided) -- may be worth a future session checking whether this specific gene pairing is a contributor.",
+      "reasons": [
+        "lone-voice buy on LINKUSDT (agreement 0.33) is the only order the bar produced (0.94 conviction, 17.0% of equity)"
+      ]
+    }
+  ]
 }
