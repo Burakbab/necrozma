@@ -306,6 +306,40 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Corrected 2026-08-30 (3-hourly check, ~13:01 UTC): the 09:51 UTC short-selling
+  design pass's Phase 1 scoping was wrong about who can ship it — `core/portfolio.py`
+  is not "under the constitution in spirit," it is one of exactly two files
+  `constitution.checksum()` literally hashes (`_PROTECTED = ["__init__.py",
+  "../core/portfolio.py"]`), sealed by `evotrader.manifest`.** Attempted to actually
+  build Phase 1 this session (`short()`/`cover()` + borrow accrual on
+  `PaperBroker`, signed-`qty` convention, 16 new unit tests covering short→mark→cover
+  round trips, borrow accrual, the cross-side buy/short guards, and a mid-short
+  circuit-breaker trip) — the tests passed and the implementation matched the design
+  doc, but `python3 -m pytest -q` on the full suite then failed 12 tests in
+  `tests/test_run_from_files_matches_bundle.py` with `CONSTITUTION MODIFIED: expected
+  8b74865634b1db07, found ...` the moment `tools/edit_bundle_module.py sync` folded
+  the edited `core/portfolio.py` into the bundle. This file's own standing rule
+  (`## Run protocol`, "If a run reports CONSTITUTION MODIFIED, stop. Do not re-seal
+  it.") means a scheduled session cannot ship this change and move on — every
+  scheduled command (`tick`, `evolve`, the daily run) calls `constitution.verify()`
+  at startup and refuses to run once the seal breaks, and there is no CLI path that
+  re-seals it; only a human editing `evotrader.manifest` by hand can. **Reverted
+  everything this session** (`git checkout -- core/portfolio.py evotrader_bundle.py`,
+  deleted the new test file) rather than leave the seal broken for whatever runs
+  next — confirmed `evotrader.manifest` itself was never touched (`verify()` only
+  reads and compares, never auto-writes on mismatch) and `python3 -m pytest -q`
+  is back to 243/243 clean, `md5sum live_state.json` unchanged
+  (`81922c6011c986449f635dbf43553d0e`). **What this changes for item 5**: Phase 1
+  is not the safe, no-sign-off engineering slice the design pass described — it
+  needs the same human-reviewed `AMENDMENTS.md` row and manifest re-seal the design
+  pass had deferred to Phase 2's constitution questions, just to land the broker
+  mechanics at all, before any testing or wiring can follow. A future session
+  should not attempt to ship Phase 1 code again without that sign-off in hand; the
+  design itself (signed-`qty` `Position`, `short()`/`cover()` mirroring `buy()`/
+  `sell()`, `borrow_bps_per_bar` accrued in `mark()`) held up under real
+  implementation and is worth keeping as the starting point once a human has
+  reviewed and re-sealed.
+
 - **Written 2026-08-30 (3-hourly check, ~09:51 UTC): a design pass for item 5
   (short selling), which had zero history before this — every other open
   item had prior sessions behind it, this one didn't.** See "Next steps"
@@ -5804,6 +5838,25 @@ every `evolve` call.
    (genome/agent wiring + the constitution questions, each needing its own
    `AMENDMENTS.md` row) and Phase 3 (shadow evolution) come after Phase 1,
    not before.
+
+   **Corrected 2026-08-30 (3-hourly check, ~13:01 UTC): Phase 1 above is not a
+   no-sign-off engineering slice — see "Current state" above.**
+   `core/portfolio.py` is one of exactly two files `constitution.checksum()`
+   literally hashes (`_PROTECTED` in the `constitution` module), sealed by
+   `evotrader.manifest`; editing it and running `tools/edit_bundle_module.py
+   sync` breaks that seal (`CONSTITUTION MODIFIED`), and this file's own Run
+   protocol rule says a scheduled session must stop there and not re-seal it,
+   not ship and move on. Actually implementing Phase 1 this session
+   (signed-`qty` `Position`, `short()`/`cover()` mirroring `buy()`/`sell()`,
+   `borrow_bps_per_bar` accrued in `mark()`, 16 passing unit tests exactly
+   matching the isolation tests named above) hit exactly this wall; reverted
+   in full (`git checkout -- core/portfolio.py evotrader_bundle.py`, deleted
+   the new test file) rather than leave the seal broken for the next scheduled
+   run. **Do not attempt to ship Phase 1 code again without a human review and
+   `evotrader.manifest` re-seal in hand first** — that sign-off was supposed to
+   wait for Phase 2's constitution questions, not gate Phase 1's broker
+   mechanics too. The design itself held up under real implementation and is
+   worth keeping as the starting point once that sign-off exists.
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
