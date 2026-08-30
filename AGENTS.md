@@ -306,6 +306,35 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-30 (3-hourly check, ~23:05 UTC): the first fresh 4h shadow
+  evolution since the dd-corrected gate landed shows the item-2 thread's
+  "reliable gen-1 quick fix" pattern no longer holds, plus a first (caveated)
+  4h holdout-noise number.** See "Next steps" item 2 and
+  `runs/2026-08-30-2305-4h-shadow-dd-corrected-gate-and-holdout-noise.md`.
+  8 generations, x6-scaled seed, `n_blind=6` (same recipe as every prior 4h-
+  shadow run) — unlike every one of those prior runs (all dated 2026-08-16
+  through -19, before `dd_corrected_stats()` was wired into `generation()`'s
+  acceptance loop at the 2026-08-21/22 weekend all-hands), this run found
+  **zero** promotions across all 8 generations. Each generation's top
+  fold-aggregate candidate looked like the usual quick fix (fitness -0.131 to
+  0.459, comfortably clearing champion's -4.200) but got rejected either by
+  the dd-corrected hard gate (continuous-replay maxDD > 40%, invisible to the
+  fold-merged number — 6 of ~15 top-3 candidates checked) or the sealed
+  holdout (the rest). Reads as: the fold-dd-blindspot fix that closed a real
+  gap in the 1d live path also closes off this specific 4h-shadow thread's
+  easy early promotions, not previously observed because no 4h run had used
+  the fixed gate before now. Block-bootstrapped the only genome this run
+  produced (the never-promoted seed itself) the same way `holdout-noise`
+  measures the live 1d champions: boot_fitness_std 1.461, 0.73x
+  `HOLDOUT_SIGMA` (2.0) — directionally supports the "more holdout bars, less
+  relative noise" hypothesis `holdout-noise`'s notes flagged but never
+  measured, but weakly (lands inside the existing 1d range, ~0.74x-1.02x
+  across v1/v2/v3, not below it) and on a genome that never cleared the
+  search gate, not a real promoted champion — not apples-to-apples with the
+  1d measurement. `md5sum live_state.json` unchanged
+  (`81922c6011c986449f635dbf43553d0e`), `python3 -m pytest -q` 243/243, no
+  code changed (standalone scratch script, not committed), genome still v3.
+
 - **Closed 2026-08-30 (3-hourly check, ~18:51 UTC): the v3 demotion/rollback
   question — raised 2026-08-22, reaffirmed unresolved in every daily
   discussion since — now has a full design pass with a recommendation,
@@ -5521,6 +5550,30 @@ every `evolve` call.
    **Closing this line of inquiry**: worth reopening only on a cheap fourth
    genome (a future v4+ promotion) or a genuinely different, sharper
    hypothesis -- not another same-method batch or genome.
+
+   **Found 2026-08-30 (3-hourly check, ~23:05 UTC): a fresh 4h shadow run —
+   the first since the dd-corrected gate was wired into `generation()`'s
+   acceptance loop (2026-08-21/22) — shows the "reliable gen-1 quick fix"
+   pattern every prior 4h-shadow run relied on no longer holds, plus a
+   first, caveated 4h `holdout-noise` number.** See "Current state" above
+   and `runs/2026-08-30-2305-4h-shadow-dd-corrected-gate-and-holdout-noise.md`.
+   8 generations, x6-scaled seed, `n_blind=6`, same isolation discipline as
+   every prior run here: **zero promotions**, where every prior run (all
+   pre-dating the fix) found one in generation 1. Each generation's top
+   fold-aggregate candidate looked like the usual fix but got rejected by
+   the dd-corrected hard gate (continuous-replay maxDD > 40%, invisible to
+   the fold-merged number) about as often as by the sealed holdout.
+   Block-bootstrapped the only genome produced (the never-promoted seed):
+   boot_fitness_std 1.461, 0.73x `HOLDOUT_SIGMA` — weakly supports "more
+   holdout bars (~6x here), less relative noise" but isn't apples-to-apples
+   with the 1d measurement (real promoted champions there, a rejected seed
+   here). **Next, concretely**: a longer or differently-seeded x6-scaled 4h
+   run to check whether *any* genome can clear the dd-corrected gate
+   post-fix — the prerequisite for both a real 4h holdout-noise measurement
+   and for meaningfully re-asking this thread's older "does a second
+   plateau exist" question, which implicitly assumed the now-invalidated
+   easy-gen-1-promotion shape. Not attempted further this session (time
+   budget after the ~70 min evolution phase already spent).
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
