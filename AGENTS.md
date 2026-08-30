@@ -4564,6 +4564,19 @@ every `evolve` call.
 
 ## Next steps (rough priority order)
 
+0. **First real hard-call flag is pending review.** `review-hard-calls`
+   (no args) reports tick 16 (2026-08-29 bar) as flagged: a lone-voice
+   LINKUSDT buy, agreement 0.33, 0.94 conviction, 17.0% of equity, the only
+   order that bar. This is the first live tick to ever trip
+   `agents.judges.flag_hard_call` since the review infrastructure shipped
+   2026-08-18 (see "Current state" 2026-08-18 entry) — it shipped ahead of
+   a real case, and this is that case. A scheduled session should read the
+   tick 16 journal entry, reason about the trade, and record a verdict via
+   `evotrader_bundle.py review-hard-calls --tick 16 --verdict '...' [--notes
+   '...']`. See `runs/2026-08-30-0020-daily-trading.md` for why the daily
+   trading run itself left this unreviewed (out of scope for its fixed
+   protocol).
+
 1. **Accumulate live forward-test data** — the only track record not contaminated
    by hindsight. This happens on its own; just don't break it.
 
