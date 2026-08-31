@@ -306,6 +306,30 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-08-31 (3-hourly check, ~12:47 UTC): the reusable 4h-shadow x6-scaled-seed
+  harness the 10:02 UTC session recommended now exists and is committed —
+  `tools/shadow_4h_x6_seed.py`, tested (`tests/test_shadow_4h_x6_seed.py`, 9 new tests,
+  full suite 252/252), no code path change, nothing live touched.** See "Next steps"
+  item 2 and `runs/2026-08-31-1247-shadow-4h-harness.md`. `build_x6_scaled_seed()`
+  builds the exact recipe every prior 4h-shadow session hand-rolled from scratch
+  (bar_interval="4h" + trend_fast/slow, rsi_len, vol_short/long, breakout_len, z_len,
+  regime_ma, volume_len, max_bars_held, min_bars_held all x6) via `Genome.child()`
+  instead of ad hoc dict mutation, so it's provenance-tracked like any real evolution
+  step. Ran it live (warm cache, 27-symbol 4h universe, 4y): trades/yr 392.7, avg days
+  held 15.54, win rate 49.4%, halts 6, max_dd -44.3%, sortino 0.94, sharpe 0.77 —
+  **exactly reproduces the 10:02 UTC session's own baseline**, byte-for-byte on every
+  reported metric. That's the strongest evidence yet that the 07:05-vs-10:02 UTC
+  baseline discrepancy (1278 vs. 392.7 trades/yr for the "same" recipe) was a real
+  construction difference in the 07:05 session's uncommitted script, not environment
+  noise or non-determinism — but since that script was never committed, the exact
+  divergence still can't be pinned down after the fact. `fitness` reports `-inf`
+  (`max_dd` -44.3% exceeds `constitution.MAX_DD_HARD_FAIL` = 40%) — expected given
+  every prior session's numbers for this exact seed, not a harness bug. Next: use
+  this harness as the fixed baseline for any future consult-threshold or
+  correlation-penalty variant test on the x6-scaled seed (07:05 UTC's still-open
+  suggestion), so results are diffable against this run instead of re-described in
+  prose.
+
 - **Tested 2026-08-31 (3-hourly check, ~10:02 UTC): tightening nine consult threshold
   genes on the x6-scaled 4h seed cuts trade frequency as predicted, but does not fix
   drawdown — a genuine negative result — and this session's own baseline didn't
@@ -5792,6 +5816,22 @@ every `evolve` call.
    `git status` clean, `live_state.json` md5 unchanged
    (`37a1b00bee3f7cb1ad2f4adde0ab9ed0`), `python3 -m pytest -q` 243/243
    confirmed at session start, no code changed, genome still v3 (1d).
+
+   **Shipped 2026-08-31 (3-hourly check, ~12:47 UTC): the recommended reusable
+   scratch harness — see "Current state" above and
+   `runs/2026-08-31-1247-shadow-4h-harness.md`.** `tools/shadow_4h_x6_seed.py`
+   commits the x6-scaled-seed recipe as one importable function
+   (`build_x6_scaled_seed`, via `Genome.child()`) plus a CLI that fetches the 4h
+   universe and runs one single-shot full-history `run_backtest()`, so every
+   future session gets the same genome construction instead of re-deriving it
+   from this thread's prose. 9 new hermetic tests (no network) check the
+   scaling math and leave-untouched genes; a live run against warm-cached data
+   reproduced the 10:02 UTC session's baseline exactly (392.7 trades/yr, -44.3%
+   max_dd, sortino 0.94), which is strong evidence the 07:05-vs-10:02 gap was a
+   real construction difference in an uncommitted script, not noise — though
+   without that script the exact divergence stays unrecoverable. Use this
+   harness, not a fresh scratch script, for the next variant test (correlation
+   penalty on the x6-scaled seed is the standing suggestion from 07:05 UTC).
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
