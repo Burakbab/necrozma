@@ -306,6 +306,42 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-31 (3-hourly check, ~07:05 UTC): the x6-scaled 4h seed's trade-count
+  inflation comes from entry frequency, not faster round-trips, and a new candidate
+  confound (`max_new_positions_per_bar`) is tested and ruled out.** See "Next steps"
+  item 2 and `runs/2026-08-31-0705-4h-shadow-entry-frequency-diagnostic.md`. Instead
+  of testing more harness constants, characterized *how* the seed overtrades via three
+  single-shot `run_backtest()` calls (v3 at 1d, x6-scaled seed at 4h, raw-unscaled seed
+  at 4h — no evolution needed): the x6-scaled seed trades 4.6x more often per year than
+  v3 (1278 vs 277 trades/yr) but holds each position for a *similar or slightly longer*
+  time (10.71 vs 9.09 days) — ruling out "positions flip faster" as the mechanism; it's
+  many more distinct new entries, not quicker exits. Also notable: the scaled seed's
+  win rate (67.7%) is higher than v3's own (35.7%) despite negative Sortino and much
+  worse drawdown (-66.1% vs -46.5%) — small wins offset by large, poorly-controlled
+  losses, not a signal-quality problem. Then tested one previously-unexamined un-scaled
+  genome gene, `superior_judge.max_new_positions_per_bar` (seed value 3, a per-*bar*
+  cap — at 4h that's up to 18 new positions/day vs the 1d-intended 3/day, and no prior
+  x6-scaling recipe ever touched it): tightening it to 1 moved trades/max_dd/sortino by
+  noise-scale amounts only (1278→1306 trades/yr, -66.1%→-65.7% max_dd) — **ruled out**,
+  same conclusion shape as the 04:07 UTC session's warmup/cooldown check. Sharpens the
+  open question to something new and concretely scoped: the *threshold* genes that gate
+  individual entries/exits (RSI bands, z-score bands, `min_trend`/`min_breakout`/
+  `min_rank_mom` minimums across all three consults) were never touched by any x6-
+  scaling recipe or any prior hand-tuning attempt — only period-length and bars-held
+  genes were ever scaled. If 4h bars are simply noisier per-bar than daily closes, the
+  same thresholds tuned against 1d noise firing far more often against 4h noise would
+  produce exactly the entry-frequency-not-hold-time shape measured here. **Recommend
+  this — widening/tightening the consult threshold genes independent of period scaling,
+  re-measured the same way — as the next concrete step toward "genuinely hand-retuned,
+  not just scaled,"** sharper than the prior framing's bare "hand-retune it somehow."
+  Read-only throughout: imported `core.genome`/`core.market`/`loop.engine` directly
+  (same pattern `run_from_files.py` already uses), never opened the real
+  `live_state.json` (v3's genome was exported once to a standalone JSON file), fresh
+  `state/cache/` entries only (gitignored, not `live_state.json`). `git status` clean,
+  `live_state.json` md5 unchanged, `python3 -m pytest -q` 243/243 confirmed at session
+  start, no code changed (two standalone scratch scripts, not committed), genome still
+  v3 (1d).
+
 - **Ruled out 2026-08-31 (3-hourly check, ~04:07 UTC): two un-scaled bar-count
   harness constants (`run_backtest`'s `warmup` default, `constitution.
   CIRCUIT_BREAKER_COOLDOWN`) are NOT why the x6-scaled 4h seed hard-fails the
@@ -5672,6 +5708,26 @@ every `evolve` call.
    terms" -- strengthens rather than settles hypothesis 1, and still leaves
    hypothesis 2 (a genuinely hand-retuned, not scaled, 4h starting point) as
    the next real experiment, not attempted here.
+
+   **Found 2026-08-31 (3-hourly check, ~07:05 UTC): the overtrading mechanism
+   is entry frequency, not faster round-trips, and a new candidate confound
+   is tested and ruled out -- see "Current state" above and
+   `runs/2026-08-31-0705-4h-shadow-entry-frequency-diagnostic.md`.** Three
+   single-shot `run_backtest()` calls (v3 at 1d, x6-scaled seed at 4h,
+   raw-unscaled seed at 4h -- no evolution needed) found the x6-scaled seed
+   trades 4.6x more often per year than v3 but holds each position for a
+   similar-or-longer time (10.71 vs 9.09 days) -- many more distinct entries,
+   not quicker exits. Then tested `superior_judge.max_new_positions_per_bar`
+   (seed value 3, a per-*bar* cap never touched by any x6-scaling recipe --
+   at 4h it's up to 18 new positions/day vs the 1d-intended 3/day): tightening
+   it to 1 moved every metric by noise-scale amounts only. **Ruled out**, same
+   shape as the 04:07 UTC warmup/cooldown result. Sharpens hypothesis 2 into
+   something concretely scoped for the next session: the consult *threshold*
+   genes (RSI bands, z-score bands, `min_trend`/`min_breakout`/`min_rank_mom`)
+   were never touched by any scaling or hand-tuning attempt so far -- widening/
+   tightening those specifically, independent of period scaling, and
+   re-measuring trade frequency the same way, is the recommended next concrete
+   step, not another same-construction run or a from-scratch full hand-retune.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
