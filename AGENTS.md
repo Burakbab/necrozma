@@ -306,6 +306,34 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-31 (3-hourly check, ~16:00 UTC): isolating the 10:02 UTC session's
+  threshold-tightening by consult shows the worse-drawdown result was driven by
+  `consult_risky` and `consult_moderate`, masking that `consult_conservative`-only
+  tightening quietly beats baseline — and the 12:47 UTC session's carried-forward
+  `correlation_penalty` recommendation is stale (that gene was removed 2026-08-20).**
+  See "Next steps" item 2 and
+  `runs/2026-08-31-1600-4h-shadow-isolate-consult-threshold.md`. Using the committed
+  `tools/shadow_4h_x6_seed.py` harness, built three single-consult variants of the
+  10:02 UTC session's nine-gene tightening plus an all-three reproduction (327.7
+  trades/yr, -48.0% max_dd — matches that session's 327.8/-48.0% closely). Isolated:
+  `consult_risky`-only barely cuts trades (392.7→382.4/yr, -2.6%) but makes drawdown
+  clearly worse (-44.3%→-48.7%, worse than the full combination); `consult_moderate`-only
+  drives most of the trade-count reduction (→337.3/yr) but has the worst risk-adjusted
+  numbers of any variant (sortino 0.74, sharpe 0.63); `consult_conservative`-only moves
+  trades/drawdown by noise only but **beats baseline on sortino (0.94→1.02) and sharpe
+  (0.77→0.85)** — the only variant that improves on baseline at all, on every metric it
+  moves. None of the four clears `MAX_DD_HARD_FAIL` (best max_dd is still baseline's
+  -44.3%), so this doesn't resolve the drawdown-gate problem, but it replaces "tightening
+  doesn't help" with a correctly-attributed claim and surfaces a genuinely positive
+  single-gene-group result for the first time in this thread. Separately: `grep -rn
+  correlation_penalty --include='*.py'` confirms the gene the 10:02/12:47 UTC sessions'
+  "Next steps" pointed at was fully removed 2026-08-20 (item 3, closed) — corrected the
+  pointer below so a third session doesn't repeat a dead-end test. `git status` clean,
+  `live_state.json` md5 unchanged (`37a1b00bee3f7cb1ad2f4adde0ab9ed0`),
+  `python3 -m pytest -q` 252/252 confirmed at session start, no code changed (one
+  standalone scratch script using the committed harness, not itself committed), genome
+  still v3 (1d).
+
 - **Shipped 2026-08-31 (3-hourly check, ~12:47 UTC): the reusable 4h-shadow x6-scaled-seed
   harness the 10:02 UTC session recommended now exists and is committed —
   `tools/shadow_4h_x6_seed.py`, tested (`tests/test_shadow_4h_x6_seed.py`, 9 new tests,
