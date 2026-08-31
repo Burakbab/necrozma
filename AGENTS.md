@@ -306,6 +306,35 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-31 (3-hourly check, ~02:43 UTC): a second, differently-seeded
+  x6-scaled 4h shadow run also found zero promotions across 14 generations —
+  same outcome as the 23:05 UTC run, via a different rejection-mechanism
+  split.** See "Next steps" item 2 and
+  `runs/2026-08-31-0243-4h-shadow-seed9001-still-zero-promotions.md`.
+  `EvolutionRun(data, seed=9001)` instead of the default `seed=7` every prior
+  4h-shadow session (including 23:05 UTC's) had used — the seed=7 run's own
+  flagged follow-up. Champion (the scaled seed) stayed pinned at fitness
+  -4.296 the whole run. Of 42 total rejections (3 top candidates x 14
+  generations), 31 (74%) failed the dd-corrected hard gate (too few trades,
+  too short, or continuous-replay drawdown > 40%) and 11 (26%) failed the
+  sealed holdout — roughly inverted from the 23:05 UTC run's split (40%
+  hard-gate / 60% holdout). Same end result, different failure mix: read as
+  stronger evidence the "x6-scaled seed can't clear the post-2026-08-22
+  promotion funnel" finding isn't specific to one `Researcher` seed's
+  proposal sequence. Sharpest single data point: a generation-5 candidate at
+  fold-fitness +1.310 (a huge nominal improvement) still failed holdout
+  (-0.976 vs a required -1.787 + 2.965 margin at 3 cumulative draws) — the
+  fold/holdout regime mismatch this thread has documented on the live 1d
+  path, reproduced cleanly in the 4h shadow track. **Recommend not running
+  more seeds of this same scaled-seed genome** — the open question is now
+  sharper (is the x6-scaled seed itself structurally too aggressive — 4413
+  search-fold trades, halts 5, fitness -4.296, none of which any real live
+  1d champion has ever shown — for this gate to clear from at all, versus a
+  genuinely retuned, not just scaled, 4h starting point), not "try yet
+  another seed of the same construction." `git status` clean, `live_state.json`
+  unchanged, `python3 -m pytest -q` 243/243, no code changed (standalone
+  scratch script, not committed), genome still v3 (1d).
+
 - **Found 2026-08-30 (3-hourly check, ~23:05 UTC): the first fresh 4h shadow
   evolution since the dd-corrected gate landed shows the item-2 thread's
   "reliable gen-1 quick fix" pattern no longer holds, plus a first (caveated)
@@ -5574,6 +5603,27 @@ every `evolve` call.
    plateau exist" question, which implicitly assumed the now-invalidated
    easy-gen-1-promotion shape. Not attempted further this session (time
    budget after the ~70 min evolution phase already spent).
+
+   **Found 2026-08-31 (3-hourly check, ~02:43 UTC): a second, differently-seeded
+   run also found zero promotions, via a different rejection-mechanism split.**
+   See "Current state" above and
+   `runs/2026-08-31-0243-4h-shadow-seed9001-still-zero-promotions.md`.
+   `EvolutionRun(seed=9001)` instead of the default `seed=7` every prior
+   4h-shadow session had used (this thread's own flagged follow-up), 14
+   generations, same x6-scaled seed and isolation discipline. Champion
+   pinned at fitness -4.296 throughout; of 42 rejections, 74% failed the
+   dd-corrected hard gate and 26% failed the sealed holdout -- roughly
+   inverted from the 23:05 UTC run's 40%/60% split, but the same end result
+   (zero promotions). Two independent seeds now agree: this isn't a
+   seed-specific artifact of one `Researcher` proposal sequence.
+   **Recommend not running further seeds of this same scaled-seed
+   construction** -- the open question is now which of two structurally
+   different things is true: the x6-scaled seed itself is too aggressive
+   (4413 search-fold trades, halts 5, fitness -4.296 -- none of which any
+   real live 1d champion has ever shown) for this gate to clear from at
+   all, or a genuinely retuned (not just scaled) 4h starting point would
+   behave differently. That's a bigger experiment than another
+   same-seed-genome run and wasn't attempted this session.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
