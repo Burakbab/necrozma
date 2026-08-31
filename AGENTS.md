@@ -306,6 +306,39 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Ruled out 2026-08-31 (3-hourly check, ~04:07 UTC): two un-scaled bar-count
+  harness constants (`run_backtest`'s `warmup` default, `constitution.
+  CIRCUIT_BREAKER_COOLDOWN`) are NOT why the x6-scaled 4h seed hard-fails the
+  dd-corrected gate — the seed is genuinely this aggressive on its own terms.**
+  See "Next steps" item 2 and
+  `runs/2026-08-31-0407-4h-shadow-warmup-cooldown-ruled-out.md`. Before
+  spending a bigger session on a genuinely hand-retuned 4h starting point (the
+  02:43 UTC note's open question), checked a cheaper alternative first: every
+  4h-shadow run since 2026-08-16 hand-scaled the seed's *period genes* by x6
+  but never touched `run_backtest`'s `warmup=60` default (several x6-scaled
+  genes, e.g. `trend_slow`/`regime_ma`=300, exceed it, so early fold bars could
+  run on incompletely-primed indicators) or `CIRCUIT_BREAKER_COOLDOWN=20`
+  (a 20-day freeze at 1d, only ~3.3 days at 4h). Tested both in isolation
+  (warmup 60 vs. 360=60x6; cooldown 20 vs. 120=20x6) via direct
+  `run_backtest`/`Evaluator` calls, no evolution needed. Neither moved any
+  metric beyond noise: fitness stayed -4.30 to -4.32 (baseline -4.296), trades
+  4225-4468, halts 6-7, continuous max_dd -0.517 to -0.568 — nowhere close to
+  closing the ~13-17 point gap to `MAX_DD_HARD_FAIL` (0.40). Baseline
+  reproduced the 02:43 UTC session's recorded numbers closely (fitness
+  -4.296 exactly; trades/halts within a few percent, plausibly from a
+  slightly later `years=4.0` fetch window). **Sharpens, doesn't reopen, the
+  open question**: this is evidence for "the x6-scaled seed is structurally
+  too aggressive" and against "it's a scaling-recipe artifact in the eval
+  harness," at least along these two dimensions — a genuinely hand-retuned
+  (not just scaled) 4h starting point is still the next real test, now on
+  firmer footing that the seed's own numbers aren't a harness bug. Did not
+  check `constitution.MIN_BARS`/the 120-bar minimum-slice-length checks
+  (gate validity, not risk-taking — weaker candidate for a 50%+ drawdown, not
+  tested on a time-budget call). `git status` clean, `live_state.json`
+  unchanged, `python3 -m pytest -q` 243/243 confirmed at session start, no
+  code changed (two standalone scratch scripts, not committed), genome still
+  v3 (1d).
+
 - **Found 2026-08-31 (3-hourly check, ~02:43 UTC): a second, differently-seeded
   x6-scaled 4h shadow run also found zero promotions across 14 generations —
   same outcome as the 23:05 UTC run, via a different rejection-mechanism
@@ -5624,6 +5657,21 @@ every `evolve` call.
    all, or a genuinely retuned (not just scaled) 4h starting point would
    behave differently. That's a bigger experiment than another
    same-seed-genome run and wasn't attempted this session.
+
+   **Ruled out 2026-08-31 (3-hourly check, ~04:07 UTC): two un-scaled
+   bar-count harness constants are not the explanation -- see "Current
+   state" above and
+   `runs/2026-08-31-0407-4h-shadow-warmup-cooldown-ruled-out.md`.** Tested
+   `run_backtest`'s `warmup=60` default and `constitution.
+   CIRCUIT_BREAKER_COOLDOWN=20`, both of which the x6-period-gene-scaling
+   recipe never touched, against their own x6-scaled values (360, 120) on the
+   same seed genome and data. Neither changed fitness, trade count, halt
+   count, or drawdown beyond noise (fitness -4.30 to -4.32 vs. baseline
+   -4.296). Reframes the still-open question from "might this be a harness
+   artifact" to a cleaner "the seed is genuinely this aggressive on its own
+   terms" -- strengthens rather than settles hypothesis 1, and still leaves
+   hypothesis 2 (a genuinely hand-retuned, not scaled, 4h starting point) as
+   the next real experiment, not attempted here.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
