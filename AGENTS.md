@@ -306,6 +306,39 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-08-31 (3-hourly check, ~22:07 UTC): `consult_conservative` tightening
+  combined with trailing-stop tightening is super-additive — the first variant in this
+  whole 4h-shadow thread (since 2026-08-16) to clear `MAX_DD_HARD_FAIL` outright.**
+  See "Next steps" item 2 and
+  `runs/2026-08-31-2207-4h-shadow-consv-trailing-synergy-clears-dd-gate.md`. Direct
+  follow-up to the 16:00 UTC session's recommendation: paired that session's winning
+  `consult_conservative`-only variant (`rsi_buy_below` 38→30, `z_buy_below` -0.8→-1.2,
+  called `consv1` below) with `risk.trailing_stop` tightening (seed value -0.15). Neither
+  lever alone gets close (`consv1` alone: -44.5% max_dd; `trailing_stop` alone at -0.06/
+  -0.08/-0.10: -41.4%/-39.3%/-44.4%, non-monotonic and only -0.08 alone clears the gate),
+  but combined, two variants clear 40% outright for the first time this thread has ever
+  recorded: **`consv1` + `trailing_stop` -0.06 → -32.7% max_dd, sortino 1.35, sharpe
+  1.09** (best risk-adjusted numbers this whole thread has ever produced for this seed),
+  and **`consv1` + `trailing_stop` -0.08 + `cash_floor_pct` 0.15 → -35.1% max_dd, fitness
+  +0.146** (first positive full-history fitness this thread has recorded — every prior
+  baseline/variant landed at `-inf` or negative). Also found: pushing `consult_conservative`
+  further than `consv1` (rsi 24, z -1.6) has *zero* additional effect — identical numbers —
+  answering that session's own "worth trying" suggestion; and `stop_loss`/
+  `max_position_pct` tightening both make drawdown worse, not better, stacked on `consv1`.
+  Same continuous full-history `run_backtest()` max_dd measurement every prior session in
+  this thread has used and compared against — a real, comparable improvement, not a
+  different metric looking better — but **not yet run through the real promotion pipeline**
+  (fold-aggregate acceptance + sealed holdout via `EvolutionRun`/`generation()`), only a
+  single full-history backtest, so this doesn't itself constitute a promotable result.
+  **Recommend a future session seed a fresh 4h shadow `EvolutionRun` from this genome**
+  (`consv1` + `trailing_stop` -0.06, or the cash_floor variant) instead of the plain
+  x6-scaled seed, and check whether it survives fold-aggregate acceptance and the sealed
+  holdout as a champion in its own right — the natural next test now that this thread has
+  its first real candidate worth running through the full pipeline. `git status` clean,
+  `live_state.json` md5 unchanged (`37a1b00bee3f7cb1ad2f4adde0ab9ed0`), `python3 -m
+  pytest -q` 252/252 confirmed at session start, no code changed (three standalone scratch
+  scripts using the committed harness, not committed), genome still v3 (1d).
+
 - **Found 2026-08-31 (3-hourly check, ~16:00 UTC): isolating the 10:02 UTC session's
   threshold-tightening by consult shows the worse-drawdown result was driven by
   `consult_risky` and `consult_moderate`, masking that `consult_conservative`-only
@@ -5860,6 +5893,38 @@ every `evolve` call.
    without that script the exact divergence stays unrecoverable. Use this
    harness, not a fresh scratch script, for the next variant test (correlation
    penalty on the x6-scaled seed is the standing suggestion from 07:05 UTC).
+
+   **Isolated 2026-08-31 (3-hourly check, ~16:00 UTC): the 10:02 UTC combination's
+   worse-drawdown result was driven by `consult_risky`/`consult_moderate`, masking a
+   quietly-positive `consult_conservative`-only result — see "Current state" above and
+   `runs/2026-08-31-1600-4h-shadow-isolate-consult-threshold.md`.** Also caught: the
+   07:05/10:02/12:47 UTC sessions' carried-forward "test correlation_penalty next"
+   suggestion pointed at a gene fully removed 2026-08-20 (item 3, closed) — corrected
+   here so a third session doesn't repeat it. `consult_conservative`-only tightening
+   (`rsi_buy_below` 38→30, `z_buy_below` -0.8→-1.2) moves trades/drawdown by noise only
+   but beats baseline on sortino (0.94→1.02) and sharpe (0.77→0.85) — the only one of
+   four isolated variants that improves on baseline at all. Recommended trying this as
+   its own starting point combined with something that attacks drawdown directly.
+
+   **Found 2026-08-31 (3-hourly check, ~22:07 UTC): that combination — done. Pairing
+   `consult_conservative` tightening with trailing-stop tightening is super-additive and
+   clears `MAX_DD_HARD_FAIL` outright, the first variant in this thread's history to do
+   so — see "Current state" above and
+   `runs/2026-08-31-2207-4h-shadow-consv-trailing-synergy-clears-dd-gate.md`.**
+   `consv1` (the 16:00 UTC variant) + `risk.trailing_stop` -0.06 (seed -0.15): -32.7%
+   max_dd, sortino 1.35, sharpe 1.09 — best risk-adjusted numbers this thread has ever
+   recorded. `consv1` + `trailing_stop` -0.08 + `cash_floor_pct` 0.15: -35.1% max_dd,
+   fitness +0.146 — first positive full-history fitness this thread has recorded.
+   Neither lever alone gets close (best single-lever result: `trailing_stop` -0.08 alone,
+   -39.3%, barely clears). Also found: pushing `consult_conservative` past `consv1` has
+   zero further effect (ruling out that as a lever), and `stop_loss`/`max_position_pct`
+   tightening both make drawdown worse. Not yet run through the real promotion pipeline
+   (fold-aggregate acceptance + sealed holdout) — only a single full-history backtest,
+   same measurement every prior session here used. **Recommend a future session seed a
+   fresh 4h shadow `EvolutionRun` from this genome** (instead of the plain x6-scaled
+   seed) and check whether it survives fold-aggregate acceptance and the sealed holdout
+   as a champion in its own right — this thread's first real candidate worth running
+   through the full pipeline.
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
