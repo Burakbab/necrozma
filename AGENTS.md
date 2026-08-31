@@ -306,6 +306,36 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Tested 2026-08-31 (3-hourly check, ~10:02 UTC): tightening nine consult threshold
+  genes on the x6-scaled 4h seed cuts trade frequency as predicted, but does not fix
+  drawdown — a genuine negative result — and this session's own baseline didn't
+  reproduce the 07:05 UTC session's baseline numbers, an unresolved discrepancy now
+  flagged rather than papered over.** See "Next steps" item 2 and
+  `runs/2026-08-31-1002-4h-shadow-threshold-tighten.md`. Tightened `min_rank_mom`/
+  `rsi_max`/`min_breakout` (consult_risky), `min_trend`/`rsi_lo`/`rsi_hi`/`min_rank_mom`
+  (consult_moderate), `rsi_buy_below`/`z_buy_below` (consult_conservative) — the
+  threshold genes the 07:05 UTC session flagged as never touched by any x6-scaling
+  recipe. Trades/yr dropped 392.7 → 327.8 (-16.5%) as the noise hypothesis predicted,
+  but max_dd got *worse* (-44.3% → -48.0%), halts rose (6 → 8), sortino/sharpe both
+  fell — fewer entries didn't translate into a shallower drawdown here. Ruled out
+  "just tighten the consult thresholds" as a free-lunch fix, though only one specific
+  combination and direction was tried. Separately: this session's baseline (392.7
+  trades/yr, -44.3% max_dd, sortino +0.94) doesn't match the 07:05 UTC session's
+  reported baseline (1278 trades/yr, -66.1% max_dd, sortino -0.29) for what should be
+  the identical x6-scaled seed — checked and ruled out gene-construction mismatch
+  (full genome dump verified gene-by-gene against the documented recipe), data
+  gaps (none, clean 8766-bar/symbol fetch), and the `run_backtest` `warmup` default
+  (60 vs. 360 moves the baseline by noise only). No RNG is reachable from a plain
+  `run_backtest()` call, so it isn't seed non-determinism either. Neither session's
+  scratch script was committed, so a line-by-line diff isn't possible after the fact.
+  **Recommend a future session either commit a small reusable (never-scheduled)
+  scratch harness for this recipe so runs are diffable, or re-run the same recipe
+  twice in one session to confirm stability, before trusting any single 4h-shadow
+  baseline number in isolation again.** `git status` clean, `live_state.json` md5
+  unchanged (`37a1b00bee3f7cb1ad2f4adde0ab9ed0`), `python3 -m pytest -q` 243/243
+  confirmed at session start, no code changed (three standalone scratch scripts, not
+  committed), genome still v3 (1d).
+
 - **Found 2026-08-31 (3-hourly check, ~07:05 UTC): the x6-scaled 4h seed's trade-count
   inflation comes from entry frequency, not faster round-trips, and a new candidate
   confound (`max_new_positions_per_bar`) is tested and ruled out.** See "Next steps"
@@ -5728,6 +5758,40 @@ every `evolve` call.
    tightening those specifically, independent of period scaling, and
    re-measuring trade frequency the same way, is the recommended next concrete
    step, not another same-construction run or a from-scratch full hand-retune.
+
+   **Tested 2026-08-31 (3-hourly check, ~10:02 UTC): tightened nine consult
+   threshold genes as recommended -- trades/yr dropped as predicted but
+   drawdown got worse, not better -- and this session's baseline didn't
+   reproduce the 07:05 UTC session's baseline, an unresolved discrepancy.**
+   See "Current state" above and
+   `runs/2026-08-31-1002-4h-shadow-threshold-tighten.md`. Tightened
+   `min_rank_mom`/`rsi_max`/`min_breakout` (consult_risky), `min_trend`/
+   `rsi_lo`/`rsi_hi`/`min_rank_mom` (consult_moderate), `rsi_buy_below`/
+   `z_buy_below` (consult_conservative) on the x6-scaled seed. Trades/yr:
+   392.7 -> 327.8 (-16.5%, confirms the noise-threshold hypothesis
+   qualitatively), but max_dd -44.3% -> -48.0% (worse), halts 6 -> 8,
+   sortino 0.94 -> 0.76, sharpe 0.77 -> 0.65 -- fewer entries did not mean a
+   shallower drawdown. **Ruled out "just tighten the thresholds" as a
+   free-lunch fix** (one specific combination/direction tried, not
+   exhaustive). Separately and more sharply: this session's own baseline for
+   the *same* x6-scaled seed construction (392.7 trades/yr, -44.3% max_dd,
+   sortino +0.94) doesn't match the 07:05 UTC session's recorded baseline
+   (1278 trades/yr, -66.1% max_dd, sortino -0.29) -- checked and ruled out
+   gene-construction mismatch (full genome dump verified gene-by-gene
+   against the documented x6 recipe), data gaps (clean 8766-bar/symbol
+   fetch, no warnings), and `run_backtest`'s `warmup` default (60 vs. 360
+   moves the baseline by noise only, ~393 vs ~406 trades/yr). No RNG is
+   reachable from a plain `run_backtest()` call, ruling out non-determinism
+   too. Neither session's scratch script was committed, so a direct diff
+   isn't possible after the fact. **Recommend a future session commit a
+   small, never-scheduled, reusable scratch harness for this specific
+   recipe** (build x6-seed, fetch 4h universe, single-shot full-history
+   `run_backtest()`) so results become diffable and this class of
+   cross-session discrepancy stops recurring silently -- and treat any
+   single prior 4h-shadow baseline number with more caution until then.
+   `git status` clean, `live_state.json` md5 unchanged
+   (`37a1b00bee3f7cb1ad2f4adde0ab9ed0`), `python3 -m pytest -q` 243/243
+   confirmed at session start, no code changed, genome still v3 (1d).
 
 3. **Cross-asset correlation awareness for the Risk Judge** — CLOSED 2026-08-20,
    see the last entry in this item's history below: the gene was measured
