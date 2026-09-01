@@ -306,6 +306,37 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Tried 2026-09-01 (3-hourly check, ~18:46-19:21 UTC): built the "structurally
+  different lever" the 16:47 UTC entry called for -- a cold-start conviction
+  floor, not just a size ramp -- and it has zero measurable effect on fold 1,
+  swept 0 to 80% of its allowed range.** See "Next steps" item 2 and
+  `runs/2026-09-01-1921-cold-start-conviction-boost-no-bite.md`. New
+  `risk_judge.cold_start_ramp_min_conviction_boost` gene (default 0.0,
+  true no-op; wired into `agents/judges.py`'s `RiskJudge.rule()`, registered
+  in `agents.researcher.GENE_SPACE`, threaded through both shadow tools' CLIs,
+  9 new tests, full suite 303/303) vetoes marginal-conviction buys outright
+  during the same cold-start window the size ramp already covers, tapering
+  back to 0 by `cold_start_ramp_bars`. Tested at boost 0.0/0.15/0.40 against
+  the 120/0.20 ramp point through `shadow_4h_fold_date_sensitivity.py --shift
+  7`: **all three runs are byte-identical across every one of the 7 shifts**
+  (6/7 hard-fail each -- also confirms the 16:47 UTC entry's finding that this
+  genome family's pass rate has kept sliding across the day, now worse than
+  13:16 UTC's 4/7). Instrumented `RiskJudge.rule()` directly against fold 1's
+  own backtest window: of 672 buy candidates in the ramp window, conviction is
+  sharply bimodal (mean 0.873, mostly unanimous 0.80-0.96 trades) with the
+  only sub-0.70 candidates already below the *un-boosted* 0.30 floor -- no
+  marginal band this lever can filter, so the fold-1 drawdown is adverse price
+  action on already-high-conviction trades, not noisy weak entries. Diffed the
+  actual filled-order list between boost=0.0 and boost=0.4 for the identical
+  fold-1 backtest: identical, every field. Gene kept (real, tested, no-op
+  default -- may still combine usefully in a real `Researcher` search or with
+  a different seed genome) but **do not hand-tune this gene against this
+  specific `consv1 + trailing_stop` genome expecting a different answer** --
+  swept most of its range with a mechanistic reason for the null result, not a
+  magnitude-tuning gap. `live_state.json` untouched, no protected file
+  touched, `tools/edit_bundle_module.py sync --check` confirmed no drift.
+  Genome still v3 (1d) live, untouched.
+
 - **Found 2026-09-01 (3-hourly check, ~15:46-16:47 UTC): the "sweep other grid
   points for a wider margin" option is closed -- three separate sessions'
   "best point" picks for the `cold_start_ramp` genes have now each been
@@ -5270,6 +5301,30 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-01 19:21 UTC): option (1) below (a structurally
+   different, non-size lever on fold 1) has now been tried in its most
+   direct form — a cold-start conviction floor — and is closed too: swept
+   0.0 to 0.40 (80% of its allowed range) against the 120/0.20 ramp point,
+   byte-identical results at every value.** See "Current state" above and
+   `runs/2026-09-01-1921-cold-start-conviction-boost-no-bite.md`. New
+   `risk_judge.cold_start_ramp_min_conviction_boost` gene (default 0.0,
+   no-op) vetoes marginal-conviction buys during the cold-start window
+   instead of just sizing them down. Instrumented directly against fold 1's
+   own backtest window: buy-candidate conviction there is bimodal (mostly
+   0.80-0.96 unanimous trades; the only low-conviction candidates were
+   already below the *un-boosted* 0.30 floor) — no marginal band exists for
+   a conviction filter to catch, so the drawdown is adverse price action on
+   already-high-conviction trades, not weak signals slipping through. Gene
+   kept (tested, no-op default, may still combine usefully in a real
+   `Researcher` search or a different seed genome) but not worth hand-tuning
+   further against this specific genome. **Narrows to two options, neither a
+   single-session task: (2a) a non-conviction structural lever — e.g. a
+   volatility-scaled position cap, or restricting which symbols/regimes can
+   open cold-start positions at all — since the failing trades are
+   unanimous/high-conviction, so the lever needs to key on something other
+   than agent conviction; or (2b) step back from patching this `consv1 +
+   trailing_stop -0.06` seed genome further and reconsider the base recipe.**
+
    **Pointer (2026-09-01 16:47 UTC): option (a) below is closed — three
    independent "best point" picks for `cold_start_ramp_bars`/
    `cold_start_ramp_start_scale` have each now been checked and each fails
