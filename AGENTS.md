@@ -333,11 +333,15 @@ is no brokerage account in this design and there does not need to be one.
   the 01:14 UTC session used to sink that genome. Fold 0 is byte-identical (the
   ramp only bites when a cold start coincides with a hard move, not a blanket
   risk-off) and holdout is essentially unchanged (still beats benchmark) — this
-  isn't "just trade less," trade count actually rises slightly. **Not yet run
-  through a full promotion decision** (no established prior champion for this
-  seed lineage to compare against) or through real search over the two new genes
-  themselves (120/0.10 was hand-picked from a small sweep, not searched) — see
-  "Next steps" item 2 for what's still open. `git status` clean, `live_state.json`
+  isn't "just trade less," trade count actually rises slightly. One real
+  `EvolutionRun.generation()` (seed 9001) ran against it as champion afterward:
+  champion held against 34 blind proposals (best challenger 0.611 vs. its
+  0.467) — a stability signal, not a promotion, since nothing reached the
+  sealed-holdout gate. **Not yet run through a full promotion decision** (no
+  established prior champion for this seed lineage to compare against) or
+  through real search over the two new genes themselves (120/0.10 was
+  hand-picked from a small sweep, not searched) — see "Next steps" item 2 for
+  what's still open. `git status` clean, `live_state.json`
   md5 unchanged (`1b5e230bb4e7440ed8fd7778425f8ea9`), constitution checksum
   unchanged (`8b74865634b1db07`, neither protected file touched), `python3 -m
   pytest -q` 262/262 (up from 255), `tools/edit_bundle_module.py sync` run and
@@ -5193,16 +5197,18 @@ every `evolve` call.
    (120 bars, 0.10x start scale — via `build_consv_trailing_ramp_seed()` in
    `tools/shadow_4h_x6_seed.py`) is the first genome in this whole thread to
    clear `MAX_DD_HARD_FAIL` on the real fold-based gate, not just a continuous
-   replay. Two things still open before treating this as a promotion
-   candidate, not just a diagnostic result: (a) a real `EvolutionRun.
-   generation()` was kicked off against it as champion (seed 9001, 24 blind
-   proposals) to see whether search finds something even better or reaches a
-   clean holdout pass — check whether that finished and what it found before
-   re-running it; (b) `cold_start_ramp_bars`/`cold_start_ramp_start_scale` are
-   now in `agents.researcher.GENE_SPACE` but 120/0.10 was hand-picked from a
-   small sweep, never searched — a real search over just those two genes,
-   starting from the un-ramped `consv1 + trailing_stop` seed, might find a
-   materially better point than the hand-picked one.**
+   replay. One real `EvolutionRun.generation()` has now run against it as
+   champion (seed 9001, 34 blind proposals, see the same run note's
+   addendum): champion held, best challenger fitness 0.611 vs. its 0.467,
+   nothing cleared the acceptance bar — a real stability signal, not a
+   promotion (nothing beat it by enough to even reach the sealed-holdout
+   gate). Still open: `cold_start_ramp_bars`/`cold_start_ramp_start_scale`
+   are now in `agents.researcher.GENE_SPACE` but 120/0.10 was hand-picked
+   from a small sweep, never searched, and whether that generation's 34
+   proposals happened to touch either gene wasn't recorded (the script only
+   captured the summary) — a real search over just those two genes, or a
+   re-run that also prints the per-candidate patch list, is the natural next
+   step.**
    Infrastructure shipped 2026-08-15: `genome.bar_interval` (defaults `"1d"`,
    zero behavior change for existing genomes), threaded through `core.live`,
    `loop.engine`'s backtest + annualization (`core.market.BARS_PER_YEAR`), and

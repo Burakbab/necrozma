@@ -81,16 +81,27 @@ does, checked with the identical functions.
 
 Not run through a full `accepts()` promotion decision against a real prior
 champion (there isn't one for this seed lineage — every session here treats
-the seed fresh). Kicked off one real `EvolutionRun.generation()` (seed 9001,
-24 blind proposals, matching the 01:14 UTC session's own methodology) with
-this genome as champion to see whether fresh search finds something even
-better around it or whether any candidate now actually reaches and clears
-the sealed holdout — still running as this note is being written; results
-either land in a same-day follow-up or are the natural first task for
-whichever session picks this up next. Also not tried: letting the Researcher
-search `cold_start_ramp_bars`/`cold_start_ramp_start_scale` themselves now
-that they're in `GENE_SPACE`, rather than the hand-picked 120/0.10 — a real
-search might find a materially better point.
+the seed fresh). Kicked off one real `EvolutionRun.generation()` (seed 9001)
+with this genome as champion to see whether fresh search finds something
+even better around it. **Result (ran to completion after this note was
+first drafted, ~45min wall clock — the first attempt hit its own 590s
+harness timeout with nothing captured due to output buffering through
+`tail`, not a real failure): 34 fresh blind proposals, best fitness 0.611
+vs. champion's 0.467, none cleared the acceptance bar — champion (the
+cold-start-ramp genome) held.** This isn't a promotion (there is still no
+sealed-holdout comparison here, since nothing beat the champion's
+fold-aggregate fitness by enough to reach that gate at all) but it is a real
+stability signal: the genome isn't obviously beaten by a generation of
+nearby blind perturbations, which the 01:14 UTC session's genome never got
+the chance to show (it never got as far as an accepted generation because it
+was already failing the hard-fail gate outright). Also not tried: letting
+the Researcher search `cold_start_ramp_bars`/`cold_start_ramp_start_scale`
+themselves now that they're in `GENE_SPACE`, rather than the hand-picked
+120/0.10 — a real search might find a materially better point. This
+session's script only captured the generation's summary (champion held, best
+challenger fitness), not the per-candidate patch list, so whether any of the
+34 proposals actually touched either new gene is unknown — a follow-up
+re-run that also prints `record["top"]` would answer that for free.
 
 `git status` clean before commit, `live_state.json` md5 unchanged
 throughout (`1b5e230bb4e7440ed8fd7778425f8ea9`), constitution checksum
