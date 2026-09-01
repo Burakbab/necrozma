@@ -5220,6 +5220,25 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-01 10:27 UTC): the 08:08 UTC sweep's 120/0.20
+   recommendation is boundary-fragile, not settled — a same-day
+   `EvolutionRun.generation()` re-check (seed 9002, `tools/
+   shadow_4h_ramp_generation.py`, new this session) found the identical
+   120/0.20 genome hard-failing `MAX_DD_HARD_FAIL` again (fold 1 max_dd
+   -43.4% vs. the sweep's -34.6%), traced to one extra 4h bar in the loaded
+   data (a fold-boundary-shift artifact `fold-date-sensitivity`'s own notes
+   already flagged as consequential, not a market crash or a bug — see
+   `runs/2026-09-01-1027-shadow-4h-ramp-generation-boundary-flip.md`).**
+   Since the champion itself no longer cleared the gate this run, "champion
+   held against 3 generations of blind proposals" isn't a real stability
+   signal here — most challengers likely hard-failed the same structural
+   fold for the same reason. **Recommend treating 120/0.20's ~5.4-point
+   margin as too thin to trust from a single snapshot**; the natural fix is
+   a shadow equivalent of the existing `fold-date-sensitivity` CLI (same
+   mechanism, parameterized for a 4h-shadow genome builder instead of just
+   the live 1d champion) rather than more one-off point measurements. Not
+   built yet.
+
    **Pointer (2026-09-01 08:08 UTC): the recommended "real search over just
    those two genes" from the 04:18 UTC entry below is now done — 37-point
    grid search, see "Current state" above and
