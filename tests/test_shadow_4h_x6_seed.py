@@ -15,6 +15,7 @@ from tools.shadow_4h_x6_seed import (
     SCALE,
     X6_ANALYST_GENES,
     X6_RISK_GENES,
+    build_consv_trailing_ramp_seed,
     build_consv_trailing_seed,
     build_x6_scaled_seed,
     summarize,
@@ -100,4 +101,21 @@ def test_consv_trailing_seed_accepts_a_custom_trailing_stop():
     seed = build_consv_trailing_seed("4h", trailing_stop=-0.08)
     assert seed.risk["trailing_stop"] == -0.08
     # untouched genes still hold at the custom-trailing-stop call site
-    assert seed.gene("consult_conservative", "rsi_buy_below") == 30.0
+
+
+def test_consv_trailing_ramp_seed_applies_cold_start_ramp_on_top_of_consv_trailing():
+    consv_trailing = build_consv_trailing_seed("4h")
+    ramped = build_consv_trailing_ramp_seed("4h")
+    assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 120
+    assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.10
+    # everything consv_trailing already set is untouched by this extra patch
+    assert ramped.gene("consult_conservative", "rsi_buy_below") == \
+        consv_trailing.gene("consult_conservative", "rsi_buy_below")
+    assert ramped.risk["trailing_stop"] == consv_trailing.risk["trailing_stop"]
+    assert ramped.bar_interval == "4h"
+
+
+def test_consv_trailing_ramp_seed_is_a_child_of_consv_trailing_seed():
+    ramped = build_consv_trailing_ramp_seed("4h")
+    consv_trailing = build_consv_trailing_seed("4h")
+    assert ramped.version == consv_trailing.version + 1

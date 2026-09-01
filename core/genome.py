@@ -109,6 +109,21 @@ SEED_GENOME: dict[str, Any] = {
                 "regime_scale": {"bull": 1.0, "chop": 0.6, "bear": 0.25, "crisis": 0.0},
                 "sell_conviction_threshold": 0.35,
                 "scale_in_allowed": True,
+                # Scales new buy size up linearly over the first
+                # `cold_start_ramp_bars` calls to RiskJudge.rule() (i.e. bars
+                # since this genome started trading from a cold start), from
+                # `cold_start_ramp_start_scale`x to 1.0x. Defaults are a true
+                # no-op (0 bars = never fires) -- see AGENTS.md item 2,
+                # 2026-09-01 session, for the cold-start-fold finding this
+                # exists to address: a from-scratch restart (a fresh
+                # walk-forward fold, or a genuinely new live account) can size
+                # into a downturn at full risk with none of the de-risking a
+                # seasoned position would already have, which the 22:07 UTC/
+                # 01:14 UTC sessions found makes an otherwise-fine genome fail
+                # the fold-based drawdown gate that a continuous replay never
+                # reveals.
+                "cold_start_ramp_bars": 0,
+                "cold_start_ramp_start_scale": 1.0,
             },
         },
         "superior_judge": {

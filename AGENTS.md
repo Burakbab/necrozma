@@ -306,6 +306,43 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Shipped 2026-09-01 (3-hourly check, ~04:18 UTC): a cold-start position-size
+  ramp gene fixes the 01:14 UTC session's fold-2 hard-fail — the first genome in
+  this whole 4h-shadow thread to clear `MAX_DD_HARD_FAIL` on the real fold-based
+  gate, not just a continuous replay.** See "Next steps" item 2 and
+  `runs/2026-09-01-0418-cold-start-ramp-clears-fold-gate.md`. Direct follow-up to
+  the 01:14 UTC session's own flagged question ("does a smaller initial position
+  size in the first N bars of a fold fix it?"). New `risk_judge` genes
+  `cold_start_ramp_bars`/`cold_start_ramp_start_scale` (both true no-ops at their
+  defaults `0`/`1.0`) scale new buy order size up linearly over the first N bars
+  since a `RiskJudge` instance's own cold start (a fresh fold, a fresh shadow run,
+  a fresh live account all start at 0 again) — wired into `agents/judges.py`,
+  added to `agents.researcher.GENE_SPACE` so real search can tune it. Caught and
+  fixed a real bug before shipping: the first version scaled the order size
+  *before* deducting it from the bar's cash/slot budget, which let the ramp free
+  up room for extra positions and washed out almost the entire effect; fixed by
+  keeping room/slot accounting on the un-ramped amount and only scaling what
+  actually gets recorded as the order. `tests/test_cold_start_ramp.py` (5 tests)
+  locks in both the no-op default and that specific semantics. Applied via new
+  `tools/shadow_4h_x6_seed.py` `build_consv_trailing_ramp_seed()` (120 bars,
+  0.10x start scale) to the 22:07 UTC session's dead-end `consv1 + trailing_stop
+  -0.06` genome: fold 1 (the one that hard-failed) goes -44.1%→-34.6% max_dd,
+  sortino 3.12→4.12, aggregate fitness -2.481→+0.467 — measured with the exact
+  functions (`Evaluator.evaluate()` + `dd_corrected_stats()`) `EvolutionRun.
+  generation()` calls before `accepts()`'s hard-fail check, the same real gate
+  the 01:14 UTC session used to sink that genome. Fold 0 is byte-identical (the
+  ramp only bites when a cold start coincides with a hard move, not a blanket
+  risk-off) and holdout is essentially unchanged (still beats benchmark) — this
+  isn't "just trade less," trade count actually rises slightly. **Not yet run
+  through a full promotion decision** (no established prior champion for this
+  seed lineage to compare against) or through real search over the two new genes
+  themselves (120/0.10 was hand-picked from a small sweep, not searched) — see
+  "Next steps" item 2 for what's still open. `git status` clean, `live_state.json`
+  md5 unchanged (`1b5e230bb4e7440ed8fd7778425f8ea9`), constitution checksum
+  unchanged (`8b74865634b1db07`, neither protected file touched), `python3 -m
+  pytest -q` 262/262 (up from 255), `tools/edit_bundle_module.py sync` run and
+  confirmed no drift. Genome still v3 (1d) live, untouched.
+
 - **Found 2026-09-01 (3-hourly check, ~01:14 UTC): the 22:07 UTC session's "first
   variant to clear MAX_DD_HARD_FAIL" genome fails the real fold-based promotion
   gate — a cold-start fold artifact, not a data-window issue.** See "Next steps"
@@ -5148,12 +5185,24 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
-   **Pointer (2026-09-01 01:14 UTC): the 22:07 UTC session's `consv1 +
-   trailing_stop -0.06` genome is a dead end — it fails the real fold-based
-   gate (-44.1% max_dd, still over `MAX_DD_HARD_FAIL`) despite clearing 40% on
-   a continuous full-history replay. See "Current state" above for the
-   cold-start-fold mechanism before spending another session on this exact
-   genome.**
+   **Pointer (2026-09-01 04:18 UTC): the 01:14 UTC session's cold-start-fold
+   dead end now has a real fix — `risk_judge.cold_start_ramp_bars`/
+   `cold_start_ramp_start_scale` (shipped this session, see "Current state"
+   above and `runs/2026-09-01-0418-cold-start-ramp-clears-fold-gate.md`). The
+   22:07 UTC session's `consv1 + trailing_stop -0.06` genome plus this ramp
+   (120 bars, 0.10x start scale — via `build_consv_trailing_ramp_seed()` in
+   `tools/shadow_4h_x6_seed.py`) is the first genome in this whole thread to
+   clear `MAX_DD_HARD_FAIL` on the real fold-based gate, not just a continuous
+   replay. Two things still open before treating this as a promotion
+   candidate, not just a diagnostic result: (a) a real `EvolutionRun.
+   generation()` was kicked off against it as champion (seed 9001, 24 blind
+   proposals) to see whether search finds something even better or reaches a
+   clean holdout pass — check whether that finished and what it found before
+   re-running it; (b) `cold_start_ramp_bars`/`cold_start_ramp_start_scale` are
+   now in `agents.researcher.GENE_SPACE` but 120/0.10 was hand-picked from a
+   small sweep, never searched — a real search over just those two genes,
+   starting from the un-ramped `consv1 + trailing_stop` seed, might find a
+   materially better point than the hand-picked one.**
    Infrastructure shipped 2026-08-15: `genome.bar_interval` (defaults `"1d"`,
    zero behavior change for existing genomes), threaded through `core.live`,
    `loop.engine`'s backtest + annualization (`core.market.BARS_PER_YEAR`), and

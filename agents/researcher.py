@@ -69,6 +69,8 @@ GENE_SPACE: dict[str, tuple[float, float, str]] = {
     "agents.risk_judge.genes.max_position_pct": (0.05, 0.34, "float"),
     "agents.risk_judge.genes.cash_floor_pct": (0.0, 0.5, "float"),
     "agents.risk_judge.genes.sell_conviction_threshold": (0.1, 0.9, "float"),
+    "agents.risk_judge.genes.cold_start_ramp_bars": (0, 300, "int"),
+    "agents.risk_judge.genes.cold_start_ramp_start_scale": (0.0, 1.0, "float"),
 
     "agents.analyst.genes.trend_fast": (3, 30, "int"),
     "agents.analyst.genes.trend_slow": (25, 150, "int"),

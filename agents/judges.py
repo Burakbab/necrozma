@@ -24,9 +24,17 @@ class RiskJudge:
     def __init__(self, genome: Genome):
         self.g = genome
         self.genes = genome.genes("risk_judge")
+        self._bars_seen = 0  # calls to rule() since this instance was built
 
     def rule(self, b: Briefing, proposals: list[Proposal], n_consults: int) -> Verdict:
         g = self.genes
+        bar_i = self._bars_seen
+        self._bars_seen += 1
+        ramp_bars = int(g.get("cold_start_ramp_bars", 0))
+        ramp_scale = 1.0
+        if ramp_bars > 0 and bar_i < ramp_bars:
+            start_scale = float(g.get("cold_start_ramp_start_scale", 1.0))
+            ramp_scale = start_scale + (1.0 - start_scale) * (bar_i / ramp_bars)
         vetoes: list[Veto] = []
         orders: list[Order] = []
 
@@ -101,7 +109,14 @@ class RiskJudge:
 
             target = float(g.get("base_size_pct", 0.12)) * score * regime_scale
             target = min(target, float(g.get("max_position_pct", 0.25)) - held_w)
-            amount = min(target * b.equity, cash_avail)
+            # Room/slot accounting (cash_avail, open_count) is always figured
+            # against the full un-ramped amount -- the ramp holds capital
+            # back, it doesn't free that capital up for extra lower-priority
+            # positions to fill the same bar (which would just redistribute
+            # the same total exposure across more, smaller positions instead
+            # of actually reducing it during the cold-start window).
+            full_amount = min(target * b.equity, cash_avail)
+            amount = full_amount * ramp_scale
             if amount <= 0 or target <= 0:
                 vetoes.append(Veto(sym, "buy", self.name, "no room: size cap or cash floor"))
                 continue
@@ -110,7 +125,7 @@ class RiskJudge:
                 symbol=sym, side="buy", quote_amount=amount,
                 reason_chain=[f"{i.agent}: {i.rationale}" for i in intents],
                 conviction=conv, agreement=share))
-            cash_avail -= amount
+            cash_avail -= full_amount
             if held_w <= 0:
                 open_count += 1
 

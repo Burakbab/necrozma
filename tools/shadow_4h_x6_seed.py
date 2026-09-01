@@ -86,6 +86,41 @@ def build_consv_trailing_seed(bar_interval: str = "4h",
                                     f"{bar_interval} seed (2026-08-31 22:07 UTC finding)")
 
 
+# The 2026-09-01 01:14 UTC session found the 22:07 UTC session's genome above
+# fails the REAL fold-based promotion gate (-44.1% max_dd on fold
+# [0.283, 0.567]'s own from-cold-start replay, vs. the -32.7% a single
+# continuous full-history backtest reports) -- a genuine cold-start artifact,
+# not a data-window bug: the fold restarts the broker from empty/full-cash,
+# and a fresh restart sizes into that fold's downturn at full risk with none
+# of the de-risking a seasoned position would already have. The same
+# session's own run note flagged "does a smaller initial position size in the
+# first N bars of a fold fix it?" as the natural follow-up. It does: the new
+# `risk_judge.cold_start_ramp_bars`/`cold_start_ramp_start_scale` genes
+# (shipped this session, see AGENTS.md item 2) at 120 bars / 0.10x take that
+# same fold from -44.1% (still hard-failing) to -34.6% (clears
+# MAX_DD_HARD_FAIL), aggregate_fitness -2.481 -> 0.467, holdout still beats
+# benchmark. Verified via the real gene (Genome.child() patch, not a
+# monkeypatch) against real 4h Binance data.
+COLD_START_RAMP_PATCH: list[tuple[str, Any]] = [
+    ("agents.risk_judge.genes.cold_start_ramp_bars", 120),
+    ("agents.risk_judge.genes.cold_start_ramp_start_scale", 0.10),
+]
+
+
+def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
+                                   trailing_stop: float = DEFAULT_TRAILING_STOP) -> Genome:
+    """`build_consv_trailing_seed()` plus the 2026-09-01 cold-start-ramp fix
+    that clears `MAX_DD_HARD_FAIL` on the real fold-based gate (see
+    `COLD_START_RAMP_PATCH`'s docstring) -- this thread's first genome to
+    clear that gate on the gate itself, not just a continuous replay. Exists
+    so a future session seeding a fresh `EvolutionRun` from it reproduces the
+    exact recipe instead of re-deriving it from a run note."""
+    base = build_consv_trailing_seed(bar_interval, trailing_stop)
+    return base.child(COLD_START_RAMP_PATCH,
+                      note="cold_start_ramp 120/0.10 on consv1 + trailing_stop "
+                           f"{trailing_stop} (2026-09-01 fold-gate fix)")
+
+
 def summarize(result: dict[str, Any], bar_interval: str) -> dict[str, Any]:
     """The subset of `run_backtest`'s output every 4h-shadow run note has
     reported, in one place instead of re-picked-apart by hand each session."""
@@ -118,12 +153,18 @@ def main() -> None:
     ap.add_argument("--years", type=float, default=4.0)
     ap.add_argument("--refresh", action="store_true", help="force a clean re-fetch")
     ap.add_argument("--warmup", type=int, default=60)
-    ap.add_argument("--recipe", choices=("x6", "consv_trailing"), default="x6",
+    ap.add_argument("--recipe", choices=("x6", "consv_trailing", "consv_trailing_ramp"),
+                    default="x6",
                     help="x6: plain x6-scaled seed. consv_trailing: x6-scaled seed "
-                         "plus the 22:07 UTC session's consv1 + trailing_stop patch.")
+                         "plus the 22:07 UTC session's consv1 + trailing_stop patch. "
+                         "consv_trailing_ramp: consv_trailing plus the 2026-09-01 "
+                         "cold-start-ramp fix that clears MAX_DD_HARD_FAIL on the "
+                         "real fold-based gate.")
     args = ap.parse_args()
 
-    if args.recipe == "consv_trailing":
+    if args.recipe == "consv_trailing_ramp":
+        genome = build_consv_trailing_ramp_seed(args.bar_interval)
+    elif args.recipe == "consv_trailing":
         genome = build_consv_trailing_seed(args.bar_interval)
     else:
         genome = build_x6_scaled_seed(args.bar_interval)
