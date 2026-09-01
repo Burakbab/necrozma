@@ -306,6 +306,37 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Swept 2026-09-01 (3-hourly check, ~06:47-08:08 UTC): a real 37-point grid
+  search over `cold_start_ramp_bars`/`cold_start_ramp_start_scale` finds a
+  strictly better point than the 04:18 UTC session's hand pick, and a
+  non-monotonic landscape.** See "Next steps" item 2 and
+  `runs/2026-09-01-0808-cold-start-ramp-sweep.md`. New
+  `tools/cold_start_ramp_sweep.py` (6 hermetic tests, no network) scores every
+  grid point with the same real functions `EvolutionRun.generation()` calls
+  before `accepts()`'s hard-fail check. 35/37 points clear
+  `MAX_DD_HARD_FAIL`; the best, `ramp_bars=120, start_scale=0.20`, beats the
+  prior 120/0.10 pick on the real selection metric (aggregate_fitness 0.454
+  vs 0.368, same -34.6% gate max_dd, holdout still beats benchmark) — updated
+  `tools/shadow_4h_x6_seed.py`'s `COLD_START_RAMP_PATCH`/
+  `build_consv_trailing_ramp_seed()` to 120/0.20 (and its one dependent test)
+  so future sessions don't re-derive the stale pick. Also found: two grid
+  points in the interior (60/0.05, 240/0.10) hard-fail outright next to
+  neighbors that clear comfortably — the two-gene landscape is genuinely
+  jagged, not a smooth bowl, worth knowing before a `Researcher`-driven search
+  over these genes assumes gradient-following is safe. Also flagged, not
+  resolved: this session's own `aggregate_fitness` for the identical 120/0.10
+  genome (0.368) doesn't match the 04:18 UTC run note's 0.467, even though
+  `gate max_dd` matches exactly — same class of cross-session discrepancy as
+  the 2026-08-31 07:05-vs-10:02 UTC baseline mismatch; not chased down, but
+  the sweep script's numbers (reproduced twice within this session) are the
+  ones to trust going forward. Not yet run through a fresh
+  `EvolutionRun.generation()` as champion at the new 120/0.20 point (the
+  04:18 UTC session did that for 120/0.10 and found it stable against 34
+  blind proposals — the natural next check for 120/0.20). `live_state.json`
+  untouched, `python3 -m pytest -q` 268/268, no protected file touched,
+  `tools/edit_bundle_module.py sync --check` confirmed no drift. Genome still
+  v3 (1d) live, untouched.
+
 - **Shipped 2026-09-01 (3-hourly check, ~04:18 UTC): a cold-start position-size
   ramp gene fixes the 01:14 UTC session's fold-2 hard-fail — the first genome in
   this whole 4h-shadow thread to clear `MAX_DD_HARD_FAIL` on the real fold-based
@@ -5189,6 +5220,28 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-01 08:08 UTC): the recommended "real search over just
+   those two genes" from the 04:18 UTC entry below is now done — 37-point
+   grid search, see "Current state" above and
+   `runs/2026-09-01-0808-cold-start-ramp-sweep.md`.** Found `ramp_bars=120,
+   start_scale=0.20` strictly better than the hand-picked 120/0.10 on the
+   real gate (aggregate_fitness 0.454 vs 0.368, same -34.6% gate max_dd,
+   holdout still beats benchmark) — `tools/shadow_4h_x6_seed.py`'s
+   `build_consv_trailing_ramp_seed()` now builds 120/0.20. Also found the
+   two-gene landscape is jagged (two interior grid points hard-fail next to
+   comfortably-clearing neighbors) — worth knowing before trusting a
+   `Researcher`-driven hill-climb here. **Still open**: no fresh
+   `EvolutionRun.generation()` has run against the new 120/0.20 point as
+   champion yet (the natural next check, mirroring what the 04:18 UTC session
+   did for 120/0.10); still no established prior champion for this seed
+   lineage to compare against for a real promotion decision; the sweep only
+   covers this one seed genome (`consv1 + trailing_stop -0.06`), untested
+   against other trailing-stop values or a different seed. Also flagged, not
+   resolved: this session's own measured `aggregate_fitness` for 120/0.10
+   (0.368) didn't match the 04:18 UTC note's 0.467 despite matching gate
+   max_dd exactly — see the run note for the caveat this leaves on any single
+   hand-run number from a prior session.
+
    **Pointer (2026-09-01 04:18 UTC): the 01:14 UTC session's cold-start-fold
    dead end now has a real fix — `risk_judge.cold_start_ramp_bars`/
    `cold_start_ramp_start_scale` (shipped this session, see "Current state"

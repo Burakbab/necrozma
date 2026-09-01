@@ -107,7 +107,7 @@ def test_consv_trailing_ramp_seed_applies_cold_start_ramp_on_top_of_consv_traili
     consv_trailing = build_consv_trailing_seed("4h")
     ramped = build_consv_trailing_ramp_seed("4h")
     assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 120
-    assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.10
+    assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20
     # everything consv_trailing already set is untouched by this extra patch
     assert ramped.gene("consult_conservative", "rsi_buy_below") == \
         consv_trailing.gene("consult_conservative", "rsi_buy_below")

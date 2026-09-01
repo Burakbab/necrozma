@@ -96,14 +96,18 @@ def build_consv_trailing_seed(bar_interval: str = "4h",
 # session's own run note flagged "does a smaller initial position size in the
 # first N bars of a fold fix it?" as the natural follow-up. It does: the new
 # `risk_judge.cold_start_ramp_bars`/`cold_start_ramp_start_scale` genes
-# (shipped this session, see AGENTS.md item 2) at 120 bars / 0.10x take that
-# same fold from -44.1% (still hard-failing) to -34.6% (clears
-# MAX_DD_HARD_FAIL), aggregate_fitness -2.481 -> 0.467, holdout still beats
-# benchmark. Verified via the real gene (Genome.child() patch, not a
-# monkeypatch) against real 4h Binance data.
+# (shipped 2026-09-01 04:18 UTC, see AGENTS.md item 2) at 120 bars / 0.10x
+# take that same fold from -44.1% (still hard-failing) to -34.6% (clears
+# MAX_DD_HARD_FAIL). A same-session follow-up grid-searched both genes
+# (`tools/cold_start_ramp_sweep.py`, 37 points) and found 120 bars / 0.20x
+# strictly better on the identical real gate: same -34.6% gate max_dd,
+# aggregate_fitness 0.454 vs 120/0.10's 0.368, holdout still beats benchmark
+# either way -- this is now the recommended point, not the original hand
+# pick. Verified via the real gene (Genome.child() patch, not a monkeypatch)
+# against real 4h Binance data.
 COLD_START_RAMP_PATCH: list[tuple[str, Any]] = [
     ("agents.risk_judge.genes.cold_start_ramp_bars", 120),
-    ("agents.risk_judge.genes.cold_start_ramp_start_scale", 0.10),
+    ("agents.risk_judge.genes.cold_start_ramp_start_scale", 0.20),
 ]
 
 
@@ -117,8 +121,9 @@ def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
     exact recipe instead of re-deriving it from a run note."""
     base = build_consv_trailing_seed(bar_interval, trailing_stop)
     return base.child(COLD_START_RAMP_PATCH,
-                      note="cold_start_ramp 120/0.10 on consv1 + trailing_stop "
-                           f"{trailing_stop} (2026-09-01 fold-gate fix)")
+                      note="cold_start_ramp 120/0.20 on consv1 + trailing_stop "
+                           f"{trailing_stop} (2026-09-01 fold-gate fix, "
+                           "grid-search-refined)")
 
 
 def summarize(result: dict[str, Any], bar_interval: str) -> dict[str, Any]:
