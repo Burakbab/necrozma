@@ -306,6 +306,33 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-09-01 (3-hourly check, ~15:46-16:47 UTC): the "sweep other grid
+  points for a wider margin" option is closed -- three separate sessions'
+  "best point" picks for the `cold_start_ramp` genes have now each been
+  checked and each fails most nearby days.** See "Next steps" item 2 and
+  `runs/2026-09-01-1647-cold-start-ramp-grid-instability.md`. Parametrized
+  `build_consv_trailing_ramp_seed()`/`shadow_4h_fold_date_sensitivity.py`
+  (new `ramp_bars`/`ramp_start_scale` overrides, `--ramp-bars`/`--ramp-scale`
+  flags, defaults unchanged, 5 new tests, full suite 290/290) so any grid
+  point can be checked with the multi-day tool, not just the hardcoded
+  120/0.20. Re-ran the 08:08 UTC sweep at today's data cutoff (~8h later):
+  **only 20/37 points clear `MAX_DD_HARD_FAIL` now (was 35/37), and 120/0.20
+  itself -- this morning's recommended point -- now hard-fails outright
+  (-44.0% max_dd, was -34.6%)**, a full flip, not a marginal boundary shift.
+  Took today's new top pick (`ramp_bars=150, start_scale=0.20`,
+  `aggregate_fitness` 0.472) through the 7-day fold-date-sensitivity check:
+  **6/7 shifts hard-fail**, worse than 120/0.20's own 4/7 from the 13:16 UTC
+  check. **Recommend not running another point-in-time sweep over these two
+  genes expecting a better answer** -- the pattern (best-of-day picks that
+  fail almost everywhere else nearby) has now reproduced across three
+  independent "best point" candidates. Two real next steps left, both bigger
+  than a single 3-hourly session: a structurally different lever on fold 1
+  (e.g. a stricter entry threshold during the cold-start window, not just
+  smaller size), or stepping back from patching this specific `consv1 +
+  trailing_stop` seed genome further. `live_state.json` untouched, `python3
+  -m pytest -q` 290/290, no protected file touched, `tools/edit_bundle_module.py
+  sync --check` confirmed no drift. Genome still v3 (1d) live, untouched.
+
 - **Measured 2026-09-01 (3-hourly check, ~12:48-13:16 UTC): built the shadow
   fold-date-sensitivity tool the 10:27 UTC session flagged, and the systematic
   answer is starker than "boundary-fragile" — the ramp genome hard-fails the
@@ -5243,6 +5270,27 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-01 16:47 UTC): option (a) below is closed — three
+   independent "best point" picks for `cold_start_ramp_bars`/
+   `cold_start_ramp_start_scale` have each now been checked and each fails
+   most nearby days; do not run another point-in-time sweep expecting a
+   better answer.** See "Current state" above and
+   `runs/2026-09-01-1647-cold-start-ramp-grid-instability.md`. Re-ran the
+   08:08 UTC sweep ~8h later: only 20/37 points clear now (was 35/37), and
+   120/0.20 itself flipped from -34.6% (pass) to -44.0% (hard-fail). Took
+   today's new top pick (150/0.20) through the 7-day fold-date-sensitivity
+   tool: 6/7 shifts hard-fail, worse than 120/0.20's own 4/7. **Two real
+   next steps remain, both bigger than one 3-hourly session**: (1) a
+   structurally different lever on fold 1 (e.g. a stricter entry threshold
+   during the cold-start window, not just smaller position size), or (2)
+   step back from patching this specific `consv1 + trailing_stop` seed
+   genome further and reconsider the base. `tools/shadow_4h_x6_seed.py`'s
+   `build_consv_trailing_ramp_seed()` and
+   `tools/shadow_4h_fold_date_sensitivity.py` now take `ramp_bars`/
+   `ramp_start_scale` overrides (`--ramp-bars`/`--ramp-scale`), so whoever
+   picks up (1) or (2) can still reuse the multi-day check on whatever they
+   try next.
+
    **Pointer (2026-09-01 13:16 UTC): the shadow fold-date-sensitivity tool the
    10:27 UTC entry below asked for is now built and run — the systematic
    check settles "boundary-fragile" into something worse.** See "Current
