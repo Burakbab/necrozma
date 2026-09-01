@@ -11,9 +11,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.genome import Genome
 from tools.shadow_4h_x6_seed import (
     BAR_HOURS,
+    DEFAULT_TRAILING_STOP,
     SCALE,
     X6_ANALYST_GENES,
     X6_RISK_GENES,
+    build_consv_trailing_seed,
     build_x6_scaled_seed,
     summarize,
 )
@@ -72,3 +74,30 @@ def test_summarize_converts_bars_held_to_days_by_interval(interval, bars_held, e
 
 def test_bar_hours_covers_every_supported_interval():
     assert set(BAR_HOURS) == {"1h", "4h", "1d"}
+
+
+def test_consv_trailing_seed_applies_consv1_and_trailing_stop_on_top_of_x6():
+    x6 = build_x6_scaled_seed("4h")
+    seed = build_consv_trailing_seed("4h")
+    assert seed.gene("consult_conservative", "rsi_buy_below") == 30.0
+    assert seed.gene("consult_conservative", "z_buy_below") == -1.2
+    assert seed.risk["trailing_stop"] == DEFAULT_TRAILING_STOP
+    # everything x6 already touched is untouched by this extra patch
+    for gene in X6_ANALYST_GENES:
+        assert seed.gene("analyst", gene) == x6.gene("analyst", gene)
+    for gene in X6_RISK_GENES:
+        assert seed.risk[gene] == x6.risk[gene]
+    assert seed.bar_interval == "4h"
+
+
+def test_consv_trailing_seed_is_a_child_of_the_x6_seed():
+    seed = build_consv_trailing_seed("4h")
+    x6 = build_x6_scaled_seed("4h")
+    assert seed.version == x6.version + 1
+
+
+def test_consv_trailing_seed_accepts_a_custom_trailing_stop():
+    seed = build_consv_trailing_seed("4h", trailing_stop=-0.08)
+    assert seed.risk["trailing_stop"] == -0.08
+    # untouched genes still hold at the custom-trailing-stop call site
+    assert seed.gene("consult_conservative", "rsi_buy_below") == 30.0

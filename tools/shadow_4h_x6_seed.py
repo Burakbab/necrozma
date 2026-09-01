@@ -57,6 +57,35 @@ def build_x6_scaled_seed(bar_interval: str = "4h") -> Genome:
     return seed.child(patches, note=f"x6-scaled seed for {bar_interval} shadow evolution")
 
 
+# The 2026-08-31 22:07 UTC session's headline finding on top of the x6-scaled
+# seed: consult_conservative tightening (rsi_buy_below 38->30, z_buy_below
+# -0.8->-1.2, "consv1") stacked with a tightened trailing stop is strongly
+# super-additive on max_dd -- neither lever alone clears MAX_DD_HARD_FAIL on
+# this seed, but combined they do (see AGENTS.md item 2 and
+# runs/2026-08-31-2207-4h-shadow-consv-trailing-synergy-clears-dd-gate.md for
+# the full sweep). -0.06 is that session's best risk-adjusted variant.
+CONSV1_PATCH: list[tuple[str, Any]] = [
+    ("agents.consult_conservative.genes.rsi_buy_below", 30.0),
+    ("agents.consult_conservative.genes.z_buy_below", -1.2),
+]
+DEFAULT_TRAILING_STOP = -0.06
+
+
+def build_consv_trailing_seed(bar_interval: str = "4h",
+                              trailing_stop: float = DEFAULT_TRAILING_STOP) -> Genome:
+    """`build_x6_scaled_seed()` plus the 22:07 UTC session's `consv1 +
+    trailing_stop` combination -- the first variant in this whole 4h-shadow
+    thread (since 2026-08-16) to clear `MAX_DD_HARD_FAIL` on a single
+    full-history backtest. That measurement was never run through the real
+    promotion pipeline (fold-aggregate acceptance + sealed holdout); this
+    builder exists so a future session can seed a fresh `EvolutionRun` from
+    it instead of re-deriving the patch from the run note's prose."""
+    base = build_x6_scaled_seed(bar_interval)
+    patches = list(CONSV1_PATCH) + [("risk.trailing_stop", trailing_stop)]
+    return base.child(patches, note=f"consv1 + trailing_stop {trailing_stop} on x6-scaled "
+                                    f"{bar_interval} seed (2026-08-31 22:07 UTC finding)")
+
+
 def summarize(result: dict[str, Any], bar_interval: str) -> dict[str, Any]:
     """The subset of `run_backtest`'s output every 4h-shadow run note has
     reported, in one place instead of re-picked-apart by hand each session."""
@@ -89,9 +118,15 @@ def main() -> None:
     ap.add_argument("--years", type=float, default=4.0)
     ap.add_argument("--refresh", action="store_true", help="force a clean re-fetch")
     ap.add_argument("--warmup", type=int, default=60)
+    ap.add_argument("--recipe", choices=("x6", "consv_trailing"), default="x6",
+                    help="x6: plain x6-scaled seed. consv_trailing: x6-scaled seed "
+                         "plus the 22:07 UTC session's consv1 + trailing_stop patch.")
     args = ap.parse_args()
 
-    genome = build_x6_scaled_seed(args.bar_interval)
+    if args.recipe == "consv_trailing":
+        genome = build_consv_trailing_seed(args.bar_interval)
+    else:
+        genome = build_x6_scaled_seed(args.bar_interval)
     data = load_universe(genome.universe, interval=genome.bar_interval,
                          years=args.years, refresh=args.refresh)
     result = run_backtest(genome, data, start_frac=0.0, end_frac=1.0,
