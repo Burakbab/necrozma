@@ -67,7 +67,8 @@ RECIPES = {
 
 def build_genome(recipe: str, bar_interval: str, trailing_stop: float,
                   ramp_bars: int | None = None,
-                  ramp_start_scale: float | None = None) -> Genome:
+                  ramp_start_scale: float | None = None,
+                  ramp_conviction_boost: float | None = None) -> Genome:
     builder = RECIPES[recipe]
     if recipe == "x6":
         return builder(bar_interval)
@@ -77,6 +78,8 @@ def build_genome(recipe: str, bar_interval: str, trailing_stop: float,
             kwargs["ramp_bars"] = ramp_bars
         if ramp_start_scale is not None:
             kwargs["ramp_start_scale"] = ramp_start_scale
+        if ramp_conviction_boost is not None:
+            kwargs["ramp_conviction_boost"] = ramp_conviction_boost
         return builder(bar_interval, trailing_stop, **kwargs)
     return builder(bar_interval, trailing_stop)
 
@@ -139,14 +142,18 @@ def main() -> None:
     ap.add_argument("--ramp-scale", type=float, default=None,
                     help="override cold_start_ramp_start_scale (consv_trailing_ramp recipe "
                          "only, default: builder's own default, currently 0.20)")
+    ap.add_argument("--ramp-conviction-boost", type=float, default=None,
+                    help="override cold_start_ramp_min_conviction_boost (consv_trailing_ramp "
+                         "recipe only, default: builder's own default, currently 0.0/off)")
     args = ap.parse_args()
 
     genome = build_genome(args.recipe, args.bar_interval, args.trailing_stop,
-                          args.ramp_bars, args.ramp_scale)
+                          args.ramp_bars, args.ramp_scale, args.ramp_conviction_boost)
     ramp_note = ""
     if args.recipe == "consv_trailing_ramp":
         ramp_note = (f" ramp_bars={genome.gene('risk_judge', 'cold_start_ramp_bars')} "
-                     f"ramp_scale={genome.gene('risk_judge', 'cold_start_ramp_start_scale')}")
+                     f"ramp_scale={genome.gene('risk_judge', 'cold_start_ramp_start_scale')} "
+                     f"conv_boost={genome.gene('risk_judge', 'cold_start_ramp_min_conviction_boost')}")
     print(f"[shadow_4h_fold_date_sensitivity] recipe={args.recipe} "
           f"bar_interval={args.bar_interval} trailing_stop={args.trailing_stop} "
           f"shift={args.shift}{ramp_note}")

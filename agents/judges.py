@@ -32,9 +32,13 @@ class RiskJudge:
         self._bars_seen += 1
         ramp_bars = int(g.get("cold_start_ramp_bars", 0))
         ramp_scale = 1.0
+        conviction_boost = 0.0
         if ramp_bars > 0 and bar_i < ramp_bars:
             start_scale = float(g.get("cold_start_ramp_start_scale", 1.0))
             ramp_scale = start_scale + (1.0 - start_scale) * (bar_i / ramp_bars)
+            max_boost = float(g.get("cold_start_ramp_min_conviction_boost", 0.0))
+            if max_boost > 0:
+                conviction_boost = max_boost * (1.0 - bar_i / ramp_bars)
         vetoes: list[Veto] = []
         orders: list[Order] = []
 
@@ -94,7 +98,7 @@ class RiskJudge:
 
         max_pos = int(g.get("max_positions", 6))
         for score, sym, intents, share, conv in scored:
-            if conv < g.get("min_conviction", 0.30):
+            if conv < g.get("min_conviction", 0.30) + conviction_boost:
                 vetoes.append(Veto(sym, "buy", self.name,
                                    f"conviction {conv:.2f} below floor"))
                 continue

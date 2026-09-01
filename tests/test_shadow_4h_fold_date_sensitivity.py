@@ -94,6 +94,19 @@ def test_build_genome_x6_and_consv_trailing_ignore_ramp_overrides():
     assert g.risk["trailing_stop"] == -0.06
 
 
+def test_build_genome_consv_trailing_ramp_accepts_conviction_boost_override():
+    g = build_genome("consv_trailing_ramp", "4h", -0.06, ramp_conviction_boost=0.15)
+    assert g.gene("risk_judge", "cold_start_ramp_min_conviction_boost") == 0.15
+    # size-ramp genes stay at builder defaults when only the boost is overridden
+    assert g.gene("risk_judge", "cold_start_ramp_bars") == 120
+    assert g.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20
+
+
+def test_build_genome_consv_trailing_ramp_conviction_boost_defaults_to_noop():
+    g = build_genome("consv_trailing_ramp", "4h", -0.06)
+    assert g.gene("risk_judge", "cold_start_ramp_min_conviction_boost") == 0.0
+
+
 def test_summarize_shifts_counts_hard_fails_and_margins():
     rows = [
         {"aggregate_fitness": 0.5, "gate_max_dd": -0.30, "hard_fail": False},

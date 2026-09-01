@@ -131,3 +131,16 @@ def test_consv_trailing_ramp_seed_defaults_match_grid_search_pick():
     ramped = build_consv_trailing_ramp_seed("4h")
     assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 120
     assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20
+
+
+def test_consv_trailing_ramp_seed_conviction_boost_defaults_to_noop():
+    ramped = build_consv_trailing_ramp_seed("4h")
+    assert ramped.gene("risk_judge", "cold_start_ramp_min_conviction_boost") == 0.0
+
+
+def test_consv_trailing_ramp_seed_accepts_conviction_boost_override():
+    ramped = build_consv_trailing_ramp_seed("4h", ramp_conviction_boost=0.15)
+    assert ramped.gene("risk_judge", "cold_start_ramp_min_conviction_boost") == 0.15
+    # size-ramp genes stay at their own defaults, independent of this override
+    assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 120
+    assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20

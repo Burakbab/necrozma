@@ -107,6 +107,7 @@ def build_consv_trailing_seed(bar_interval: str = "4h",
 # against real 4h Binance data.
 DEFAULT_RAMP_BARS = 120
 DEFAULT_RAMP_START_SCALE = 0.20
+DEFAULT_RAMP_CONVICTION_BOOST = 0.0
 
 COLD_START_RAMP_PATCH: list[tuple[str, Any]] = [
     ("agents.risk_judge.genes.cold_start_ramp_bars", DEFAULT_RAMP_BARS),
@@ -117,7 +118,9 @@ COLD_START_RAMP_PATCH: list[tuple[str, Any]] = [
 def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
                                    trailing_stop: float = DEFAULT_TRAILING_STOP,
                                    ramp_bars: int = DEFAULT_RAMP_BARS,
-                                   ramp_start_scale: float = DEFAULT_RAMP_START_SCALE) -> Genome:
+                                   ramp_start_scale: float = DEFAULT_RAMP_START_SCALE,
+                                   ramp_conviction_boost: float = DEFAULT_RAMP_CONVICTION_BOOST
+                                   ) -> Genome:
     """`build_consv_trailing_seed()` plus the 2026-09-01 cold-start-ramp fix
     that clears `MAX_DD_HARD_FAIL` on the real fold-based gate (see
     `COLD_START_RAMP_PATCH`'s docstring) -- this thread's first genome to
@@ -126,16 +129,26 @@ def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
     exact recipe instead of re-deriving it from a run note.
 
     `ramp_bars`/`ramp_start_scale` default to the 08:08 UTC grid search's
-    recommended point (120/0.20) but can be overridden -- the 13:16 UTC
-    fold-date-sensitivity finding (that point hard-fails the real gate on
-    4/7 recent days) means other grid points are worth checking the same
-    way, not just this one hand-picked default."""
+    recommended point (120/0.20) but can be overridden -- the 13:16 UTC and
+    16:47 UTC fold-date-sensitivity findings (three independent "best point"
+    picks for these two genes each fail most nearby days) mean this size-only
+    lever is not enough on its own, not that another grid point over the same
+    two genes is worth chasing further.
+
+    `ramp_conviction_boost` (default 0.0, no-op) layers on the structurally
+    different lever the 16:47 UTC entry called for: `cold_start_ramp_min_
+    conviction_boost` (agents/judges.py) vetoes weak-conviction entries
+    outright during the same cold-start window instead of just sizing them
+    down -- see that gene's own comment in core/genome.py."""
     base = build_consv_trailing_seed(bar_interval, trailing_stop)
     patch = [("agents.risk_judge.genes.cold_start_ramp_bars", ramp_bars),
-             ("agents.risk_judge.genes.cold_start_ramp_start_scale", ramp_start_scale)]
+             ("agents.risk_judge.genes.cold_start_ramp_start_scale", ramp_start_scale),
+             ("agents.risk_judge.genes.cold_start_ramp_min_conviction_boost",
+              ramp_conviction_boost)]
     return base.child(patch,
-                      note=f"cold_start_ramp {ramp_bars}/{ramp_start_scale} on consv1 + "
-                           f"trailing_stop {trailing_stop} (2026-09-01 fold-gate fix)")
+                      note=f"cold_start_ramp {ramp_bars}/{ramp_start_scale}/"
+                           f"conv+{ramp_conviction_boost} on consv1 + trailing_stop "
+                           f"{trailing_stop} (2026-09-01 fold-gate fix)")
 
 
 def summarize(result: dict[str, Any], bar_interval: str) -> dict[str, Any]:

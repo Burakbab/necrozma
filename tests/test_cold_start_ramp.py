@@ -37,6 +37,7 @@ def test_default_genome_has_no_ramp():
     g = Genome()
     assert g.genes("risk_judge")["cold_start_ramp_bars"] == 0
     assert g.genes("risk_judge")["cold_start_ramp_start_scale"] == 1.0
+    assert g.genes("risk_judge")["cold_start_ramp_min_conviction_boost"] == 0.0
 
 
 def test_zero_ramp_bars_is_a_true_noop():
@@ -112,3 +113,71 @@ def test_ramp_counter_is_per_instance_not_global():
     # outright (amount <= 0), same "no room" path a zero cash_avail would hit
     assert v.orders == []
     assert any(veto.reason == "no room: size cap or cash floor" for veto in v.vetoes)
+
+
+def test_conviction_boost_is_a_true_noop_at_default():
+    # marginal conviction, just above the default 0.30 floor
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 10),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 0.5),
+    ])
+    judge = RiskJudge(g)
+    proposals = _unanimous_buy_proposals(conviction=0.32)
+    b = _briefing()
+    v = judge.rule(b, proposals, n_consults=3)
+    assert v.orders  # boost defaults to 0.0 -> min_conviction floor unchanged
+
+
+def test_conviction_boost_vetoes_marginal_entry_at_cold_start():
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 10),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+        ("agents.risk_judge.genes.cold_start_ramp_min_conviction_boost", 0.10),
+    ])
+    judge = RiskJudge(g)
+    # conviction 0.32 clears the base 0.30 floor but not 0.30 + 0.10 boost
+    proposals = _unanimous_buy_proposals(conviction=0.32)
+    b = _briefing()
+    v = judge.rule(b, proposals, n_consults=3)
+    assert v.orders == []
+    assert any(veto.reason.startswith("conviction") for veto in v.vetoes)
+
+
+def test_conviction_boost_tapers_to_zero_by_ramp_bars():
+    ramp_bars = 4
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", ramp_bars),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+        ("agents.risk_judge.genes.cold_start_ramp_min_conviction_boost", 0.10),
+    ])
+    judge = RiskJudge(g)
+    proposals = _unanimous_buy_proposals(conviction=0.32)
+    b = _briefing()
+
+    vetoed = []
+    for _ in range(ramp_bars + 2):
+        v = judge.rule(b, proposals, n_consults=3)
+        vetoed.append(v.orders == [])
+
+    # bar 0: full boost (0.30 + 0.10 = 0.40) vetoes the 0.32-conviction entry
+    assert vetoed[0] is True
+    # once past ramp_bars, boost is fully tapered off -> entry clears again
+    assert all(v is False for v in vetoed[ramp_bars:])
+
+
+def test_conviction_boost_leaves_sizing_ramp_unaffected():
+    # the two levers are independent: a conviction boost alone (start_scale
+    # left at 1.0) must not change order size for entries that do clear it
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 5),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+        ("agents.risk_judge.genes.cold_start_ramp_min_conviction_boost", 0.05),
+    ])
+    judge = RiskJudge(g)
+    baseline = RiskJudge(Genome())
+    proposals = _unanimous_buy_proposals(conviction=0.9)  # well clear of any boost
+    b = _briefing()
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    boosted_amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    assert boosted_amount == pytest.approx(base_amount)

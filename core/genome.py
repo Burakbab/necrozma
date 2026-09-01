@@ -124,6 +124,15 @@ SEED_GENOME: dict[str, Any] = {
                 # reveals.
                 "cold_start_ramp_bars": 0,
                 "cold_start_ramp_start_scale": 1.0,
+                # Structurally different lever than the size ramp above: adds
+                # to `min_conviction` (not just shrinks the order) during the
+                # same cold-start window, tapering linearly back to 0 extra
+                # by `cold_start_ramp_bars`. A weak-conviction entry gets
+                # vetoed outright instead of sized down -- see AGENTS.md item
+                # 2, 2026-09-01 16:47 UTC entry, for why the size-only ramp
+                # (three independent grid points) wasn't enough on its own.
+                # Default 0.0 is a true no-op.
+                "cold_start_ramp_min_conviction_boost": 0.0,
             },
         },
         "superior_judge": {
