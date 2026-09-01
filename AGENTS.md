@@ -306,6 +306,37 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Closed 2026-09-01 (3-hourly check, ~22:00-22:20 UTC): tested the
+  volatility-scaled cold-start cap shipped earlier this same cycle against
+  fold 1 -- it doesn't help either, and at magnitudes that actually bind it
+  makes the drawdown worse, not better.** See "Next steps" item 2 and
+  `runs/2026-09-01-2159-cold-start-vol-cap-shipped.md` (updated with this
+  finding after the gene infra's own commit). The 0.3-0.8 cap range
+  originally guessed at (by analogy to `consult_conservative`'s 1.10
+  `max_vol` veto) was the wrong scale: direct instrumentation of fold 1's
+  own first-120-bars window found the actual buy-candidate vol distribution
+  there is 0.033-0.342 (p90 0.301) -- every value in that first-guess range
+  is a guaranteed no-op on this fold, confirmed on the real gate (cap=0.5
+  reproduces cap=0.0's numbers to 3 decimals). Swept caps actually inside
+  the observed range instead: 0.30 barely bites (negligible), 0.20 and 0.05
+  both make the real gate's `gate max_dd` *worse* (-34.6% -> -35.4% and
+  -36.0% respectively), and 0.10-0.15 swing fold 1 from passing to
+  outright hard-failing (-43.5%/-43.8% vs baseline -34.6%). No cap value
+  tested, from 0.05 to 0.5, ever improves the drawdown. Not root-caused
+  (plausible mechanism: shrinking early positions changes the equity
+  trajectory that every later bar's sizing and slot-filling depends on, so
+  the downstream trade sequence isn't just "the same trades, smaller" in a
+  27-symbol multi-position system) but the sign is consistent across three
+  tested magnitudes, not a single noisy draw. Gene kept (real, tested,
+  no-op default, GENE_SPACE-registered -- may still help a different seed
+  genome or a real `Researcher` search) but **do not hand-tune
+  `cold_start_ramp_vol_cap` against this specific genome expecting a
+  different sign.** `live_state.json` untouched, no protected file touched,
+  no code changed this entry (diagnosis only, via uncommitted scratch
+  scripts). Genome still v3 (1d) live, untouched. **This closes both halves
+  of the 19:21 UTC entry's option (2a) fork -- see "Next steps" item 2 for
+  what's left (option 2b, the only one untried).**
+
 - **Built 2026-09-01 (3-hourly check, ~21:46-22:xx UTC): shipped the
   non-conviction structural lever the 19:21 UTC entry's option (2a) called
   for -- a volatility-scaled cold-start position cap.** See "Next steps"
@@ -5337,19 +5368,30 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
-   **Pointer (2026-09-01 ~22:00 UTC): option (2a) from the 19:21 UTC entry
-   below (a non-conviction, volatility-scaled position cap) is now built and
-   tested -- see "Current state" above for the shipped
-   `risk_judge.cold_start_ramp_vol_cap` gene. Empirical effect against fold 1
-   not yet confirmed this session** (the `--shift 7` check was still running
-   when this session ended) -- the next session should run
-   `shadow_4h_fold_date_sensitivity.py --recipe consv_trailing_ramp
-   --ramp-vol-cap <value> --shift 7` at a few candidate cap values (try
-   something in the 0.3-0.8 range, below `consult_conservative`'s own 1.10
-   `max_vol` veto so it can actually bind on `RiskyConsult`-driven buys,
-   which have no vol filter of their own) before concluding anything about
-   whether this lever helps or is another dead end like the conviction
-   boost.
+   **Pointer (2026-09-01 ~22:20 UTC): option (2a) from the 19:21 UTC entry
+   below is now closed -- a volatility-scaled cold-start cap doesn't help
+   fold 1 either, and when it actually binds it makes the drawdown worse,
+   not better.** See "Current state" above and
+   `runs/2026-09-01-2159-cold-start-vol-cap-shipped.md`. New
+   `risk_judge.cold_start_ramp_vol_cap` gene shipped and tested (default
+   0.0, no-op, GENE_SPACE-registered, threaded through both shadow tools).
+   The first-guess cap range (0.3-0.8, by analogy to
+   `consult_conservative`'s 1.10 `max_vol` veto) turned out to be the wrong
+   scale -- fold 1's actual buy-candidate vol distribution is 0.033-0.342,
+   so that whole range was a guaranteed no-op. Sweeping caps inside the
+   real range found: 0.30 negligible, 0.20 and 0.05 both make the real
+   gate's max_dd *worse* (not better), and 0.10-0.15 flip fold 1 from
+   passing to hard-failing outright. **Every lever tried against fold 1's
+   cold start so far has now failed**: the size ramp alone is
+   boundary-fragile (13:16/16:47 UTC), the conviction floor found no
+   marginal band (19:21 UTC), and the vol cap backfires when it bites
+   (this entry). **Option (2b) -- step back from patching this `consv1 +
+   trailing_stop -0.06` seed genome further and reconsider the base recipe
+   -- is now the only untried option left on this thread.** It is a
+   bigger, multi-session task: needs either a different seed genome
+   through the same `consv_trailing_ramp`-family fold-1 diagnostic, or a
+   fresh `Researcher`-driven search that isn't anchored to hand-picked
+   patches on top of one fixed 22:07 UTC starting point.
 
    **Pointer (2026-09-01 19:21 UTC): option (1) below (a structurally
    different, non-size lever on fold 1) has now been tried in its most

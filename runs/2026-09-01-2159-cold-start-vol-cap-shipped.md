@@ -65,29 +65,75 @@ failure mode `tools/edit_bundle_module.py` exists to prevent).
 `live_state.json` untouched, no protected file touched, genome still v3
 (1d) live, untouched.
 
-### Not finished this session: the empirical check against fold 1
+### Tested (same session, after the commit above): the vol cap doesn't help fold 1 either — and at magnitudes that actually bind, it makes the drawdown worse
 
-Started the same check the 19:21 UTC session used for the conviction-boost
-gene (`shadow_4h_fold_date_sensitivity.py --recipe consv_trailing_ramp
---ramp-vol-cap <value> --shift 7`) but it was still running (network-bound
-market-data fetch, not stuck — low CPU time, process alive) when this
-session's time budget ran out. **This entry ships tested, no-op-by-default
-infrastructure only — it is not yet a verdict on whether the lever actually
-helps fold 1's drawdown.** Same posture the conviction-boost gene shipped
-under in the prior session (committed before its own empirical result was
-in hand).
+The baseline `--shift 1` check (cap=0.0, matching the committed gene's
+no-op default) confirmed the expected starting point: `gate max_dd` -34.6%,
+`aggregate_fitness` 0.395, fold fitnesses `[-0.040, 2.260, 0.075]` — same
+as every prior session's number for this exact point.
+
+First surprise: the 0.3-0.8 cap range this note originally recommended
+(picked by analogy to `consult_conservative`'s 1.10 `max_vol` veto) turned
+out to be the wrong scale entirely. A direct instrumentation of
+`RiskJudge.rule()` against fold 1's own first-120-bars window (scratch
+script, not committed) found the *actual* realised-vol distribution of buy
+candidates there is 0.033-0.342 (mean 0.188, p90 0.301) — every value in
+the originally-recommended range is above the observed maximum, so a cap
+there is a guaranteed no-op on this fold regardless of magnitude. Confirmed
+directly: cap=0.5 through the real gate reproduces cap=0.0's numbers to 3
+decimal places (`gate max_dd` -34.6%, `aggregate_fitness` 0.395 both
+runs) — same shape of finding as the conviction-boost gene, but for a
+different underlying reason (wrong assumed scale, not "no marginal band").
+
+Swept caps actually inside the observed range instead
+(`fold1_vol_cap_sweep.py`, scratch, one continuous fold-1 backtest per
+point, not the full walk-forward gate):
+
+| `vol_cap` | fold-1 max_dd | sortino | trades | fitness |
+|---:|---:|---:|---:|---:|
+| 0.30 (barely inside range) | -34.8% | 2.371 | 558 | 1.272 (~cap=0.0, negligible bite) |
+| 0.20 | -34.8% | 2.27 | 556 | 1.224 |
+| 0.15 | **-43.5%** | 2.37 | 618 | **-inf (hard-fails)** |
+| 0.10 | **-43.8%** | 2.60 | 639 | **-inf (hard-fails)** |
+| 0.05 (near-universal shrink) | -35.7% | 2.54 | 543 | 1.437 |
+
+Confirmed on the real gate too (`--shift 1`, `dd_corrected_stats`, not just
+the single-fold continuous number above): cap=0.20 gate max_dd -35.4%
+(worse than baseline -34.6%, fold-1 fitness 2.260→1.867, aggregate_fitness
+0.395→0.332); cap=0.05 gate max_dd -36.0% (also worse, aggregate_fitness
+0.395→0.370). **No cap value tested — from 0.05 to 0.5 — ever improves
+fold 1's drawdown on either the continuous or the real fold-based gate. At
+magnitudes too high to bind it's a no-op (as expected); at magnitudes that
+actually shrink real orders (0.05-0.20) the drawdown gets measurably
+*worse*, not better**, and at 0.10-0.15 specifically it swings the fold
+from passing to hard-failing outright. Not root-caused this session (a
+plausible mechanism: shrinking early positions changes portfolio equity's
+trajectory, which feeds back into every later bar's `target = base_size_pct
+* score * regime_scale` sizing and which symbols later get a slot, so the
+actual trade sequence downstream of bar 0-120 isn't just "the same trades,
+smaller" — it can genuinely different trades in a 27-symbol, multi-position
+system, not obviously for the better).
 
 ## Recommendation for the next session
 
-Run the fold-1 check this session didn't finish:
-`shadow_4h_fold_date_sensitivity.py --recipe consv_trailing_ramp
---ramp-vol-cap <value> --shift 7` at a few candidate values, something in
-the 0.3-0.8 range (below `consult_conservative`'s own 1.10 `max_vol` veto,
-so the cap can actually bind on `RiskyConsult`-driven buys that have no vol
-filter of their own — a cap above ~1.10-1.60 would rarely trigger since
-most surviving candidates are already below that from the consults' own
-vetoes). If it measurably improves fold 1's hard-fail rate on the real
-gate, that's real progress on item 2. If it's another byte-identical no-op
-like the conviction boost, that closes option (2a) too and leaves only
-(2b) — stepping back from this seed genome — as the live option, per the
-19:21 UTC entry.
+**Option (2a) — a volatility-scaled position cap — is now closed for this
+`consv1 + trailing_stop -0.06` seed genome, same as the conviction-boost
+option before it, but for a different reason: this lever does bite, and
+when it does, it makes fold 1's drawdown worse rather than better, not just
+neutral.** The gene stays in the genome (real, tested, no-op-by-default,
+GENE_SPACE-registered — a different seed genome or a real `Researcher`
+search may still find a magnitude/genome combination where it helps; this
+session only tested one genome's one fold). Do not keep hand-tuning
+`cold_start_ramp_vol_cap` against this specific genome expecting a
+different sign — three magnitudes inside the fold's actual vol range have
+now each made things worse, not just failed to help.
+
+**This closes out both halves of the 19:21 UTC entry's option (2a) fork.**
+The only next-steps item 2 option left un-tried is **(2b): step back from
+patching this `consv1 + trailing_stop -0.06` seed genome further and
+reconsider the base recipe** — every lever tried against fold 1's cold
+start so far (size ramp alone: boundary-fragile per the 13:16/16:47 UTC
+sessions; conviction floor: no marginal band; vol cap: backfires when it
+bites) has failed to produce a genome that reliably clears the real gate
+across nearby dates. That is a bigger, multi-session task, not a single
+3-hourly slice.
