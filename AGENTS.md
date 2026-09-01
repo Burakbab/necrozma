@@ -306,6 +306,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-09-01 (3-hourly check, ~01:14 UTC): the 22:07 UTC session's "first
+  variant to clear MAX_DD_HARD_FAIL" genome fails the real fold-based promotion
+  gate — a cold-start fold artifact, not a data-window issue.** See "Next steps"
+  item 2 and
+  `runs/2026-09-01-0114-4h-shadow-consv-trailing-fails-real-fold-gate.md`. Direct
+  follow-up to that session's own recommendation: seeded a fresh 4h shadow
+  `EvolutionRun` from its `consv1 + trailing_stop -0.06` genome (via the new
+  `build_consv_trailing_seed()` in `tools/shadow_4h_x6_seed.py`, committed this
+  session with 3 tests, full suite 255/255) and ran it through
+  `Evaluator.evaluate()` + `dd_corrected_stats()` -- the actual functions
+  `EvolutionRun.generation()` calls before `accepts()`'s hard-fail check.
+  **Result: -44.1% max_dd on the real gate, still failing the 40% hard-fail** --
+  contradicting the -32.7% headline. Ruled out a data-window discrepancy first
+  (this thread's most common failure mode): a continuous replay over the exact
+  same `[0.0, 0.85]` span the gate covers reproduces -32.7% exactly, matching
+  the full-history number. The real cause: the gate's 3 walk-forward folds are
+  each backtested independently from a cold start, and the middle fold
+  (`[0.283, 0.567]`, roughly year 2 of 4) hard-fails on its own -- -44.1% max_dd,
+  fitness `-inf`, despite a striking 3.12 sortino *within* that fold (a sharp
+  V, not a slow bleed). `dd_corrected_stats()` takes the worse of fold-merged
+  and continuous max_dd, so it isn't fooled by either direction, but it means a
+  strategy can look fine on one continuous replay while a from-scratch restart
+  partway through the same span blows through the drawdown limit -- the
+  opposite failure mode from the 2026-08-22 `fold-dd-blindspot` fix (which
+  worried the continuous view could hide something the fold view catches; here
+  the fold view catches something worse than the continuous view shows). Also
+  ran one real `EvolutionRun.generation()` (24 proposals, seed 9001) with this
+  genome as champion: found candidates with much better fold-aggregate fitness
+  (best 0.361 vs champion's -2.481) but every one that reached the sealed
+  holdout gate failed it (3 cumulative draws, all rejected) -- champion held.
+  **This specific genome is a dead end as a promotion candidate.** `git status`
+  clean, `live_state.json` md5 unchanged (`1b5e230bb4e7440ed8fd7778425f8ea9`),
+  `python3 -m pytest -q` 255/255 confirmed both before and after this session's
+  harness commit, no `live_state.json` touch (the one `Genome.promote()` call
+  reachable in `generation()` never fired -- no candidate was accepted -- and
+  even when it does fire it only writes the gitignored `state/genomes/` dir),
+  genome still v3 (1d) live.
+
 - **Found 2026-08-31 (3-hourly check, ~22:07 UTC): `consult_conservative` tightening
   combined with trailing-stop tightening is super-additive — the first variant in this
   whole 4h-shadow thread (since 2026-08-16) to clear `MAX_DD_HARD_FAIL` outright.**
@@ -5110,6 +5148,12 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-01 01:14 UTC): the 22:07 UTC session's `consv1 +
+   trailing_stop -0.06` genome is a dead end — it fails the real fold-based
+   gate (-44.1% max_dd, still over `MAX_DD_HARD_FAIL`) despite clearing 40% on
+   a continuous full-history replay. See "Current state" above for the
+   cold-start-fold mechanism before spending another session on this exact
+   genome.**
    Infrastructure shipped 2026-08-15: `genome.bar_interval` (defaults `"1d"`,
    zero behavior change for existing genomes), threaded through `core.live`,
    `loop.engine`'s backtest + annualization (`core.market.BARS_PER_YEAR`), and
