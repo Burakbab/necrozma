@@ -144,3 +144,17 @@ def test_consv_trailing_ramp_seed_accepts_conviction_boost_override():
     # size-ramp genes stay at their own defaults, independent of this override
     assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 120
     assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20
+
+
+def test_consv_trailing_ramp_seed_vol_cap_defaults_to_noop():
+    ramped = build_consv_trailing_ramp_seed("4h")
+    assert ramped.gene("risk_judge", "cold_start_ramp_vol_cap") == 0.0
+
+
+def test_consv_trailing_ramp_seed_accepts_vol_cap_override():
+    ramped = build_consv_trailing_ramp_seed("4h", ramp_vol_cap=0.5)
+    assert ramped.gene("risk_judge", "cold_start_ramp_vol_cap") == 0.5
+    # other ramp genes stay at their own defaults, independent of this override
+    assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 120
+    assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20
+    assert ramped.gene("risk_judge", "cold_start_ramp_min_conviction_boost") == 0.0

@@ -108,6 +108,7 @@ def build_consv_trailing_seed(bar_interval: str = "4h",
 DEFAULT_RAMP_BARS = 120
 DEFAULT_RAMP_START_SCALE = 0.20
 DEFAULT_RAMP_CONVICTION_BOOST = 0.0
+DEFAULT_RAMP_VOL_CAP = 0.0
 
 COLD_START_RAMP_PATCH: list[tuple[str, Any]] = [
     ("agents.risk_judge.genes.cold_start_ramp_bars", DEFAULT_RAMP_BARS),
@@ -119,7 +120,8 @@ def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
                                    trailing_stop: float = DEFAULT_TRAILING_STOP,
                                    ramp_bars: int = DEFAULT_RAMP_BARS,
                                    ramp_start_scale: float = DEFAULT_RAMP_START_SCALE,
-                                   ramp_conviction_boost: float = DEFAULT_RAMP_CONVICTION_BOOST
+                                   ramp_conviction_boost: float = DEFAULT_RAMP_CONVICTION_BOOST,
+                                   ramp_vol_cap: float = DEFAULT_RAMP_VOL_CAP
                                    ) -> Genome:
     """`build_consv_trailing_seed()` plus the 2026-09-01 cold-start-ramp fix
     that clears `MAX_DD_HARD_FAIL` on the real fold-based gate (see
@@ -139,16 +141,26 @@ def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
     different lever the 16:47 UTC entry called for: `cold_start_ramp_min_
     conviction_boost` (agents/judges.py) vetoes weak-conviction entries
     outright during the same cold-start window instead of just sizing them
-    down -- see that gene's own comment in core/genome.py."""
+    down -- see that gene's own comment in core/genome.py. Measured 2026-09-01
+    19:21 UTC to have zero effect on fold 1 (no marginal-conviction band to
+    catch there).
+
+    `ramp_vol_cap` (default 0.0, no-op) is the non-conviction structural lever
+    that entry's own pointer called for next: caps a cold-start buy's size by
+    the traded symbol's own realised vol (`Features.vol`) instead of its
+    conviction, so a high-conviction entry into a currently-volatile symbol
+    still sizes down -- see that gene's own comment in core/genome.py."""
     base = build_consv_trailing_seed(bar_interval, trailing_stop)
     patch = [("agents.risk_judge.genes.cold_start_ramp_bars", ramp_bars),
              ("agents.risk_judge.genes.cold_start_ramp_start_scale", ramp_start_scale),
              ("agents.risk_judge.genes.cold_start_ramp_min_conviction_boost",
-              ramp_conviction_boost)]
+              ramp_conviction_boost),
+             ("agents.risk_judge.genes.cold_start_ramp_vol_cap", ramp_vol_cap)]
     return base.child(patch,
                       note=f"cold_start_ramp {ramp_bars}/{ramp_start_scale}/"
-                           f"conv+{ramp_conviction_boost} on consv1 + trailing_stop "
-                           f"{trailing_stop} (2026-09-01 fold-gate fix)")
+                           f"conv+{ramp_conviction_boost}/volcap{ramp_vol_cap} on "
+                           f"consv1 + trailing_stop {trailing_stop} "
+                           f"(2026-09-01 fold-gate fix)")
 
 
 def summarize(result: dict[str, Any], bar_interval: str) -> dict[str, Any]:
@@ -190,10 +202,19 @@ def main() -> None:
                          "consv_trailing_ramp: consv_trailing plus the 2026-09-01 "
                          "cold-start-ramp fix that clears MAX_DD_HARD_FAIL on the "
                          "real fold-based gate.")
+    ap.add_argument("--ramp-bars", type=int, default=DEFAULT_RAMP_BARS)
+    ap.add_argument("--ramp-scale", type=float, default=DEFAULT_RAMP_START_SCALE)
+    ap.add_argument("--ramp-conviction-boost", type=float, default=DEFAULT_RAMP_CONVICTION_BOOST)
+    ap.add_argument("--ramp-vol-cap", type=float, default=DEFAULT_RAMP_VOL_CAP,
+                    help="cold_start_ramp_vol_cap: caps a cold-start buy's size by "
+                         "the symbol's realised vol instead of conviction (0.0 = off)")
     args = ap.parse_args()
 
     if args.recipe == "consv_trailing_ramp":
-        genome = build_consv_trailing_ramp_seed(args.bar_interval)
+        genome = build_consv_trailing_ramp_seed(args.bar_interval, ramp_bars=args.ramp_bars,
+                                                 ramp_start_scale=args.ramp_scale,
+                                                 ramp_conviction_boost=args.ramp_conviction_boost,
+                                                 ramp_vol_cap=args.ramp_vol_cap)
     elif args.recipe == "consv_trailing":
         genome = build_consv_trailing_seed(args.bar_interval)
     else:

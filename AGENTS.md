@@ -306,6 +306,42 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Built 2026-09-01 (3-hourly check, ~21:46-22:xx UTC): shipped the
+  non-conviction structural lever the 19:21 UTC entry's option (2a) called
+  for -- a volatility-scaled cold-start position cap.** See "Next steps"
+  item 2. New `risk_judge.cold_start_ramp_vol_cap` gene (default `0.0`, true
+  no-op; wired into `agents/judges.py`'s `RiskJudge.rule()`, registered in
+  `agents.researcher.GENE_SPACE` as `(0.0, 3.0, "float")`, threaded through
+  both shadow tools' CLIs -- `tools/shadow_4h_x6_seed.py`'s
+  `build_consv_trailing_ramp_seed()` new `ramp_vol_cap` kwarg / `--ramp-vol-cap`
+  flag, and `tools/shadow_4h_fold_date_sensitivity.py`'s matching
+  `--ramp-vol-cap` override) caps a cold-start buy's size by the traded
+  symbol's own `Features.vol` (annualised realised vol, already computed by
+  the Analyst every bar -- no new plumbing needed, unlike the removed
+  correlation-penalty gene which needed a new `rets_by_symbol` field) instead
+  of by conviction: a symbol whose vol exceeds the cap gets its buy shrunk by
+  `cap / vol`, composing multiplicatively with the existing size ramp. This
+  directly targets what the 19:21 UTC entry's instrumentation found: fold 1's
+  failing trades are unanimous, high-conviction (0.80-0.96) entries, so a
+  conviction-based filter had no marginal band to catch, but nothing in this
+  codebase currently caps position size by volatility during cold start --
+  `ConservativeConsult`/`ModerateConsult` veto high-vol symbols outright
+  (`max_vol` 1.10/1.60) but `RiskyConsult` (momentum/breakout) has no vol
+  filter at all, so a volatile breakout can still reach the Risk Judge at
+  full conviction. 12 new tests (10 in `tests/test_cold_start_ramp.py`
+  covering the no-op default, shrink/no-shrink cases, fail-safe on a missing
+  `Features` entry, ramp-window gating, and composition with the size ramp;
+  1 each in the two shadow-tool test files), full suite 309/309,
+  `tools/edit_bundle_module.py sync` run and confirmed no drift.
+  `live_state.json` untouched, no protected file touched. Genome still v3
+  (1d) live, untouched. **Empirical check against fold 1 (the same
+  `shadow_4h_fold_date_sensitivity.py --shift 7` methodology the 19:21 UTC
+  entry used for the conviction-boost gene) was still running in the
+  background when this entry was written -- see the next entry below, or a
+  follow-up run, for the result; this entry covers only the shipped,
+  tested, no-op-by-default infrastructure, not yet a verdict on whether the
+  lever actually helps.**
+
 - **Tried 2026-09-01 (3-hourly check, ~18:46-19:21 UTC): built the "structurally
   different lever" the 16:47 UTC entry called for -- a cold-start conviction
   floor, not just a size ramp -- and it has zero measurable effect on fold 1,
@@ -5301,6 +5337,20 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-01 ~22:00 UTC): option (2a) from the 19:21 UTC entry
+   below (a non-conviction, volatility-scaled position cap) is now built and
+   tested -- see "Current state" above for the shipped
+   `risk_judge.cold_start_ramp_vol_cap` gene. Empirical effect against fold 1
+   not yet confirmed this session** (the `--shift 7` check was still running
+   when this session ended) -- the next session should run
+   `shadow_4h_fold_date_sensitivity.py --recipe consv_trailing_ramp
+   --ramp-vol-cap <value> --shift 7` at a few candidate cap values (try
+   something in the 0.3-0.8 range, below `consult_conservative`'s own 1.10
+   `max_vol` veto so it can actually bind on `RiskyConsult`-driven buys,
+   which have no vol filter of their own) before concluding anything about
+   whether this lever helps or is another dead end like the conviction
+   boost.
+
    **Pointer (2026-09-01 19:21 UTC): option (1) below (a structurally
    different, non-size lever on fold 1) has now been tried in its most
    direct form — a cold-start conviction floor — and is closed too: swept

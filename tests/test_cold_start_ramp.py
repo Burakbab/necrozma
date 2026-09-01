@@ -12,7 +12,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agents.judges import RiskJudge
 from core.genome import Genome
-from core.types import Briefing, Intent, Proposal
+from core.types import Briefing, Features, Intent, Proposal
+
+
+def _features(symbol: str = "BTCUSDT", vol: float = 0.5) -> Features:
+    return Features(symbol=symbol, price=100.0, ret_1=0.0, ret_5=0.0, ret_20=0.0,
+                    trend=0.0, slope=0.0, rsi=50.0, vol=vol, vol_ratio=1.0,
+                    dd_from_high=0.0, dist_ma=0.0, zscore=0.0, volume_shock=1.0,
+                    breakout=0.0, rank_mom=0.5)
 
 
 def _briefing(**overrides) -> Briefing:
@@ -38,6 +45,7 @@ def test_default_genome_has_no_ramp():
     assert g.genes("risk_judge")["cold_start_ramp_bars"] == 0
     assert g.genes("risk_judge")["cold_start_ramp_start_scale"] == 1.0
     assert g.genes("risk_judge")["cold_start_ramp_min_conviction_boost"] == 0.0
+    assert g.genes("risk_judge")["cold_start_ramp_vol_cap"] == 0.0
 
 
 def test_zero_ramp_bars_is_a_true_noop():
@@ -181,3 +189,125 @@ def test_conviction_boost_leaves_sizing_ramp_unaffected():
     base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
     boosted_amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
     assert boosted_amount == pytest.approx(base_amount)
+
+
+def test_vol_cap_is_a_true_noop_at_default():
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 10),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+    ])
+    baseline = RiskJudge(Genome())
+    judge = RiskJudge(g)
+    proposals = _unanimous_buy_proposals()
+    b = _briefing(features={"BTCUSDT": _features(vol=5.0)})  # extreme vol, still no-op
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    assert amount == pytest.approx(base_amount)
+
+
+def test_vol_cap_shrinks_order_for_a_volatile_symbol_during_cold_start():
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 10),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+        ("agents.risk_judge.genes.cold_start_ramp_vol_cap", 0.5),
+    ])
+    judge = RiskJudge(g)
+    baseline = RiskJudge(Genome())
+    proposals = _unanimous_buy_proposals()
+    b = _briefing(features={"BTCUSDT": _features(vol=1.0)})  # 2x the cap
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    assert amount == pytest.approx(base_amount * 0.5)  # cap / vol = 0.5 / 1.0
+
+
+def test_vol_cap_leaves_calm_symbols_untouched():
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 10),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+        ("agents.risk_judge.genes.cold_start_ramp_vol_cap", 0.5),
+    ])
+    judge = RiskJudge(g)
+    baseline = RiskJudge(Genome())
+    proposals = _unanimous_buy_proposals()
+    b = _briefing(features={"BTCUSDT": _features(vol=0.3)})  # below the cap
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    assert amount == pytest.approx(base_amount)
+
+
+def test_vol_cap_fails_safe_when_symbol_has_no_features():
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 10),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+        ("agents.risk_judge.genes.cold_start_ramp_vol_cap", 0.5),
+    ])
+    judge = RiskJudge(g)
+    baseline = RiskJudge(Genome())
+    proposals = _unanimous_buy_proposals()
+    b = _briefing(features={})  # no Features entry for this symbol at all
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    assert amount == pytest.approx(base_amount)  # can't cap what it can't measure
+
+
+def test_vol_cap_only_active_inside_the_ramp_window():
+    ramp_bars = 2
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", ramp_bars),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 1.0),
+        ("agents.risk_judge.genes.cold_start_ramp_vol_cap", 0.5),
+    ])
+    judge = RiskJudge(g)
+    baseline = RiskJudge(Genome())
+    proposals = _unanimous_buy_proposals()
+    b = _briefing(features={"BTCUSDT": _features(vol=1.0)})
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    amounts = []
+    for _ in range(ramp_bars + 2):
+        v = judge.rule(b, proposals, n_consults=3)
+        amounts.append(v.orders[0].quote_amount if v.orders else 0.0)
+
+    # capped while inside the ramp window (bars 0, 1)
+    for a in amounts[:ramp_bars]:
+        assert a == pytest.approx(base_amount * 0.5)
+    # uncapped once the cold-start window has passed
+    for a in amounts[ramp_bars:]:
+        assert a == pytest.approx(base_amount)
+
+
+def test_vol_cap_composes_multiplicatively_with_the_size_ramp():
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_bars", 10),
+        ("agents.risk_judge.genes.cold_start_ramp_start_scale", 0.2),
+        ("agents.risk_judge.genes.cold_start_ramp_vol_cap", 0.5),
+    ])
+    judge = RiskJudge(g)
+    baseline = RiskJudge(Genome())
+    proposals = _unanimous_buy_proposals()
+    b = _briefing(features={"BTCUSDT": _features(vol=1.0)})  # 2x the cap
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    # 0.2x sizing ramp times 0.5x vol cap = 0.1x
+    assert amount == pytest.approx(base_amount * 0.2 * 0.5)
+
+
+def test_vol_cap_requires_ramp_bars_set_even_if_cap_is_set():
+    # cold_start_ramp_bars=0 is the master off-switch for the whole cold-start
+    # family; a vol cap alone (with no ramp window) must not fire on its own.
+    g = Genome().child([
+        ("agents.risk_judge.genes.cold_start_ramp_vol_cap", 0.5),
+    ])
+    judge = RiskJudge(g)
+    baseline = RiskJudge(Genome())
+    proposals = _unanimous_buy_proposals()
+    b = _briefing(features={"BTCUSDT": _features(vol=1.0)})
+
+    base_amount = baseline.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    amount = judge.rule(b, proposals, n_consults=3).orders[0].quote_amount
+    assert amount == pytest.approx(base_amount)

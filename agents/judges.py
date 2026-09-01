@@ -39,6 +39,8 @@ class RiskJudge:
             max_boost = float(g.get("cold_start_ramp_min_conviction_boost", 0.0))
             if max_boost > 0:
                 conviction_boost = max_boost * (1.0 - bar_i / ramp_bars)
+        vol_cap = float(g.get("cold_start_ramp_vol_cap", 0.0))
+        vol_cap_active = ramp_bars > 0 and bar_i < ramp_bars and vol_cap > 0
         vetoes: list[Veto] = []
         orders: list[Order] = []
 
@@ -121,6 +123,10 @@ class RiskJudge:
             # of actually reducing it during the cold-start window).
             full_amount = min(target * b.equity, cash_avail)
             amount = full_amount * ramp_scale
+            if vol_cap_active:
+                feat = b.features.get(sym)
+                if feat is not None and feat.vol > vol_cap:
+                    amount *= vol_cap / feat.vol
             if amount <= 0 or target <= 0:
                 vetoes.append(Veto(sym, "buy", self.name, "no room: size cap or cash floor"))
                 continue

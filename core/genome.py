@@ -133,6 +133,23 @@ SEED_GENOME: dict[str, Any] = {
                 # (three independent grid points) wasn't enough on its own.
                 # Default 0.0 is a true no-op.
                 "cold_start_ramp_min_conviction_boost": 0.0,
+                # A third, independent cold-start lever -- see AGENTS.md item
+                # 2, 2026-09-01 19:21 UTC entry: the conviction-boost gene
+                # above measured zero effect on the fold-1 drawdown because
+                # every candidate trade in that window was already
+                # high-conviction (unanimous, 0.80-0.96) -- there was no
+                # marginal band for a conviction filter to catch. This gene
+                # instead caps position size by the traded symbol's own
+                # `Features.vol` (annualised realised vol, already computed
+                # by the Analyst every bar) during the same cold-start
+                # window, regardless of conviction: a symbol whose vol
+                # exceeds this cap gets its buy shrunk by `cap / vol`, so a
+                # high-conviction entry into a currently-volatile symbol
+                # still sizes down. 0.0 (default) disables it -- a real vol
+                # cap of exactly 0.0 would veto every buy, so 0.0 is an
+                # unambiguous off-sentinel, same convention as
+                # `cold_start_ramp_bars`.
+                "cold_start_ramp_vol_cap": 0.0,
             },
         },
         "superior_judge": {
