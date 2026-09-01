@@ -65,10 +65,19 @@ RECIPES = {
 }
 
 
-def build_genome(recipe: str, bar_interval: str, trailing_stop: float) -> Genome:
+def build_genome(recipe: str, bar_interval: str, trailing_stop: float,
+                  ramp_bars: int | None = None,
+                  ramp_start_scale: float | None = None) -> Genome:
     builder = RECIPES[recipe]
     if recipe == "x6":
         return builder(bar_interval)
+    if recipe == "consv_trailing_ramp":
+        kwargs: dict[str, Any] = {}
+        if ramp_bars is not None:
+            kwargs["ramp_bars"] = ramp_bars
+        if ramp_start_scale is not None:
+            kwargs["ramp_start_scale"] = ramp_start_scale
+        return builder(bar_interval, trailing_stop, **kwargs)
     return builder(bar_interval, trailing_stop)
 
 
@@ -124,12 +133,23 @@ def main() -> None:
                          "same default as the bundled fold-date-sensitivity command)")
     ap.add_argument("--years", type=float, default=4.0)
     ap.add_argument("--refresh", action="store_true", help="force a clean re-fetch")
+    ap.add_argument("--ramp-bars", type=int, default=None,
+                    help="override cold_start_ramp_bars (consv_trailing_ramp recipe only, "
+                         "default: builder's own default, currently 120)")
+    ap.add_argument("--ramp-scale", type=float, default=None,
+                    help="override cold_start_ramp_start_scale (consv_trailing_ramp recipe "
+                         "only, default: builder's own default, currently 0.20)")
     args = ap.parse_args()
 
-    genome = build_genome(args.recipe, args.bar_interval, args.trailing_stop)
+    genome = build_genome(args.recipe, args.bar_interval, args.trailing_stop,
+                          args.ramp_bars, args.ramp_scale)
+    ramp_note = ""
+    if args.recipe == "consv_trailing_ramp":
+        ramp_note = (f" ramp_bars={genome.gene('risk_judge', 'cold_start_ramp_bars')} "
+                     f"ramp_scale={genome.gene('risk_judge', 'cold_start_ramp_start_scale')}")
     print(f"[shadow_4h_fold_date_sensitivity] recipe={args.recipe} "
           f"bar_interval={args.bar_interval} trailing_stop={args.trailing_stop} "
-          f"shift={args.shift}")
+          f"shift={args.shift}{ramp_note}")
 
     buffer_years = args.years + (args.shift / 365.25) + 0.1
     raw = market.load_universe(genome.universe, genome.bar_interval, buffer_years,

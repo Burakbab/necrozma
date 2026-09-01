@@ -105,25 +105,37 @@ def build_consv_trailing_seed(bar_interval: str = "4h",
 # either way -- this is now the recommended point, not the original hand
 # pick. Verified via the real gene (Genome.child() patch, not a monkeypatch)
 # against real 4h Binance data.
+DEFAULT_RAMP_BARS = 120
+DEFAULT_RAMP_START_SCALE = 0.20
+
 COLD_START_RAMP_PATCH: list[tuple[str, Any]] = [
-    ("agents.risk_judge.genes.cold_start_ramp_bars", 120),
-    ("agents.risk_judge.genes.cold_start_ramp_start_scale", 0.20),
+    ("agents.risk_judge.genes.cold_start_ramp_bars", DEFAULT_RAMP_BARS),
+    ("agents.risk_judge.genes.cold_start_ramp_start_scale", DEFAULT_RAMP_START_SCALE),
 ]
 
 
 def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
-                                   trailing_stop: float = DEFAULT_TRAILING_STOP) -> Genome:
+                                   trailing_stop: float = DEFAULT_TRAILING_STOP,
+                                   ramp_bars: int = DEFAULT_RAMP_BARS,
+                                   ramp_start_scale: float = DEFAULT_RAMP_START_SCALE) -> Genome:
     """`build_consv_trailing_seed()` plus the 2026-09-01 cold-start-ramp fix
     that clears `MAX_DD_HARD_FAIL` on the real fold-based gate (see
     `COLD_START_RAMP_PATCH`'s docstring) -- this thread's first genome to
     clear that gate on the gate itself, not just a continuous replay. Exists
     so a future session seeding a fresh `EvolutionRun` from it reproduces the
-    exact recipe instead of re-deriving it from a run note."""
+    exact recipe instead of re-deriving it from a run note.
+
+    `ramp_bars`/`ramp_start_scale` default to the 08:08 UTC grid search's
+    recommended point (120/0.20) but can be overridden -- the 13:16 UTC
+    fold-date-sensitivity finding (that point hard-fails the real gate on
+    4/7 recent days) means other grid points are worth checking the same
+    way, not just this one hand-picked default."""
     base = build_consv_trailing_seed(bar_interval, trailing_stop)
-    return base.child(COLD_START_RAMP_PATCH,
-                      note="cold_start_ramp 120/0.20 on consv1 + trailing_stop "
-                           f"{trailing_stop} (2026-09-01 fold-gate fix, "
-                           "grid-search-refined)")
+    patch = [("agents.risk_judge.genes.cold_start_ramp_bars", ramp_bars),
+             ("agents.risk_judge.genes.cold_start_ramp_start_scale", ramp_start_scale)]
+    return base.child(patch,
+                      note=f"cold_start_ramp {ramp_bars}/{ramp_start_scale} on consv1 + "
+                           f"trailing_stop {trailing_stop} (2026-09-01 fold-gate fix)")
 
 
 def summarize(result: dict[str, Any], bar_interval: str) -> dict[str, Any]:

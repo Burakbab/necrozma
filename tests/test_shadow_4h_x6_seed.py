@@ -119,3 +119,15 @@ def test_consv_trailing_ramp_seed_is_a_child_of_consv_trailing_seed():
     ramped = build_consv_trailing_ramp_seed("4h")
     consv_trailing = build_consv_trailing_seed("4h")
     assert ramped.version == consv_trailing.version + 1
+
+
+def test_consv_trailing_ramp_seed_accepts_ramp_overrides():
+    ramped = build_consv_trailing_ramp_seed("4h", ramp_bars=90, ramp_start_scale=0.05)
+    assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 90
+    assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.05
+
+
+def test_consv_trailing_ramp_seed_defaults_match_grid_search_pick():
+    ramped = build_consv_trailing_ramp_seed("4h")
+    assert ramped.gene("risk_judge", "cold_start_ramp_bars") == 120
+    assert ramped.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20
