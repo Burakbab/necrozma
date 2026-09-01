@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 17,
-  "updated": "2026-08-31T00:22:03+00:00",
+  "ticks": 18,
+  "updated": "2026-09-01T00:22:17+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -165,7 +165,7 @@
         "avg_cost": 0.33248683104152005,
         "opened_ts": "2026-08-21 00:00:00+00:00",
         "peak_price": 0.3387,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -177,7 +177,7 @@
         "avg_cost": 11.366543573823721,
         "opened_ts": "2026-08-29 00:00:00+00:00",
         "peak_price": 11.434,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -187,8 +187,8 @@
         "qty": 1303.106538757656,
         "avg_cost": 1.3641817499999997,
         "opened_ts": "2026-08-30 00:00:00+00:00",
-        "peak_price": 1.3635,
-        "bars_held": 0,
+        "peak_price": 1.3798,
+        "bars_held": 1,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -764,6 +764,10 @@
       [
         "2026-08-30 00:00:00+00:00",
         11038.700997852437
+      ],
+      [
+        "2026-08-31 00:00:00+00:00",
+        11493.468533159135
       ]
     ],
     "peak_nav": 11579.15168657734,
@@ -4416,6 +4420,190 @@
           }
         ],
         "notes": "regime bull (scale 1.00), breadth 100%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-09-01T00:22:17+00:00",
+      "bar": "2026-08-31 00:00:00+00:00",
+      "tick": 18,
+      "nav_before": 11493.47,
+      "nav_after": 11553.86,
+      "cash": 3866.86,
+      "cash_before": 3866.86,
+      "positions": {
+        "CRVUSDT": 3070.01,
+        "LINKUSDT": 2809.84,
+        "XRPUSDT": 1807.15
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-08-31 00:00:00+00:00",
+        "nav": 11493.468533159135,
+        "regime": "bull",
+        "breadth": 0.9629629629629629,
+        "cash_pct": 0.336439513310683,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "ETHUSDT",
+              "side": "buy",
+              "conviction": 0.539,
+              "why": "at/near range high (breakout -1.9%), momentum rank 0.81, slope +1.01%"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout -0.7%), momentum rank 1.00, slope +8.70%"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.569,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.92, slope +8.27%"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.519,
+              "why": "at/near range high (breakout -1.6%), momentum rank 0.73, slope +1.74%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "XRPUSDT",
+              "side": "buy",
+              "conviction": 0.904,
+              "why": "confirmed trend: ma-spread +24.3%, slope +2.18%, rsi 66 in band"
+            },
+            {
+              "symbol": "DOGEUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +16.6%, slope +0.36%, rsi 62 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +24.1%, slope +0.60%, rsi 71 in band"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +17.1%, slope +8.27%, rsi 59 in band"
+            },
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +6.3%, slope +0.77%, rsi 58 in band"
+            },
+            {
+              "symbol": "FETUSDT",
+              "side": "buy",
+              "conviction": 0.812,
+              "why": "confirmed trend: ma-spread +8.3%, slope +0.34%, rsi 54 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.938,
+              "why": "confirmed trend: ma-spread +27.7%, slope +4.59%, rsi 64 in band"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "buy",
+              "conviction": 0.835,
+              "why": "confirmed trend: ma-spread +15.8%, slope +0.50%, rsi 61 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.869,
+              "why": "confirmed trend: ma-spread +30.3%, slope +1.74%, rsi 68 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [],
+        "vetoes": [
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "XRPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "DOGEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "FETUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ETHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [],
+        "notes": "regime bull (scale 1.00), breadth 96%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
