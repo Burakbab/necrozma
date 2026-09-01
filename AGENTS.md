@@ -306,6 +306,29 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Measured 2026-09-01 (3-hourly check, ~12:48-13:16 UTC): built the shadow
+  fold-date-sensitivity tool the 10:27 UTC session flagged, and the systematic
+  answer is starker than "boundary-fragile" — the ramp genome hard-fails the
+  real gate on 4 of 7 recent days, not just an occasional flip.** See "Next
+  steps" item 2 and `runs/2026-09-01-1316-shadow-4h-fold-date-sensitivity.md`.
+  New `tools/shadow_4h_fold_date_sensitivity.py` (11 hermetic tests, no
+  network) generalizes the bundled `fold-date-sensitivity` command from the
+  live 1d champion to any 4h-shadow genome builder from
+  `tools/shadow_4h_x6_seed.py`, and additionally applies `dd_corrected_stats()`
+  at each "as-of" shift — the exact correction `EvolutionRun.generation()`
+  applies before `accepts()`'s hard-fail check — so it reports whether the
+  genome would actually clear `MAX_DD_HARD_FAIL` that day, not just its
+  `aggregate_fitness`. `--recipe consv_trailing_ramp --shift 7` (~707s, one
+  week of as-of dates against the 120/0.20 champion): 4/7 shifts hard-fail
+  outright, and the 3 that clear do so by at most +5.6 points of margin —
+  worse than "sits close to the line," this genome is on the wrong side of
+  the line more often than not. Recommend not treating 120/0.20 (or 120/0.10)
+  as a settled fix for the cold-start-fold problem; two untried next steps in
+  the run note (sweep other grid points through this tool, or accept this
+  seed genome's fold 1 is structurally fragile and needs a different lever).
+  `live_state.json` untouched, `python3 -m pytest -q` 285/285 (up from 274),
+  no protected file touched. Genome still v3 (1d) live, untouched.
+
 - **Swept 2026-09-01 (3-hourly check, ~06:47-08:08 UTC): a real 37-point grid
   search over `cold_start_ramp_bars`/`cold_start_ramp_start_scale` finds a
   strictly better point than the 04:18 UTC session's hand pick, and a
@@ -5220,6 +5243,29 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-01 13:16 UTC): the shadow fold-date-sensitivity tool the
+   10:27 UTC entry below asked for is now built and run — the systematic
+   check settles "boundary-fragile" into something worse.** See "Current
+   state" above and
+   `runs/2026-09-01-1316-shadow-4h-fold-date-sensitivity.md`. New
+   `tools/shadow_4h_fold_date_sensitivity.py` (11 tests) re-evaluates a
+   4h-shadow genome builder across a week of "as-of" dates with the real
+   `dd_corrected_stats()` gate check applied at each. Result for the 08:08
+   UTC sweep's recommended `cold_start_ramp_bars=120,
+   cold_start_ramp_start_scale=0.20`: **4 of 7 recent days hard-fail
+   `MAX_DD_HARD_FAIL` outright**, and the 3 that clear do so by at most +5.6
+   points of margin. **Do not treat 120/0.20 (or 120/0.10) as a settled fix
+   for the 01:14 UTC cold-start-fold problem** — it fails the real gate more
+   often than it passes across nearby run dates, which the two prior
+   same-day snapshots (08:08 UTC pass, 10:27 UTC fail) only hinted at.
+   Two untried next steps, either usable with the new tool directly: (a)
+   sweep other points from the 08:08 UTC grid search (larger `ramp_bars`
+   or `start_scale`) through `--recipe consv_trailing_ramp --shift 7` for a
+   wider-margin point, or (b) treat this seed genome's (`consv1 +
+   trailing_stop -0.06`) fold 1 as structurally fragile and look for a
+   different lever entirely rather than continuing to tune the ramp genes
+   against it.
+
    **Pointer (2026-09-01 10:27 UTC): the 08:08 UTC sweep's 120/0.20
    recommendation is boundary-fragile, not settled — a same-day
    `EvolutionRun.generation()` re-check (seed 9002, `tools/
