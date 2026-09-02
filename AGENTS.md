@@ -306,6 +306,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Built 2026-09-02 (3-hourly check, ~00:50-01:2x UTC): the first slice of
+  item 2's untried option (2b) -- checking whether fold 1's repeated
+  near-40% drawdown is real risk or a fold-rebasing measurement artifact,
+  using code that already exists rather than another hand-tuned gene.**
+  See "Next steps" item 2. Every session since 2026-08-31 has treated fold
+  1's from-cold-start `max_dd` as ground truth and tried to survive it (size
+  ramp, conviction floor, vol cap -- all closed, see the 21:59 UTC entry
+  below); none asked whether that number itself is trustworthy.
+  `dd_corrected_stats()` (what `accepts()` actually gates on) is one-sided:
+  it takes `min(fold-merged, continuous)`, which can only ever make max_dd
+  *more* negative. But `loop.evolve.dd_trust_continuous_stats()` -- built
+  2026-08-22 for the bundled `succession-audit` command, applied there only
+  to past 1d champions -- is the two-sided sibling: fold-merged max_dd can
+  also *overstate* true risk when a fold's own local peak rebases to a
+  fresh, lower value right at its boundary (exactly what a fold starting
+  cold, broker reset to flat cash, mechanically does). New
+  `tools/shadow_4h_trust_continuous_check.py` applies that existing,
+  already-tested function to the 4h-shadow genome family for the first
+  time -- `x6`, `consv_trailing`, and `consv_trailing_ramp` (120/0.20) all
+  audited in one pass, reporting per-fold max_dd plus both the current
+  one-sided gate verdict and the two-sided `trust_continuous` verdict, and
+  flagging any recipe where they disagree. No engine, constitution, or gene
+  change -- pure composition of already-tested `Evaluator.evaluate`/
+  `dd_corrected_stats`/`dd_trust_continuous_stats`, same precedent as every
+  other read-only diagnostic in this codebase. 7 new hermetic tests
+  (`tests/test_shadow_4h_trust_continuous_check.py`, monkeypatched
+  `run_backtest` same pattern as `tests/test_continuous_max_dd.py` --
+  covers the flip case, the no-flip-real-risk case, the neither-hard-fails
+  case, per-fold reporting, both `format_row` branches, and the
+  unknown-recipe CLI guard), full suite 316/316 (up from 309), `tools/
+  edit_bundle_module.py sync --check` confirmed no drift (nothing bundled
+  touched -- only a new `tools/`/`tests/` file). `live_state.json`
+  untouched (md5 unchanged from the 00:20 UTC daily-trading run). Genome
+  still v3 (1d) live, untouched. **The actual real-data run against all
+  three recipes was still in progress when this entry was written -- see
+  the next entry, or a follow-up session, for the result.** This entry
+  covers only the shipped, tested tool, not yet a verdict on whether fold
+  1's drawdown is real or an artifact.
+
 - **Closed 2026-09-01 (3-hourly check, ~22:00-22:20 UTC): tested the
   volatility-scaled cold-start cap shipped earlier this same cycle against
   fold 1 -- it doesn't help either, and at magnitudes that actually bind it
