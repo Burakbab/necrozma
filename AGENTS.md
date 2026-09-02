@@ -306,6 +306,33 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-09-02 (3-hourly check, ~19:00-19:27 UTC): a fresh unconstrained-search
+  seed clears the real fold-aggregate hard gate for the first time in this
+  sub-thread -- still fails the sealed holdout.** See "Next steps" item 2 and
+  `runs/2026-09-02-1927-shadow-4h-x6-seed9102-fold-gate-cleared.md`. Ran
+  `tools/shadow_4h_ramp_generation.py --recipe x6 --generations 2 --seed 9102`
+  (fresh seed, distinct from 06:46-07:15 UTC's 9101) -- 2 real
+  `EvolutionRun.generation()` calls against real 4h data, unpatched `x6` seed,
+  read-only (never calls `save()`/`promote()`). Generation 1: same pattern as
+  every prior entry, all top candidates hard-fail the gate. **Generation 2's
+  top candidate (`consult_moderate.rsi_hi` 72.0->91.8, `risk_judge.cash_floor_pct`
+  0.05->0.479, fold-aggregate fitness 1.231 vs. seed champion's -2.486
+  hard-fail sentinel) actually cleared `dd_corrected_stats()`'s drawdown
+  gate** -- the first time any candidate in this unconstrained-search
+  sub-thread has done so -- **but then failed the sealed holdout** (-1.808 vs.
+  champion's -0.281 + margin 2.355). Reads as a blunt de-risking move (~48%
+  permanent cash floor) that happens to duck fold 1's specific drawdown
+  window without adding real edge elsewhere, not a targeted fix. Nuances but
+  doesn't reverse the 06:46-07:15 UTC finding: unconstrained search can
+  occasionally clear the fold gate this seed has died on before, but nothing
+  found across 3 generations/2 seeds so far has cleared *both* fold and
+  holdout -- still a small sample. Does not touch item 2's owner-decision
+  fork (accept the full stack vs. redirect), not decided here.
+  `live_state.json` untouched, no protected file touched, no code changed
+  this entry (`python3 -m pytest -q` 338/338 confirmed as baseline before
+  starting, not re-run after since nothing changed). Genome still v3 (1d)
+  live, untouched.
+
 - **Design pass 2026-09-02 (3-hourly check, ~15:46-16:05 UTC): item 6
   (Equities/FX) has never had a design pass -- no `MarketData` class/ABC
   exists despite the item's wording, there's no single DI point to extend
@@ -5575,6 +5602,23 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-02 ~19:00-19:27 UTC): a fresh seed's second generation
+   is the first candidate in the unconstrained-search sub-thread to clear
+   the real fold-aggregate hard gate -- it still fails the sealed holdout.**
+   See "Current state" above and
+   `runs/2026-09-02-1927-shadow-4h-x6-seed9102-fold-gate-cleared.md`.
+   `tools/shadow_4h_ramp_generation.py --recipe x6 --generations 2 --seed
+   9102` (unmodified tool, fresh seed): generation 2's top candidate
+   (`consult_moderate.rsi_hi` + `risk_judge.cash_floor_pct` ~0.48, a blunt
+   de-risking move) cleared `dd_corrected_stats()` for the first time this
+   sub-thread has seen, then lost at the sealed holdout (-1.808 vs. champion
+   -0.281 + margin). **Nuances, doesn't reverse, the 06:46-07:15 UTC
+   finding** -- unconstrained search can occasionally clear the fold gate
+   this seed champion has died on before, but nothing across 3
+   generations/2 seeds so far has cleared *both* fold and holdout. Option
+   (i) (more generations/seeds) stays open, not closed by this; still a
+   small sample. Does not touch the owner-decision fork below.
+
    **Pointer (2026-09-02 ~12:47-13:09 UTC): the last named single-lever
    alternative under (2b), `consv1` alone (no `trailing_stop`), is now
    checked too -- all 9 grid points hard-fail fold 1's real gate, and
