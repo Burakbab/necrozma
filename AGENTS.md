@@ -306,7 +306,45 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
-- **Built 2026-09-02 (3-hourly check, ~00:50-01:2x UTC): the first slice of
+- **Found 2026-09-02 (3-hourly check, ~01:12 UTC): the pre-ramp fold-1
+  hard-fail that started the whole cold-start-ramp gene-building effort
+  three days ago is partly a fold-rebasing measurement artifact, not pure
+  real risk.** See "Next steps" item 2 and
+  `runs/2026-09-02-0112-trust-continuous-fold1-partial-artifact.md`. Ran
+  the tool built earlier this same cycle
+  (`tools/shadow_4h_trust_continuous_check.py`) against today's real 4h
+  data for all three recipes in this thread. `x6` (bare seed): fold-1
+  failure confirmed real under both the current one-sided gate (-44.5%
+  max_dd) and the two-sided `dd_trust_continuous_stats` view (-44.3%) --
+  no artifact there, the `consv1 + trailing_stop` tightening genuinely
+  fixed a real problem. **But `consv_trailing` (that tightening, no ramp
+  gene yet) -- the exact genome the 2026-09-01 01:14 UTC session found
+  hard-failing at -44.1% and that triggered building the ramp genes in the
+  first place -- flips: one-sided gate says -43.8% (hard-fail), two-sided
+  `trust_continuous` says -32.7% (clears, fitness +0.406, not -inf).** The
+  fold restarts the broker from flat cash right as a real but more moderate
+  decline is underway, so the decline reads as a much larger fraction of
+  the fold's own reset local peak than of the account's true peak.
+  `consv_trailing_ramp` (120/0.20) still clears both ways (-34.8%/-32.7%).
+  **Not a reversal of the 21:59 UTC "step back" recommendation, but a real
+  qualification**: the ramp genes' actual contribution may be smaller than
+  "fixed a hard-failing genome" -- closer to "improved an already-passing
+  (under the more accurate two-sided reading) genome's one-sided number."
+  Does not touch the separate, still-valid boundary-fragility finding
+  (13:16/16:47 UTC) -- both a fold-rebasing overstatement and a
+  boundary-fragile magnitude can be true of the same fold at once.
+  Recommend against re-tuning the ramp genes over this; the concrete next
+  step is checking whether today's flip holds across the `--shift`-day walk
+  `fold-date-sensitivity` already does, before treating it as settled.
+  `dd_trust_continuous_stats()` stays diagnostic-only, not wired into
+  `accepts()` -- no gate-policy change made or proposed here, same explicit
+  owner-decision framing as `succession-audit`'s own 2026-08-22 finding.
+  `live_state.json` untouched, no protected file touched,
+  `python3 -m pytest -q` 316/316 (no code changed this entry -- analysis
+  only, using the tool already committed this cycle). Genome still v3 (1d)
+  live, untouched.
+
+- **Built 2026-09-02 (3-hourly check, ~00:50-01:12 UTC): the first slice of
   item 2's untried option (2b) -- checking whether fold 1's repeated
   near-40% drawdown is real risk or a fold-rebasing measurement artifact,
   using code that already exists rather than another hand-tuned gene.**
