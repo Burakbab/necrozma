@@ -53,6 +53,7 @@ from core import market  # noqa: E402
 from core.genome import Genome  # noqa: E402
 from loop.evolve import Evaluator, dd_corrected_stats  # noqa: E402
 from tools.shadow_4h_x6_seed import (  # noqa: E402
+    SCALE,
     build_consv_trailing_ramp_seed,
     build_consv_trailing_seed,
     build_x6_scaled_seed,
@@ -69,12 +70,14 @@ def build_genome(recipe: str, bar_interval: str, trailing_stop: float,
                   ramp_bars: int | None = None,
                   ramp_start_scale: float | None = None,
                   ramp_conviction_boost: float | None = None,
-                  ramp_vol_cap: float | None = None) -> Genome:
+                  ramp_vol_cap: float | None = None,
+                  scale: int | None = None) -> Genome:
     builder = RECIPES[recipe]
+    scale_kwargs: dict[str, Any] = {} if scale is None else {"scale": scale}
     if recipe == "x6":
-        return builder(bar_interval)
+        return builder(bar_interval, **scale_kwargs)
     if recipe == "consv_trailing_ramp":
-        kwargs: dict[str, Any] = {}
+        kwargs: dict[str, Any] = dict(scale_kwargs)
         if ramp_bars is not None:
             kwargs["ramp_bars"] = ramp_bars
         if ramp_start_scale is not None:
@@ -84,7 +87,7 @@ def build_genome(recipe: str, bar_interval: str, trailing_stop: float,
         if ramp_vol_cap is not None:
             kwargs["ramp_vol_cap"] = ramp_vol_cap
         return builder(bar_interval, trailing_stop, **kwargs)
-    return builder(bar_interval, trailing_stop)
+    return builder(bar_interval, trailing_stop, **scale_kwargs)
 
 
 def slice_window(raw: dict[str, pd.DataFrame], as_of: pd.Timestamp,
@@ -151,11 +154,16 @@ def main() -> None:
     ap.add_argument("--ramp-vol-cap", type=float, default=None,
                     help="override cold_start_ramp_vol_cap (consv_trailing_ramp recipe only, "
                          "default: builder's own default, currently 0.0/off)")
+    ap.add_argument("--scale", type=int, default=None,
+                    help="override the period-length gene multiplier (default: "
+                         "builder's own default, currently 6) -- check whether "
+                         "fold-1 behavior is specific to SCALE=6 or general to "
+                         "the 4h-bar switch (AGENTS.md item 2, option (2b)(ii))")
     args = ap.parse_args()
 
     genome = build_genome(args.recipe, args.bar_interval, args.trailing_stop,
                           args.ramp_bars, args.ramp_scale, args.ramp_conviction_boost,
-                          args.ramp_vol_cap)
+                          args.ramp_vol_cap, args.scale)
     ramp_note = ""
     if args.recipe == "consv_trailing_ramp":
         ramp_note = (f" ramp_bars={genome.gene('risk_judge', 'cold_start_ramp_bars')} "
@@ -164,7 +172,8 @@ def main() -> None:
                      f"vol_cap={genome.gene('risk_judge', 'cold_start_ramp_vol_cap')}")
     print(f"[shadow_4h_fold_date_sensitivity] recipe={args.recipe} "
           f"bar_interval={args.bar_interval} trailing_stop={args.trailing_stop} "
-          f"shift={args.shift}{ramp_note}")
+          f"shift={args.shift} scale={args.scale if args.scale is not None else SCALE}"
+          f"{ramp_note}")
 
     buffer_years = args.years + (args.shift / 365.25) + 0.1
     raw = market.load_universe(genome.universe, genome.bar_interval, buffer_years,

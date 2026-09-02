@@ -88,6 +88,26 @@ def test_build_genome_consv_trailing_ramp_partial_override_keeps_other_default()
     assert g.gene("risk_judge", "cold_start_ramp_start_scale") == 0.20
 
 
+def test_build_genome_x6_accepts_custom_scale():
+    default = build_genome("x6", "4h", -0.06)
+    scaled = build_genome("x6", "4h", -0.06, scale=4)
+    assert scaled.gene("analyst", "trend_fast") == default.gene("analyst", "trend_fast") * 4 / 6
+
+
+def test_build_genome_consv_trailing_accepts_custom_scale():
+    g = build_genome("consv_trailing", "4h", -0.12, scale=8)
+    assert g.risk["trailing_stop"] == -0.12
+    default = build_genome("x6", "4h", -0.06, scale=8)
+    assert g.gene("analyst", "trend_fast") == default.gene("analyst", "trend_fast")
+
+
+def test_build_genome_consv_trailing_ramp_accepts_custom_scale():
+    g = build_genome("consv_trailing_ramp", "4h", -0.06, scale=4)
+    assert g.gene("risk_judge", "cold_start_ramp_bars") == 120
+    default = build_genome("x6", "4h", -0.06, scale=4)
+    assert g.gene("analyst", "trend_fast") == default.gene("analyst", "trend_fast")
+
+
 def test_build_genome_x6_and_consv_trailing_ignore_ramp_overrides():
     # ramp_bars/ramp_start_scale only apply to the consv_trailing_ramp recipe
     g = build_genome("consv_trailing", "4h", -0.06, ramp_bars=180, ramp_start_scale=0.30)

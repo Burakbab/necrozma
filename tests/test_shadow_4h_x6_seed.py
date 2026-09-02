@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from core.genome import Genome
 from tools.shadow_4h_x6_seed import (
     BAR_HOURS,
+    DEFAULT_RAMP_BARS,
     DEFAULT_TRAILING_STOP,
     SCALE,
     X6_ANALYST_GENES,
@@ -55,6 +56,43 @@ def test_x6_scaled_seed_is_a_child_not_a_mutation_of_the_seed():
 def test_x6_scaled_seed_default_bar_interval_is_4h():
     g = build_x6_scaled_seed()
     assert g.bar_interval == "4h"
+
+
+def test_x6_scaled_seed_default_scale_is_six():
+    default = build_x6_scaled_seed("4h")
+    explicit = build_x6_scaled_seed("4h", scale=6)
+    for gene in X6_ANALYST_GENES:
+        assert default.gene("analyst", gene) == explicit.gene("analyst", gene)
+    for gene in X6_RISK_GENES:
+        assert default.risk[gene] == explicit.risk[gene]
+
+
+@pytest.mark.parametrize("scale", [4, 8])
+def test_x6_scaled_seed_accepts_a_custom_scale(scale):
+    seed = Genome()
+    scaled = build_x6_scaled_seed("4h", scale=scale)
+    for gene in X6_ANALYST_GENES:
+        assert scaled.gene("analyst", gene) == seed.gene("analyst", gene) * scale
+    for gene in X6_RISK_GENES:
+        assert scaled.risk[gene] == seed.risk[gene] * scale
+
+
+def test_consv_trailing_seed_accepts_a_custom_scale():
+    x8 = build_x6_scaled_seed("4h", scale=8)
+    seed = build_consv_trailing_seed("4h", scale=8)
+    for gene in X6_ANALYST_GENES:
+        assert seed.gene("analyst", gene) == x8.gene("analyst", gene)
+    for gene in X6_RISK_GENES:
+        assert seed.risk[gene] == x8.risk[gene]
+    assert seed.gene("consult_conservative", "rsi_buy_below") == 30.0
+
+
+def test_consv_trailing_ramp_seed_accepts_a_custom_scale():
+    x4 = build_x6_scaled_seed("4h", scale=4)
+    seed = build_consv_trailing_ramp_seed("4h", scale=4)
+    for gene in X6_ANALYST_GENES:
+        assert seed.gene("analyst", gene) == x4.gene("analyst", gene)
+    assert seed.gene("risk_judge", "cold_start_ramp_bars") == DEFAULT_RAMP_BARS
 
 
 @pytest.mark.parametrize("interval,bars_held,expected_days", [

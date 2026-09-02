@@ -306,6 +306,29 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Built 2026-09-02 (3-hourly check, ~09:47-onward UTC): parametrized the
+  x6-scaling recipe's `SCALE=6` constant, to check option (2b)(ii) -- is
+  fold 1's cold-start drawdown specific to SCALE=6, or general to the 4h-bar
+  switch itself?** See "Next steps" item 2 and
+  `runs/2026-09-02-0956-x6-scale-parametrized.md`. Every session since
+  2026-08-16 hand-built the x6 recipe with `SCALE=6` as a fixed module
+  constant, never a parameter -- so nobody had checked whether the drawdown
+  this whole thread has fought is a property of trading 4h bars with this
+  27-symbol system at all, or an artifact of that one specific multiplier.
+  Added a `scale: int = SCALE` kwarg to `build_x6_scaled_seed()`,
+  `build_consv_trailing_seed()`, and `build_consv_trailing_ramp_seed()`
+  (`tools/shadow_4h_x6_seed.py`, default unchanged so every existing caller
+  and run note's numbers still mean `scale=6`), plus a `--scale` CLI flag on
+  that tool and on `shadow_4h_fold_date_sensitivity.py` (threaded through its
+  `build_genome()` dispatcher as `Optional[int]`, backward compatible). 8 new
+  tests, full suite 332/332 (up from 324), `tools/edit_bundle_module.py sync
+  --check` clean (neither tool is bundled). `live_state.json` untouched, no
+  protected file touched. Genome still v3 (1d) live, untouched. **Real-data
+  check (`--recipe x6 --shift 1 --scale {4,6,8}`) was still fetching/running
+  when this entry was written** -- see the run note or a follow-up entry for
+  the result; this entry covers only the shipped, tested infrastructure, not
+  yet a verdict on whether SCALE=6 itself is implicated.
+
 - **Found 2026-09-02 (3-hourly check, ~06:46-07:15 UTC): a pure
   Researcher-driven search starting from the unpatched `x6` seed hits the
   exact same fold-1 wall as every hand-picked patch in this thread -- option
@@ -5499,6 +5522,15 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-02 ~09:47-onward UTC): the first slice of (2b)(ii) --
+   `SCALE=6` is now a parameter (`--scale`), not a fixed constant, so a
+   fold-date-sensitivity run can check whether fold 1's drawdown persists at
+   other bar-scaling ratios. Empirical check (scale 4/6/8) was still running
+   when this pointer was written -- see "Current state" above and
+   `runs/2026-09-02-0956-x6-scale-parametrized.md` for the result once
+   known.** Does not close (2b); (i) (more generations/seeds of the
+   unconstrained `--recipe x6` search) is still untried too.
+
    **Pointer (2026-09-02 ~06:46-07:15 UTC): option (2b)'s first slice --
    unconstrained search on the unpatched `x6` seed -- hits the same fold-1
    wall as every hand patch; the more literal reading of (2b) (reconsider

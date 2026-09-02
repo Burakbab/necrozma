@@ -42,19 +42,29 @@ SCALE = 6
 BAR_HOURS = {"1h": 1, "4h": 4, "1d": 24}
 
 
-def build_x6_scaled_seed(bar_interval: str = "4h") -> Genome:
+def build_x6_scaled_seed(bar_interval: str = "4h", scale: int = SCALE) -> Genome:
     """The seed genome, switched to `bar_interval` with every period-length
-    gene multiplied by SCALE. Matches the recipe documented in AGENTS.md item
-    2 (2026-08-16 onward) exactly -- deliberately NOT re-tuned, just rescaled,
-    so the drawdown/overtrading behavior measured here is attributable to the
-    bar-size switch alone, not to any other change."""
+    gene multiplied by `scale`. Matches the recipe documented in AGENTS.md
+    item 2 (2026-08-16 onward) exactly at the default `scale=SCALE=6` --
+    deliberately NOT re-tuned, just rescaled, so the drawdown/overtrading
+    behavior measured here is attributable to the bar-size switch alone, not
+    to any other change.
+
+    `scale` is exposed (2026-09-02, AGENTS.md item 2's option (2b)(ii)) so a
+    session can check whether the fold-1 cold-start drawdown this whole
+    thread has fought since 2026-08-31 is a property of the 4h-bar switch
+    itself or specifically of the SCALE=6 choice -- untried by every prior
+    session, which always hand-built the x6-only recipe as a single fixed
+    constant. Not wired into the bundle or any scheduled command; the name
+    `build_x6_scaled_seed` and module name stay as-is for continuity with
+    every existing run note and caller that means SCALE=6 by default."""
     seed = Genome()
     patches: list[tuple[str, Any]] = [("bar_interval", bar_interval)]
     for gene in X6_ANALYST_GENES:
-        patches.append((f"agents.analyst.genes.{gene}", seed.gene("analyst", gene) * SCALE))
+        patches.append((f"agents.analyst.genes.{gene}", seed.gene("analyst", gene) * scale))
     for gene in X6_RISK_GENES:
-        patches.append((f"risk.{gene}", seed.risk[gene] * SCALE))
-    return seed.child(patches, note=f"x6-scaled seed for {bar_interval} shadow evolution")
+        patches.append((f"risk.{gene}", seed.risk[gene] * scale))
+    return seed.child(patches, note=f"x{scale}-scaled seed for {bar_interval} shadow evolution")
 
 
 # The 2026-08-31 22:07 UTC session's headline finding on top of the x6-scaled
@@ -72,17 +82,21 @@ DEFAULT_TRAILING_STOP = -0.06
 
 
 def build_consv_trailing_seed(bar_interval: str = "4h",
-                              trailing_stop: float = DEFAULT_TRAILING_STOP) -> Genome:
+                              trailing_stop: float = DEFAULT_TRAILING_STOP,
+                              scale: int = SCALE) -> Genome:
     """`build_x6_scaled_seed()` plus the 22:07 UTC session's `consv1 +
     trailing_stop` combination -- the first variant in this whole 4h-shadow
     thread (since 2026-08-16) to clear `MAX_DD_HARD_FAIL` on a single
     full-history backtest. That measurement was never run through the real
     promotion pipeline (fold-aggregate acceptance + sealed holdout); this
     builder exists so a future session can seed a fresh `EvolutionRun` from
-    it instead of re-deriving the patch from the run note's prose."""
-    base = build_x6_scaled_seed(bar_interval)
+    it instead of re-deriving the patch from the run note's prose.
+
+    `scale` (default `SCALE=6`, added 2026-09-02) passes through to
+    `build_x6_scaled_seed()` -- see that function's docstring."""
+    base = build_x6_scaled_seed(bar_interval, scale=scale)
     patches = list(CONSV1_PATCH) + [("risk.trailing_stop", trailing_stop)]
-    return base.child(patches, note=f"consv1 + trailing_stop {trailing_stop} on x6-scaled "
+    return base.child(patches, note=f"consv1 + trailing_stop {trailing_stop} on x{scale}-scaled "
                                     f"{bar_interval} seed (2026-08-31 22:07 UTC finding)")
 
 
@@ -121,7 +135,8 @@ def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
                                    ramp_bars: int = DEFAULT_RAMP_BARS,
                                    ramp_start_scale: float = DEFAULT_RAMP_START_SCALE,
                                    ramp_conviction_boost: float = DEFAULT_RAMP_CONVICTION_BOOST,
-                                   ramp_vol_cap: float = DEFAULT_RAMP_VOL_CAP
+                                   ramp_vol_cap: float = DEFAULT_RAMP_VOL_CAP,
+                                   scale: int = SCALE
                                    ) -> Genome:
     """`build_consv_trailing_seed()` plus the 2026-09-01 cold-start-ramp fix
     that clears `MAX_DD_HARD_FAIL` on the real fold-based gate (see
@@ -149,8 +164,11 @@ def build_consv_trailing_ramp_seed(bar_interval: str = "4h",
     that entry's own pointer called for next: caps a cold-start buy's size by
     the traded symbol's own realised vol (`Features.vol`) instead of its
     conviction, so a high-conviction entry into a currently-volatile symbol
-    still sizes down -- see that gene's own comment in core/genome.py."""
-    base = build_consv_trailing_seed(bar_interval, trailing_stop)
+    still sizes down -- see that gene's own comment in core/genome.py.
+
+    `scale` (default `SCALE=6`, added 2026-09-02) passes through to
+    `build_x6_scaled_seed()` -- see that function's docstring."""
+    base = build_consv_trailing_seed(bar_interval, trailing_stop, scale=scale)
     patch = [("agents.risk_judge.genes.cold_start_ramp_bars", ramp_bars),
              ("agents.risk_judge.genes.cold_start_ramp_start_scale", ramp_start_scale),
              ("agents.risk_judge.genes.cold_start_ramp_min_conviction_boost",
@@ -208,17 +226,23 @@ def main() -> None:
     ap.add_argument("--ramp-vol-cap", type=float, default=DEFAULT_RAMP_VOL_CAP,
                     help="cold_start_ramp_vol_cap: caps a cold-start buy's size by "
                          "the symbol's realised vol instead of conviction (0.0 = off)")
+    ap.add_argument("--scale", type=int, default=SCALE,
+                    help="period-length gene multiplier (default 6, i.e. the "
+                         "original 'x6' recipe) -- override to check whether "
+                         "fold-1 behavior is specific to SCALE=6 or general to "
+                         "the 4h-bar switch (AGENTS.md item 2, option (2b)(ii))")
     args = ap.parse_args()
 
     if args.recipe == "consv_trailing_ramp":
         genome = build_consv_trailing_ramp_seed(args.bar_interval, ramp_bars=args.ramp_bars,
                                                  ramp_start_scale=args.ramp_scale,
                                                  ramp_conviction_boost=args.ramp_conviction_boost,
-                                                 ramp_vol_cap=args.ramp_vol_cap)
+                                                 ramp_vol_cap=args.ramp_vol_cap,
+                                                 scale=args.scale)
     elif args.recipe == "consv_trailing":
-        genome = build_consv_trailing_seed(args.bar_interval)
+        genome = build_consv_trailing_seed(args.bar_interval, scale=args.scale)
     else:
-        genome = build_x6_scaled_seed(args.bar_interval)
+        genome = build_x6_scaled_seed(args.bar_interval, scale=args.scale)
     data = load_universe(genome.universe, interval=genome.bar_interval,
                          years=args.years, refresh=args.refresh)
     result = run_backtest(genome, data, start_frac=0.0, end_frac=1.0,
