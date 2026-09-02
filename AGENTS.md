@@ -306,6 +306,32 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-09-02 (3-hourly check, ~03:47-04:13 UTC): the 01:12 UTC flip
+  doesn't hold across nearby days -- one of seven days shows real risk under
+  both the one-sided and two-sided view, so `dd_trust_continuous_stats`
+  doesn't settle the fold-1 question either way for this genome family.**
+  See "Next steps" item 2 and
+  `runs/2026-09-02-0413-trust-continuous-flip-day-sensitivity.md`. Built the
+  01:12 UTC entry's own named next step: new
+  `tools/shadow_4h_fold_date_sensitivity_trust_check.py` (7 new tests, full
+  suite 322/322) combines `fold-date-sensitivity`'s multi-day walk with
+  `trust_continuous_check`'s two-sided correction, reporting both verdicts at
+  every shift -- pure composition of existing, already-tested functions, no
+  engine/constitution/gene change. Ran `consv_trailing` (the recipe that
+  flipped) across the same 7-day walk: **2/7 shifts flip the same way (today,
+  and 2026-08-27), 4/7 don't even hard-fail one-sided, but 1/7
+  (2026-08-29) hard-fails under BOTH views (-46.8% one-sided, -42.9%
+  two-sided)** -- real risk that day, not an artifact. Same "best
+  snapshot doesn't generalize" pattern this thread has now found three times
+  (grid-point instability 16:47 UTC, generation-vs-sweep boundary flip 10:27
+  UTC, and now the artifact-vs-real-risk question itself). **Recommend
+  against treating the two-sided correction as settling fold-1 one way or
+  the other for this genome family** -- it doesn't touch "Next steps" item
+  2's still-open options; (2b) (step back from this seed genome, reconsider
+  the base recipe) remains the only untried option. `dd_trust_continuous_stats()`
+  stays diagnostic-only. `live_state.json` untouched, no protected file
+  touched. Genome still v3 (1d) live, untouched.
+
 - **Found 2026-09-02 (3-hourly check, ~01:12 UTC): the pre-ramp fold-1
   hard-fail that started the whole cold-start-ramp gene-building effort
   three days ago is partly a fold-rebasing measurement artifact, not pure
@@ -5445,6 +5471,24 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-02 ~04:13 UTC): the 01:12 UTC "fold-rebasing artifact"
+   finding doesn't hold across nearby days -- 1 of 7 shifts hard-fails under
+   BOTH the one-sided and two-sided correction, so `dd_trust_continuous_stats`
+   does not settle whether fold 1's drawdown is real for this genome family.
+   Does not reopen (2a)/close-out; (2b) is still the only untried option.**
+   See "Current state" above and
+   `runs/2026-09-02-0413-trust-continuous-flip-day-sensitivity.md`. New
+   `tools/shadow_4h_fold_date_sensitivity_trust_check.py` (7 tests, full
+   suite 322/322) runs the two-sided correction across the same 7-day
+   `fold-date-sensitivity` walk instead of a single snapshot. `consv_trailing`
+   result: 2/7 shifts flip (today and 2026-08-27), 4/7 don't even hard-fail
+   one-sided, but 2026-08-29 hard-fails under both views (-46.8%/-42.9%) --
+   real risk that day. Third instance of this genome family's "best
+   snapshot doesn't generalize" pattern (grid-point instability 16:47 UTC,
+   generation-vs-sweep boundary flip 10:27 UTC). **Do not treat the
+   trust_continuous view as a shortcut past (2b)** -- it's exactly as
+   day-sensitive as the raw one-sided number.
+
    **Pointer (2026-09-01 ~22:20 UTC): option (2a) from the 19:21 UTC entry
    below is now closed -- a volatility-scaled cold-start cap doesn't help
    fold 1 either, and when it actually binds it makes the drawdown worse,
