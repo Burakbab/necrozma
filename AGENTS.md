@@ -306,6 +306,30 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Built 2026-09-02 (3-hourly check, ~06:46-07:xx UTC): the first slice of
+  "Next steps" item 2's option (2b) -- a fresh Researcher-driven search
+  starting from the unpatched `x6` seed, not another hand-picked patch on top
+  of the fixed 22:07 UTC `consv1 + trailing_stop` starting point.** See "Next
+  steps" item 2. Every session since 2026-08-31 22:07 UTC has hand-tuned a
+  gene on top of that one fixed seed (size ramp, conviction floor, vol cap --
+  all closed, see entries below) and each one failed; nothing has yet let
+  actual search loose on a genuinely unpatched starting point.
+  `tools/shadow_4h_ramp_generation.py` (previously hardcoded to the
+  `consv_trailing_ramp` champion only) is now generalized with a `--recipe`
+  flag (`x6`/`consv_trailing`/`consv_trailing_ramp`, reusing
+  `shadow_4h_fold_date_sensitivity.py`'s existing `build_genome()` rather than
+  duplicating the mapping) so a real `EvolutionRun` can be seeded from any of
+  the three -- `--recipe x6` is the new, previously-impossible case. 2 new
+  tests (CLI wiring only, `EvolutionRun`/`load_universe` stubbed, no network),
+  full suite 324/324 (up from 322/322), `tools/edit_bundle_module.py sync
+  --check` confirmed no drift (only `tools/`/`tests/` files touched).
+  `live_state.json` untouched. Genome still v3 (1d) live, untouched. **A
+  3-generation run (`--recipe x6 --seed 9101`) against real 4h data was
+  kicked off in the background right after this tool shipped -- see the next
+  entry, or a follow-up session, for whether search finds its own way past
+  fold 1's `MAX_DD_HARD_FAIL` gate. This entry covers only the shipped,
+  tested CLI generalization, not yet a verdict on the search itself.**
+
 - **Found 2026-09-02 (3-hourly check, ~03:47-04:13 UTC): the 01:12 UTC flip
   doesn't hold across nearby days -- one of seven days shows real risk under
   both the one-sided and two-sided view, so `dd_trust_continuous_stats`
@@ -5471,6 +5495,16 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-02 ~06:46-07:xx UTC): the first slice of option (2b) is
+   underway -- `shadow_4h_ramp_generation.py` now takes `--recipe x6` to seed
+   a real `EvolutionRun` from the unpatched seed instead of a hand-picked
+   patch.** See "Current state" above. A 3-generation run against real data
+   was started in the background; its result (whether search clears fold 1's
+   gate on its own) is not yet known as of this entry -- check the next
+   "Current state" entry, or run `python3 tools/shadow_4h_ramp_generation.py
+   --recipe x6 --generations N --seed <fresh>` again if no result was
+   recorded. (2a) stays closed; nothing here reopens it.
+
    **Pointer (2026-09-02 ~04:13 UTC): the 01:12 UTC "fold-rebasing artifact"
    finding doesn't hold across nearby days -- 1 of 7 shifts hard-fails under
    BOTH the one-sided and two-sided correction, so `dd_trust_continuous_stats`

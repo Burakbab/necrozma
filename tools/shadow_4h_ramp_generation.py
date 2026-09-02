@@ -1,15 +1,28 @@
-"""Run real `EvolutionRun.generation()` calls against the cold-start-ramp
-4h-shadow champion (`tools.shadow_4h_x6_seed.build_consv_trailing_ramp_seed()`,
-now 120 bars / 0.20x after the 2026-09-01 08:08 UTC grid search) -- the
-"natural next check" that same run note flagged and left undone: the 04:18
-UTC session already ran one `generation()` against the prior 120/0.10 point
-(seed 9001, 34 blind proposals, champion held) but never re-ran it against
-the refined 120/0.20 point, and that session's own script only captured the
-generation summary, not `record["top"]`'s per-candidate patch list -- so
-whether any proposal actually touched either new `cold_start_ramp_bars`/
-`cold_start_ramp_start_scale` gene went unrecorded. This script prints
-`record["top"]` every generation so that stays visible, and flags any
-proposal (in or out of the top 8) whose patch touches either gene.
+"""Run real `EvolutionRun.generation()` calls against a 4h-shadow champion --
+originally built only for the cold-start-ramp champion
+(`tools.shadow_4h_x6_seed.build_consv_trailing_ramp_seed()`, 120 bars / 0.20x
+after the 2026-09-01 08:08 UTC grid search); the "natural next check" that
+run note flagged and left undone: the 04:18 UTC session already ran one
+`generation()` against the prior 120/0.10 point (seed 9001, 34 blind
+proposals, champion held) but never re-ran it against the refined 120/0.20
+point, and that session's own script only captured the generation summary,
+not `record["top"]`'s per-candidate patch list -- so whether any proposal
+actually touched either new `cold_start_ramp_bars`/`cold_start_ramp_start_scale`
+gene went unrecorded. This script prints `record["top"]` every generation so
+that stays visible, and flags any proposal (in or out of the top 8) whose
+patch touches either gene.
+
+Generalized 2026-09-02 (3-hourly check) to take `--recipe` (`x6` /
+`consv_trailing` / `consv_trailing_ramp`, same three as
+`shadow_4h_fold_date_sensitivity.py`, reusing its `build_genome()` rather than
+redefining the mapping) for AGENTS.md item 2's option (2b): starting a real
+`EvolutionRun` from the *unpatched* `x6` seed (no hand-picked `consv1 +
+trailing_stop`) checks whether Researcher-driven search finds its own way to
+a genome that clears the real fold-based `MAX_DD_HARD_FAIL` gate, instead of
+this thread continuing to hand-tune genes on top of the one fixed 22:07 UTC
+starting point. Default recipe stays `consv_trailing_ramp` (unchanged
+behavior for the original use above) -- `x6` is what a fresh search run
+should pass explicitly.
 
 Not wired into any scheduled command, the bundle, or run_from_files.py.
 Read-only with respect to the live account: `EvolutionRun.generation()` never
@@ -17,8 +30,9 @@ touches `live_state.json` -- it only appends to the gitignored
 `state/lineage.jsonl` scratch log. Never calls `evolve`/`tick`/`save`.
 
 Usage:
-    python3 tools/shadow_4h_ramp_generation.py [--generations 3] [--n-blind 6]
-                                               [--seed 9002] [--years 4.0]
+    python3 tools/shadow_4h_ramp_generation.py [--recipe x6] [--generations 3]
+                                               [--n-blind 6] [--seed 9002]
+                                               [--years 4.0]
 """
 from __future__ import annotations
 
@@ -31,7 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.market import load_universe  # noqa: E402
 from loop.evolve import EvolutionRun  # noqa: E402
-from tools.shadow_4h_x6_seed import build_consv_trailing_ramp_seed  # noqa: E402
+from tools.shadow_4h_fold_date_sensitivity import RECIPES, build_genome  # noqa: E402
 
 RAMP_GENES = ("cold_start_ramp_bars", "cold_start_ramp_start_scale")
 
@@ -56,10 +70,21 @@ def print_top(record: dict) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--recipe", choices=tuple(RECIPES), default="consv_trailing_ramp",
+                    help="x6: plain x6-scaled seed, no hand-picked patches -- the "
+                         "AGENTS.md item 2 option (2b) starting point for a fresh "
+                         "Researcher-driven search. consv_trailing / "
+                         "consv_trailing_ramp: same recipes as "
+                         "shadow_4h_fold_date_sensitivity.py (default, unchanged "
+                         "from this script's original purpose).")
     ap.add_argument("--bar-interval", default="4h")
     ap.add_argument("--years", type=float, default=4.0)
     ap.add_argument("--refresh", action="store_true", help="force a clean re-fetch")
     ap.add_argument("--trailing-stop", type=float, default=-0.06)
+    ap.add_argument("--ramp-bars", type=int, default=None,
+                    help="override cold_start_ramp_bars (consv_trailing_ramp only)")
+    ap.add_argument("--ramp-scale", type=float, default=None,
+                    help="override cold_start_ramp_start_scale (consv_trailing_ramp only)")
     ap.add_argument("--seed", type=int, default=9002,
                     help="Researcher RNG seed -- 9002, distinct from the 04:18 "
                          "UTC session's 9001, so this is a fresh draw rather "
@@ -71,11 +96,15 @@ def main() -> None:
                          "default of 14 here")
     args = ap.parse_args()
 
-    champion = build_consv_trailing_ramp_seed(args.bar_interval, args.trailing_stop)
-    print(f"[shadow_4h_ramp_generation] champion: cold_start_ramp "
-          f"{champion.gene('risk_judge', 'cold_start_ramp_bars')}/"
-          f"{champion.gene('risk_judge', 'cold_start_ramp_start_scale')} on consv1 + "
-          f"trailing_stop {args.trailing_stop}, {args.bar_interval} bars")
+    champion = build_genome(args.recipe, args.bar_interval, args.trailing_stop,
+                            ramp_bars=args.ramp_bars, ramp_start_scale=args.ramp_scale)
+    ramp_note = ""
+    if args.recipe == "consv_trailing_ramp":
+        ramp_note = (f" cold_start_ramp {champion.gene('risk_judge', 'cold_start_ramp_bars')}/"
+                     f"{champion.gene('risk_judge', 'cold_start_ramp_start_scale')} on")
+    print(f"[shadow_4h_ramp_generation] recipe={args.recipe} champion:{ramp_note} "
+          f"{args.bar_interval} bars"
+          + (f", trailing_stop {args.trailing_stop}" if args.recipe != "x6" else ""))
 
     data = load_universe(champion.universe, interval=champion.bar_interval,
                          years=args.years, refresh=args.refresh)
