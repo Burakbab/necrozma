@@ -48,11 +48,49 @@ new `scale` kwarg across all three recipes), full suite **332/332** (up from
 shadow tool is bundled). `live_state.json` untouched, no protected file
 touched. Genome still v3 (1d) live, untouched.
 
-## Empirical check (in progress / result below)
+## Empirical check: result
 
-Kicked off `shadow_4h_fold_date_sensitivity.py --recipe x6 --shift 1
---scale {4,6,8}` against real 4h Binance data (fresh cache in this cloud
-sandbox, so the scale=6 baseline run alone needs to fetch all 27 universe
-symbols from scratch -- slow, still running when this note was first
-written). Result to follow in this same file once all three scales have run,
-or in a follow-up run note if a later session picks this back up first.
+Ran `shadow_4h_fold_date_sensitivity.py --recipe x6 --shift 1 --scale {4,6,8}`
+against real 4h Binance data (bare `x6` recipe -- no `consv1`/trailing-stop/
+ramp genes, so this isolates the scaling multiplier itself, same as every
+other bare-seed measurement in this thread):
+
+| scale | gate max_dd | hard_fail | gate margin | fold fitnesses |
+|-------|------------:|:---------:|-------------:|-----------------|
+| 4     | -56.5%      | YES       | -16.5%       | [-0.314, -5.000, -5.000] |
+| 6     | -44.3%      | YES       | -4.3%        | [0.092, 2.560, -0.271] |
+| 8     | -48.0%      | YES       | -8.0%        | [-5.000, -5.000, 0.198] |
+
+**All three scales hard-fail `MAX_DD_HARD_FAIL` on the real fold-based gate.
+`SCALE=6` is not the cause of fold 1's cold-start drawdown -- it is, if
+anything, the least-bad of the three points tried** (smallest margin of
+failure, and the only one where more than one fold clears at all). Scale 4
+and scale 8 both fail by a wider margin and have two of three folds bottom
+out at the fitness floor (-5.000, `dd_corrected_stats()`'s "check failed
+completely" sentinel), which scale 6 avoids.
+
+**Reading:** this answers the literal first half of option (2b)(ii) --
+adjusting the x6 bar-scaling multiplier is not a route around fold 1's
+cold-start drawdown; every scale tested drowns the same way, and the
+multiplier this thread already settled on (6) happens to be the best of the
+three, not an arbitrary unexamined pick that got lucky/unlucky. Combined
+with the 2026-09-02 ~06:56 UTC finding (unconstrained Researcher search on
+the unpatched seed also can't route around it), this narrows what's left of
+item 2's "reconsider the base recipe" idea to the other named half: the
+`consv1` consult-tightening choice (`rsi_buy_below`/`z_buy_below`), not yet
+checked the same way (e.g. does varying those two thresholds, independent of
+whatever else is layered on top, change fold 1's behavior on its own,
+holding scale=6 fixed?). Not run this cycle -- flagged as the next untried
+slice under (2b) in AGENTS.md item 2.
+
+One shift, one seed, bare `x6` only (not `consv_trailing`/
+`consv_trailing_ramp`) -- not exhaustive, but consistent with every other
+finding in this thread: the fold-1 cold-start drawdown looks structural to
+trading 4h bars with this 27-symbol multi-position system from a cold
+broker start, not an artifact of any single hand-picked constant tried so
+far (SCALE, ramp bars/scale, conviction boost, vol cap all checked and none
+alone fixes it -- only the `consv1 + trailing_stop + ramp` stack together
+does, per the 2026-08-31/09-01 findings).
+
+`live_state.json` untouched throughout. No protected file touched. Genome
+still v3 (1d) live, untouched.

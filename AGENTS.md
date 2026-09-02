@@ -306,28 +306,28 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
-- **Built 2026-09-02 (3-hourly check, ~09:47-onward UTC): parametrized the
-  x6-scaling recipe's `SCALE=6` constant, to check option (2b)(ii) -- is
-  fold 1's cold-start drawdown specific to SCALE=6, or general to the 4h-bar
-  switch itself?** See "Next steps" item 2 and
-  `runs/2026-09-02-0956-x6-scale-parametrized.md`. Every session since
-  2026-08-16 hand-built the x6 recipe with `SCALE=6` as a fixed module
-  constant, never a parameter -- so nobody had checked whether the drawdown
-  this whole thread has fought is a property of trading 4h bars with this
-  27-symbol system at all, or an artifact of that one specific multiplier.
-  Added a `scale: int = SCALE` kwarg to `build_x6_scaled_seed()`,
-  `build_consv_trailing_seed()`, and `build_consv_trailing_ramp_seed()`
-  (`tools/shadow_4h_x6_seed.py`, default unchanged so every existing caller
-  and run note's numbers still mean `scale=6`), plus a `--scale` CLI flag on
-  that tool and on `shadow_4h_fold_date_sensitivity.py` (threaded through its
-  `build_genome()` dispatcher as `Optional[int]`, backward compatible). 8 new
-  tests, full suite 332/332 (up from 324), `tools/edit_bundle_module.py sync
-  --check` clean (neither tool is bundled). `live_state.json` untouched, no
-  protected file touched. Genome still v3 (1d) live, untouched. **Real-data
-  check (`--recipe x6 --shift 1 --scale {4,6,8}`) was still fetching/running
-  when this entry was written** -- see the run note or a follow-up entry for
-  the result; this entry covers only the shipped, tested infrastructure, not
-  yet a verdict on whether SCALE=6 itself is implicated.
+- **Found 2026-09-02 (3-hourly check, ~09:47-10:10 UTC): `SCALE=6` is not
+  the cause of fold 1's cold-start drawdown -- scale 4 and scale 8 both
+  hard-fail the real gate too, and worse than scale 6.** See "Next steps"
+  item 2 and `runs/2026-09-02-0956-x6-scale-parametrized.md`. Parametrized
+  `tools/shadow_4h_x6_seed.py`'s `SCALE=6` module constant into a `scale`
+  kwarg/`--scale` CLI flag (on that tool and on
+  `shadow_4h_fold_date_sensitivity.py`'s `build_genome()`, default unchanged,
+  backward compatible) so option (2b)(ii) -- reconsider the x6 bar-scaling
+  approach itself -- could actually be tested instead of assumed. 8 new
+  tests, full suite 332/332, `tools/edit_bundle_module.py sync --check`
+  clean. Ran the bare `x6` recipe (`--shift 1`) at scale 4/6/8 against real
+  4h data: **all three hard-fail `MAX_DD_HARD_FAIL` (-56.5%/-44.3%/-48.0%
+  gate max_dd respectively) -- scale 6 is the least-bad of the three, not an
+  arbitrary pick that got lucky.** One shift/one seed, bare `x6` only -- not
+  exhaustive, but consistent with every other finding in this thread: no
+  single hand-picked constant (SCALE, ramp bars/scale, conviction boost, vol
+  cap) fixes fold 1 alone; only the `consv1 + trailing_stop + ramp` stack
+  together does. **Narrows what's left of "reconsider the base recipe" to
+  the other named half -- the `consv1` consult-tightening thresholds
+  (`rsi_buy_below`/`z_buy_below`) -- not yet checked in isolation.**
+  `live_state.json` untouched, no protected file touched. Genome still v3
+  (1d) live, untouched.
 
 - **Found 2026-09-02 (3-hourly check, ~06:46-07:15 UTC): a pure
   Researcher-driven search starting from the unpatched `x6` seed hits the
@@ -5522,14 +5522,21 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
-   **Pointer (2026-09-02 ~09:47-onward UTC): the first slice of (2b)(ii) --
-   `SCALE=6` is now a parameter (`--scale`), not a fixed constant, so a
-   fold-date-sensitivity run can check whether fold 1's drawdown persists at
-   other bar-scaling ratios. Empirical check (scale 4/6/8) was still running
-   when this pointer was written -- see "Current state" above and
-   `runs/2026-09-02-0956-x6-scale-parametrized.md` for the result once
-   known.** Does not close (2b); (i) (more generations/seeds of the
-   unconstrained `--recipe x6` search) is still untried too.
+   **Pointer (2026-09-02 ~09:47-10:10 UTC): (2b)(ii)'s bar-scaling-multiplier
+   half is checked and closed -- scale 4/6/8 all hard-fail fold 1, scale 6 is
+   the least-bad of the three, not an unexamined pick. The `consv1`
+   consult-tightening thresholds are the only untried piece of "reconsider
+   the base recipe" left.** See "Current state" above and
+   `runs/2026-09-02-0956-x6-scale-parametrized.md`. `tools/shadow_4h_x6_seed.py`
+   and `shadow_4h_fold_date_sensitivity.py` now take `--scale` (default 6,
+   backward compatible) so this check could be run at all. **Three live
+   threads left under item 2, none tried yet in isolation:** (i) more
+   generations/seeds of the unconstrained `--recipe x6` search; (ii-remaining)
+   sweep the `consv1` thresholds (`rsi_buy_below`/`z_buy_below`) themselves
+   against fold 1, holding scale=6 fixed, instead of only ever measuring them
+   stacked with trailing-stop and ramp genes; or accept that this genome
+   family's fold-1 fix requires the full stack and stop looking for a
+   single-lever alternative.
 
    **Pointer (2026-09-02 ~06:46-07:15 UTC): option (2b)'s first slice --
    unconstrained search on the unpatched `x6` seed -- hits the same fold-1
