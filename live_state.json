@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 18,
-  "updated": "2026-09-01T00:22:17+00:00",
+  "ticks": 19,
+  "updated": "2026-09-02T00:22:38+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -164,8 +164,8 @@
         "qty": 8960.908355403051,
         "avg_cost": 0.33248683104152005,
         "opened_ts": "2026-08-21 00:00:00+00:00",
-        "peak_price": 0.3387,
-        "bars_held": 10,
+        "peak_price": 0.3709,
+        "bars_held": 11,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -177,7 +177,7 @@
         "avg_cost": 11.366543573823721,
         "opened_ts": "2026-08-29 00:00:00+00:00",
         "peak_price": 11.434,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +188,7 @@
         "avg_cost": 1.3641817499999997,
         "opened_ts": "2026-08-30 00:00:00+00:00",
         "peak_price": 1.3798,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -768,9 +768,13 @@
       [
         "2026-08-31 00:00:00+00:00",
         11493.468533159135
+      ],
+      [
+        "2026-09-01 00:00:00+00:00",
+        11730.187051129285
       ]
     ],
-    "peak_nav": 11579.15168657734,
+    "peak_nav": 11730.187051129285,
     "halted": false,
     "halt_bars_left": 0,
     "halt_count": 0,
@@ -4597,6 +4601,118 @@
           },
           {
             "symbol": "ETHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [],
+        "notes": "regime bull (scale 1.00), breadth 96%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-09-02T00:22:38+00:00",
+      "bar": "2026-09-01 00:00:00+00:00",
+      "tick": 19,
+      "nav_before": 11730.19,
+      "nav_after": 11692.28,
+      "cash": 3866.86,
+      "cash_before": 3866.86,
+      "positions": {
+        "CRVUSDT": 3298.51,
+        "LINKUSDT": 2769.29,
+        "XRPUSDT": 1757.63
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-09-01 00:00:00+00:00",
+        "nav": 11730.187051129285,
+        "regime": "bull",
+        "breadth": 0.9629629629629629,
+        "cash_pct": 0.32965006804179137,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.579,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.96, slope +9.23%"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.559,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.88, slope +1.23%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ETHUSDT",
+              "side": "buy",
+              "conviction": 0.869,
+              "why": "confirmed trend: ma-spread +20.4%, slope +0.15%, rsi 72 in band"
+            },
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.892,
+              "why": "confirmed trend: ma-spread +24.4%, slope +3.00%, rsi 72 in band"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.938,
+              "why": "confirmed trend: ma-spread +19.6%, slope +9.23%, rsi 67 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +27.0%, slope +2.09%, rsi 67 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.915,
+              "why": "confirmed trend: ma-spread +30.1%, slope +1.23%, rsi 72 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [],
+        "vetoes": [
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "SOLUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ETHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "CRVUSDT",
             "side": "buy",
             "by": "risk_judge",
             "reason": "no room: size cap or cash floor"
