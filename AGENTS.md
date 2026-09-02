@@ -306,6 +306,29 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Design pass 2026-09-02 (3-hourly check, ~15:46-16:05 UTC): item 6
+  (Equities/FX) has never had a design pass -- no `MarketData` class/ABC
+  exists despite the item's wording, there's no single DI point to extend
+  (unlike item 5's `PaperBroker`), and several crypto-specific assumptions
+  (24/7 tick cadence, calendar-grid `find_gaps`, `"XXXUSDT"` symbol format,
+  no asset-class genome field) are load-bearing outside any protected file.**
+  See "Next steps" item 6 and
+  `runs/2026-09-02-1550-equities-fx-design-pass.md`. No code shipped --
+  item 2 (4h shadow evolution) hit an explicit owner-decision fork this
+  morning and the two redirect options it names (item 4, item 5) are both
+  currently no-ops (`review-hard-calls` 0 pending; short selling blocked on
+  human sign-off), so this session picked up the next concretely-scoped
+  open item instead. Flags an orphaned finding: `.env.example` already
+  stages Alpaca paper-trading credentials with zero other references
+  anywhere in the repo -- worth a human confirming intent before any Phase 1
+  data-source work starts. Concretely scoped next step in the run note:
+  pick a real data source (Alpaca vs. a free historical mirror) first, then
+  an isolated additive fetcher + a session-aware `find_gaps` variant, tested
+  in isolation, no wiring into `core/live.py`'s tick cadence yet.
+  `live_state.json` untouched, no protected file touched,
+  `python3 -m pytest -q` 338/338 (pre-existing baseline, no code changed
+  this entry). Genome still v3 (1d) live, untouched.
+
 - **Found 2026-09-02 (3-hourly check, ~12:47-13:09 UTC): `consv1` alone,
   without `trailing_stop`, does not clear fold 1's real gate at any
   threshold tried -- all three named single-lever alternatives under item
@@ -6984,6 +7007,45 @@ every `evolve` call.
    worth keeping as the starting point once that sign-off exists.
 
 6. **Equities/FX** behind the same `MarketData` interface.
+
+   **Design pass done 2026-09-02 (3-hourly check, ~15:46-16:05 UTC), no code
+   shipped — see "Current state" above and
+   `runs/2026-09-02-1550-equities-fx-design-pass.md`.** Correction to this
+   item's own wording: no `MarketData` class/ABC/Protocol exists today —
+   `core/market.py`'s free-function surface (`fetch_klines`/`load`/
+   `load_universe`/`Replay`) is imported ad hoc in ~20+ places (`core/live.py`,
+   `loop/engine.py`, `agents/analyst.py`, `run_from_files.py`, `tools/*.py`,
+   plus 30+ per-function imports inside `evotrader_bundle.py`'s flattened
+   mirror), not injected through one class the way item 5's `PaperBroker` is
+   — so there is no single method surface to extend the way item 5's
+   `.short()`/`.cover()` slice could. Traced the crypto-specific assumptions
+   living outside any `_PROTECTED` file: `core/live.py`'s tick cadence has no
+   market-hours/session/holiday gate (crypto never closes, so nothing has
+   ever needed one); `core/market.py:114-130`'s `find_gaps` assumes a fixed
+   calendar-step grid (would false-positive on every equity weekend/holiday);
+   `"BTCUSDT"`-style symbol concatenation is load-bearing in
+   `core/genome.py`'s default `universe`, `agents/analyst.py`'s
+   `regime_anchor`, and `top_symbols_by_volume()`'s USDT-only filtering; and
+   the genome schema has no asset-class/quote-currency/session-calendar
+   field at all. **Also flags an orphaned finding**: `.env.example` already
+   stages Alpaca paper-trading credentials
+   (`APCA_API_BASE_URL`/`APCA_API_KEY_ID`/`APCA_API_SECRET_KEY`) with zero
+   other references anywhere in the repo — looks like a forgotten or
+   anticipatory placeholder, not partial implementation; worth a human
+   confirming intent before picking a real data source. **No code shipped
+   deliberately**: the honest small-and-isolated slice available today (a
+   new fetcher, a session-aware `find_gaps` variant) would have zero real
+   consumer until a data source is actually chosen — scaffolding with no
+   caller is dead weight, not progress. **Concretely scoped next step**:
+   (1) a human picks a real data source (Alpaca vs. a free historical
+   mirror analogous to `data-api.binance.vision`); (2) then an isolated
+   additive fetcher in `core/market.py` + a session-aware `find_gaps`
+   variant (additive optional param, default preserves today's behavior
+   byte-for-byte), each tested against synthetic fixtures in isolation; (3)
+   stop there — wiring a real trading-hours gate into `core/live.py`'s tick
+   cadence, a genome `asset_class` field, and `top_symbols_by_volume()`'s
+   quote-currency filtering are separate, bigger, riskier follow-on
+   sessions, same discipline item 5 and item 7 both used.
 
 7. **Unflatten `evotrader_bundle.py` into real files.** The `_SRC` dict keys map
    directly onto a normal multi-file layout (`_SRC['core.types']` →
