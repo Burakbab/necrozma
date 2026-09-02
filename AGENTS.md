@@ -306,6 +306,36 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-09-02 (3-hourly check, ~12:47-13:09 UTC): `consv1` alone,
+  without `trailing_stop`, does not clear fold 1's real gate at any
+  threshold tried -- all three named single-lever alternatives under item
+  2's "reconsider the base recipe" (SCALE, unconstrained search, consv1
+  alone) are now checked and none routes around fold 1 on its own.** See
+  "Next steps" item 2 and
+  `runs/2026-09-02-1309-consv1-threshold-sweep-isolated.md`. New
+  `tools/consv1_threshold_sweep.py` grid-searches `rsi_buy_below`
+  (38.0/30.0/22.0) x `z_buy_below` (-0.8/-1.2/-1.6) on top of the bare
+  `x6`-scaled seed (default `trailing_stop=-0.15`, no ramp genes, `scale=6`
+  fixed), evaluated with the real `Evaluator.evaluate()` +
+  `dd_corrected_stats()` gate path. 6 new tests (grid coverage, hard-fail
+  flagging, and a spy-on-`.child()` check that every sweep genome leaves
+  `trailing_stop`/ramp genes untouched), full suite 338/338. Result: **all 9
+  grid points hard-fail `MAX_DD_HARD_FAIL`** (-42.6% to -44.3% gate max_dd,
+  barely different from the -44.3% untightened baseline) -- `consv1`
+  tightening alone even makes `aggregate_fitness` slightly worse (-2.450 ->
+  -2.565), not better, and once `rsi_buy_below<=30.0` the `z_buy_below` leg
+  has zero additional effect (every such row is bit-for-bit identical).
+  **The 2026-08-31 22:07 UTC "consv1 + trailing_stop is super-additive"
+  finding is now more precisely attributable: `trailing_stop` carries that
+  synergy, `consv1` barely moves the gate on its own.** Recommends closing
+  option (2b) as exhausted for single-lever alternatives; the open choice
+  left under item 2 is whether to accept the full `consv1 + trailing_stop +
+  ramp` stack and move toward a real (non-shadow) promotion attempt, or
+  redirect effort elsewhere (parked short-selling Phase 1, or item 4's
+  LLM-backed consults) -- not decided here, flagged for the next
+  session/owner call. `live_state.json` untouched, no protected file
+  touched. Genome still v3 (1d) live, untouched.
+
 - **Found 2026-09-02 (3-hourly check, ~09:47-10:10 UTC): `SCALE=6` is not
   the cause of fold 1's cold-start drawdown -- scale 4 and scale 8 both
   hard-fail the real gate too, and worse than scale 6.** See "Next steps"
@@ -5522,6 +5552,28 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-02 ~12:47-13:09 UTC): the last named single-lever
+   alternative under (2b), `consv1` alone (no `trailing_stop`), is now
+   checked too -- all 9 grid points hard-fail fold 1's real gate, and
+   `trailing_stop` (not `consv1`) turns out to be the lever carrying the
+   22:07 UTC "super-additive" synergy. Recommend closing (2b) as exhausted
+   for single-lever alternatives.** See "Current state" above and
+   `runs/2026-09-02-1309-consv1-threshold-sweep-isolated.md`. New
+   `tools/consv1_threshold_sweep.py` grid-searches `rsi_buy_below` x
+   `z_buy_below` on the bare `x6` seed (`trailing_stop` left at its
+   untightened default, `scale=6` fixed) against the real
+   `Evaluator`/`dd_corrected_stats()` gate: all 9 points hard-fail
+   (-42.6% to -44.3% gate max_dd, barely different from the -44.3%
+   untightened baseline), and tightening `consv1` alone makes
+   `aggregate_fitness` slightly *worse* (-2.450 -> -2.565), not better.
+   **What's left under item 2 is no longer "which single lever fixes fold
+   1" (answered: none does) but a decision the next session/owner should
+   make explicitly: accept the full `consv1 + trailing_stop + ramp` stack
+   and move toward a real (non-shadow) promotion attempt for this genome
+   family, or park 4h-bar shadow evolution and redirect effort (parked
+   short-selling Phase 1, or item 4's LLM-backed consults).** Not decided
+   this cycle.
+
    **Pointer (2026-09-02 ~09:47-10:10 UTC): (2b)(ii)'s bar-scaling-multiplier
    half is checked and closed -- scale 4/6/8 all hard-fail fold 1, scale 6 is
    the least-bad of the three, not an unexamined pick. The `consv1`
