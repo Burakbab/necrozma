@@ -306,29 +306,33 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
-- **Built 2026-09-02 (3-hourly check, ~06:46-07:xx UTC): the first slice of
-  "Next steps" item 2's option (2b) -- a fresh Researcher-driven search
-  starting from the unpatched `x6` seed, not another hand-picked patch on top
-  of the fixed 22:07 UTC `consv1 + trailing_stop` starting point.** See "Next
-  steps" item 2. Every session since 2026-08-31 22:07 UTC has hand-tuned a
-  gene on top of that one fixed seed (size ramp, conviction floor, vol cap --
-  all closed, see entries below) and each one failed; nothing has yet let
-  actual search loose on a genuinely unpatched starting point.
-  `tools/shadow_4h_ramp_generation.py` (previously hardcoded to the
-  `consv_trailing_ramp` champion only) is now generalized with a `--recipe`
-  flag (`x6`/`consv_trailing`/`consv_trailing_ramp`, reusing
-  `shadow_4h_fold_date_sensitivity.py`'s existing `build_genome()` rather than
-  duplicating the mapping) so a real `EvolutionRun` can be seeded from any of
-  the three -- `--recipe x6` is the new, previously-impossible case. 2 new
-  tests (CLI wiring only, `EvolutionRun`/`load_universe` stubbed, no network),
-  full suite 324/324 (up from 322/322), `tools/edit_bundle_module.py sync
-  --check` confirmed no drift (only `tools/`/`tests/` files touched).
-  `live_state.json` untouched. Genome still v3 (1d) live, untouched. **A
-  3-generation run (`--recipe x6 --seed 9101`) against real 4h data was
-  kicked off in the background right after this tool shipped -- see the next
-  entry, or a follow-up session, for whether search finds its own way past
-  fold 1's `MAX_DD_HARD_FAIL` gate. This entry covers only the shipped,
-  tested CLI generalization, not yet a verdict on the search itself.**
+- **Found 2026-09-02 (3-hourly check, ~06:46-07:15 UTC): a pure
+  Researcher-driven search starting from the unpatched `x6` seed hits the
+  exact same fold-1 wall as every hand-picked patch in this thread -- option
+  (2b)'s first slice is evidence against "a fresh search routes around it
+  easily."** See "Next steps" item 2 and
+  `runs/2026-09-02-0656-fresh-search-x6-recipe.md`. Generalized
+  `tools/shadow_4h_ramp_generation.py` with a `--recipe`
+  (`x6`/`consv_trailing`/`consv_trailing_ramp`) flag (reusing
+  `shadow_4h_fold_date_sensitivity.py`'s `build_genome()`, 2 new tests, full
+  suite 324/324, no bundle drift) so a real `EvolutionRun` could be seeded
+  from the genuinely unpatched seed for the first time in this thread, not
+  another hand-picked gene on the fixed 22:07 UTC `consv1 + trailing_stop`
+  starting point. Ran one generation (14 proposals, seed 9101) against real
+  4h data: the top pick by a wide margin -- `regime_scale.bear=0.125`
+  (fold-aggregate fitness 0.856 vs champion 0.435) -- **hard-fails the real
+  `dd_corrected_stats()` gate on drawdown**, read directly from
+  `state/lineage.jsonl`'s rejection reason. A second candidate cleared the
+  fold gate but failed the sealed holdout; a third also hard-failed. **Not
+  exhaustive (one generation, one seed)**, but the search's own best idea
+  drowns in the same cold-start drawdown every targeted patch has hit since
+  2026-08-31 -- so the more literal reading of (2b), reconsidering the base
+  recipe itself (the x6 bar-scaling approach or the `consv1` tightening, not
+  just unconstrained search on top of x6), is now the more promising
+  untried half, not running more generations of the same search. `--recipe
+  x6` stays available in the tool for anyone who wants to try more
+  generations/seeds anyway. `live_state.json` untouched, no protected file
+  touched. Genome still v3 (1d) live, untouched.
 
 - **Found 2026-09-02 (3-hourly check, ~03:47-04:13 UTC): the 01:12 UTC flip
   doesn't hold across nearby days -- one of seven days shows real risk under
@@ -5495,15 +5499,25 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
-   **Pointer (2026-09-02 ~06:46-07:xx UTC): the first slice of option (2b) is
-   underway -- `shadow_4h_ramp_generation.py` now takes `--recipe x6` to seed
-   a real `EvolutionRun` from the unpatched seed instead of a hand-picked
-   patch.** See "Current state" above. A 3-generation run against real data
-   was started in the background; its result (whether search clears fold 1's
-   gate on its own) is not yet known as of this entry -- check the next
-   "Current state" entry, or run `python3 tools/shadow_4h_ramp_generation.py
-   --recipe x6 --generations N --seed <fresh>` again if no result was
-   recorded. (2a) stays closed; nothing here reopens it.
+   **Pointer (2026-09-02 ~06:46-07:15 UTC): option (2b)'s first slice --
+   unconstrained search on the unpatched `x6` seed -- hits the same fold-1
+   wall as every hand patch; the more literal reading of (2b) (reconsider
+   the base recipe itself) is the untried half now.** See "Current state"
+   above and `runs/2026-09-02-0656-fresh-search-x6-recipe.md`.
+   `shadow_4h_ramp_generation.py --recipe x6` (new this entry) ran one real
+   generation from the unpatched seed: the top proposal by a wide margin
+   (fold-aggregate 0.856 vs 0.435, a bear-regime size cut) still hard-fails
+   `dd_corrected_stats()`'s drawdown gate -- one generation, one seed, not
+   exhaustive, but it argues against "a fresh search would easily route
+   around fold 1." **Two live options left under (2b), neither tried yet:**
+   (i) more generations/seeds of the same unconstrained `--recipe x6` search
+   (the tool now supports this directly), in case one generation was simply
+   unlucky; or (ii) reconsider the *base recipe* itself -- the x6 bar-scaling
+   multiplier approach, or the `consv1` consult-tightening choice -- rather
+   than searching on top of either. (ii) is untried by every session in this
+   thread so far and is the more literal reading of "step back ... and
+   reconsider the base recipe" from the entry that first proposed (2b). (2a)
+   stays closed; nothing here reopens it.
 
    **Pointer (2026-09-02 ~04:13 UTC): the 01:12 UTC "fold-rebasing artifact"
    finding doesn't hold across nearby days -- 1 of 7 shifts hard-fails under

@@ -44,20 +44,48 @@ Kicked off `python3 tools/shadow_4h_ramp_generation.py --recipe x6
 background right after the tool shipped, to see whether search finds its own
 way past fold 1's `MAX_DD_HARD_FAIL` gate within this session's time budget.
 
-## What's not done
+## Update (~07:05-07:15 UTC): the search's own top pick hits the same wall
 
-The search's actual result was **not known when this note was written** --
-it was still fetching/replaying market data in the background. Whoever
-next picks up item 2 should check `state/lineage.jsonl` (gitignored scratch
-log `EvolutionRun.generation()` appends to) or just re-run the command above
-with a fresh `--seed` if no result got recorded in a later "Current state"
-entry. If search does land on something that clears the gate, the next
-useful check is the same `shadow_4h_fold_date_sensitivity.py --shift 7`
-multi-day walk this thread has applied to every other candidate -- a
-same-day pass has repeatedly not generalized across nearby days for this
-genome family (grid-point instability, generation-vs-sweep boundary flip,
-trust-continuous day-sensitivity), so a single x6-search win should not be
-treated as settled either.
+The first `--recipe x6` run (seed 9101, `--generations 3 --n-blind 6`) was
+killed by its own 590s safety timeout mid-evaluation of generation 1's
+proposals -- 4h/4-year fold evaluation of a full proposal batch is more
+expensive than that budget for this genome family. Re-ran smaller and
+unbuffered against the now-warm data cache (`--generations 1 --n-blind 4`,
+same seed) and it completed in 580s.
+
+**Result: no proposal cleared the bar in generation 1, and the top pick by a
+wide margin -- fold-aggregate fitness 0.856 vs the unpatched champion's
+0.435, `agents.risk_judge.genes.regime_scale.bear: 0.125` (i.e. cut bear-regime
+position sizing to an eighth) -- still hard-fails the real fold-corrected
+gate.** Read directly from `state/lineage.jsonl`'s `rejections` list for this
+generation:
+
+- `regime_scale.bear=0.125` (fitness 0.856): **"challenger failed a hard gate
+  ... drawdown > 40%"** -- rejected by the real `dd_corrected_stats()` gate
+  despite the large fold-aggregate win. The exact same fold-1 blind-spot
+  pattern every hand-picked patch in this thread has hit (grid-point
+  instability, boundary flips, trust-continuous corrections), now reproduced
+  by pure Researcher search with zero hand-tuning involved.
+- `min_rank_mom + trailing_stop` tune (fitness 0.689): cleared the fold gate
+  but failed the **sealed holdout** (0.135 vs champion's own -0.281 + a 2.355
+  margin) -- the unpatched champion's holdout fitness is itself quite poor,
+  so this isn't even a strong champion to beat.
+- `max_position_pct=0.175` (fitness 0.492): hard-failed the same fold gate.
+
+**Reading:** option (2b)'s first slice does not support "search finds an easy
+way past fold 1 that hand-tuning missed." Given free rein over the whole gene
+space with no seed-genome anchoring at all, the search's own best idea (an
+83% recipe-inverting sizing cut in bear regimes) still drowns in fold 1's
+cold-start drawdown, the same wall every targeted patch has hit since
+2026-08-31. This is one generation (14 proposals) from one seed (9101) --
+not exhaustive -- but it is evidence against, not for, "the seed genome is
+the problem and a fresh search would route around it easily." The more
+literal reading of (2b) -- reconsidering the *base recipe itself* (the x6
+bar-scaling approach, or the `consv1` consult tightening, not just letting
+search loose on top of x6) -- remains untried and is now the more promising
+half of (2b) to pick up next, over running more generations of this same
+search with a different seed.
 
 `live_state.json` untouched. No protected file touched. Genome still v3
-(1d) live, untouched.
+(1d) live, untouched. `state/lineage.jsonl` is gitignored scratch state, not
+committed -- this note is the durable record of the finding.
