@@ -306,6 +306,31 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-09-02 (3-hourly check, ~21:47-22:12 UTC): a third unconstrained-search
+  seed clears the fold gate zero times in 2 generations, unlike seed 9102 --
+  1 of 5 generations across 3 seeds so far has ever cleared it.** See "Next
+  steps" item 2 and `runs/2026-09-02-2212-shadow-4h-x6-seed9103.md`. Ran
+  `tools/shadow_4h_ramp_generation.py --recipe x6 --generations 2 --seed 9103`
+  (fresh seed, distinct from 9101/9102) -- 2 real `EvolutionRun.generation()`
+  calls against real 4h data, unpatched `x6` seed, read-only. Both
+  generations' top candidates hard-fail `dd_corrected_stats()`'s drawdown
+  gate, including a hypothesis not tried elsewhere in this thread
+  (`risk_judge.max_position_pct` 0.175, "circuit breaker tripped 5x --
+  concentration too high", fold fitness 0.816 vs. champion's -2.531
+  hard-fail sentinel -- still hard-fails). No candidate this seed produced
+  ever reached the sealed holdout check. Sample is now 3 seeds/5 generations,
+  1 fold-clear (which itself failed holdout), 0 candidates ever clearing
+  both fold and holdout -- more evidence for "near-misses, not real
+  solutions," consistent with every prior entry, flagged as worth weighing
+  against treating option (i) as exhausted too. Does not touch item 2's
+  owner-decision fork, not decided here. `live_state.json` untouched, no
+  protected file touched, `python3 -m pytest -q` 338/338 baseline (no code
+  changed this entry). Genome still v3 (1d) live, untouched. Also: this
+  session's clone started detached with a local `main` sharing no common
+  ancestor with `origin/main` (stale ref from before an earlier force-push
+  rewrote origin's history) -- resolved with `git reset --hard origin/main`
+  before starting, working tree was already clean, nothing lost.
+
 - **Found 2026-09-02 (3-hourly check, ~19:00-19:27 UTC): a fresh unconstrained-search
   seed clears the real fold-aggregate hard gate for the first time in this
   sub-thread -- still fails the sealed holdout.** See "Next steps" item 2 and
@@ -5602,6 +5627,21 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-02 ~21:47-22:12 UTC): a third seed clears the fold gate
+   zero times in 2 generations -- sample is now 3 seeds/5 generations, only
+   1 fold-clear (which failed holdout), 0 clearing both.** See "Current
+   state" above and `runs/2026-09-02-2212-shadow-4h-x6-seed9103.md`.
+   `tools/shadow_4h_ramp_generation.py --recipe x6 --generations 2 --seed
+   9103` (unmodified tool, fresh seed): both generations' top candidates
+   hard-fail `dd_corrected_stats()`, including a not-previously-tried
+   concentration-limit hypothesis (`risk_judge.max_position_pct=0.175`)
+   that still hard-fails the same way. **Option (i) (more generations/seeds)
+   is not closed by this, but the running tally (1/5 fold-clears, 0/5
+   holdout-clears) is worth the next session weighing against treating it
+   as similarly exhausted to the single-lever alternatives closed at
+   12:47-13:09 UTC** -- not decided here. Does not touch the owner-decision
+   fork below.
+
    **Pointer (2026-09-02 ~19:00-19:27 UTC): a fresh seed's second generation
    is the first candidate in the unconstrained-search sub-thread to clear
    the real fold-aggregate hard gate -- it still fails the sealed holdout.**
