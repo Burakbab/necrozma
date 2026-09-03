@@ -31,10 +31,24 @@ Every scheduled run, in order:
    git checkout main
    git pull --rebase origin main
    ```
-   Several routines share this repo and collide otherwise. If local `main` has
-   diverged from `origin/main` (history here has been rewritten before, and may
-   be again), **`origin/main` is authoritative** — `git reset --hard
-   origin/main` and carry on. Never force-push.
+   Several routines share this repo and collide otherwise. If that reports
+   local `main` and `origin/main` as diverged (sometimes phrased as "no common
+   ancestor"), **this is almost always the cloud clone's shallow fetch (a
+   fixed commit depth), not a real force-push** — five independent sessions
+   between 2026-09-02 and 2026-09-03 (~19:00, ~21:47, ~00:46, ~03:46, and the
+   09:00 UTC daily discussion) all hit this and traced it to shallow-clone
+   staleness, not rewritten history. Confirm and fix it the non-destructive
+   way first:
+   ```
+   git fetch --unshallow origin   # or: git fetch --depth=200 origin main
+   git merge-base main origin/main
+   ```
+   If a merge-base is found (it always has been so far), local `main` has no
+   commits of its own — `git merge --ff-only origin/main` applies cleanly,
+   nothing discarded, nothing lost. Only fall back to `git reset --hard
+   origin/main` if the unshallowed fetch still shows a genuine rewrite (no
+   merge-base at all even with full history) — `origin/main` is authoritative
+   in that case. Never force-push.
 
 3. **`pip3 install -r requirements.txt -q`** — the cloud sandbox starts bare with
    no numpy/pandas.
@@ -305,6 +319,39 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Fixed 2026-09-03 (3-hourly check, ~09:46-10:xx UTC): the recurring
+  "detached HEAD, no common ancestor" git situation is a shallow-clone
+  artifact, not a real force-push — Run protocol step 2 now says so and gives
+  the safe fix.** No code shipped, no shadow research this cycle (item 2's
+  accept-vs-redirect call was already flagged for the owner by this morning's
+  09:00 UTC daily discussion, and three prior sessions already recommended
+  against a sixth `x6` seed — nothing new to add there, so this cycle picked
+  up a different, safe, small improvement instead of manufacturing more of
+  the same). This session's own clone hit the same divergence every recent
+  session has hit (`git log --oneline main -3` vs `origin/main -3` showed no
+  shared commits) — `git merge-base` returned nothing at first, but that was
+  because the clone is shallow (`git rev-parse --is-shallow-repository` ->
+  `true`, depth 50); `git fetch --depth=200 origin main` immediately found a
+  real merge-base (local `main`'s tip was an ancestor of `origin/main`, just
+  58 commits behind), and `git merge --ff-only origin/main` applied cleanly —
+  no reset, nothing discarded. This is the same root cause the 09:00 UTC
+  daily discussion diagnosed independently an hour earlier (`git fetch
+  --unshallow`), and the same situation at least three other 3-hourly
+  sessions hit on 2026-09-02/09-03 (19:00, 21:47, 00:46, 03:46 UTC), each
+  resolving it a different way (`reset --hard`, `checkout -B`, `fetch
+  --unshallow`) without anyone updating the protocol to say why it keeps
+  happening or which fix avoids an unnecessary destructive `reset --hard`.
+  Updated the Run protocol's step 2 (this file, near the top) with the actual
+  cause and the non-destructive fetch-and-check-merge-base-first sequence,
+  keeping `reset --hard` as the documented fallback only for a genuine
+  rewrite (no merge-base even with full history). Pure documentation change —
+  no code, no tests, `live_state.json` untouched (md5 identical), `python3 -m
+  pytest -q` 338/338 confirmed this session (baseline, no code changed).
+  Genome still v3 (1d) live, untouched. Daily bar already handled at 00:20
+  UTC (tick 20, held) — confirmed via `live_state.json`'s `updated` timestamp
+  and `runs/2026-09-03-0020-daily-trading.md` before starting; no tick run
+  this cycle.
 
 - **Found 2026-09-03 (3-hourly check, ~03:46-04:16 UTC): a fifth unconstrained-search
   seed clears the fold gate a third time -- but via the exact same mutation
