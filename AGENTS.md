@@ -34,11 +34,22 @@ Every scheduled run, in order:
    Several routines share this repo and collide otherwise. If that reports
    local `main` and `origin/main` as diverged (sometimes phrased as "no common
    ancestor"), **this is almost always the cloud clone's shallow fetch (a
-   fixed commit depth), not a real force-push** — five independent sessions
-   between 2026-09-02 and 2026-09-03 (~19:00, ~21:47, ~00:46, ~03:46, and the
-   09:00 UTC daily discussion) all hit this and traced it to shallow-clone
-   staleness, not rewritten history. Confirm and fix it the non-destructive
-   way first:
+   fixed commit depth), not a real force-push** — six-plus independent
+   sessions between 2026-09-02 and 2026-09-03 (~19:00, ~21:47, ~00:46,
+   ~03:46, the 09:00 UTC daily discussion, and the 21:46 UTC 3-hourly check)
+   all hit this and traced it to shallow-clone staleness, not rewritten
+   history. `tools/git_sync.py` (added 2026-09-03, tested:
+   `tests/test_git_sync.py`, 7 tests against real local git repos) now runs
+   the fix for you:
+   ```
+   python3 tools/git_sync.py
+   ```
+   It unshallows if needed, checks for a real merge-base, and fast-forwards
+   if one exists (nothing discarded, nothing lost) — only falling back to
+   `git reset --hard origin/main` if the fetch still shows a genuine rewrite
+   (no merge-base at all even with full history), and refusing to do even
+   that if the working tree is dirty (prints a message instead of clobbering
+   uncommitted work). The equivalent by hand:
    ```
    git fetch --unshallow origin   # or: git fetch --depth=200 origin main
    git merge-base main origin/main
@@ -319,6 +330,37 @@ is no brokerage account in this design and there does not need to be one.
 ---
 
 ## Current state
+
+- **Shipped 2026-09-03 (3-hourly check, ~21:46-22:xx UTC): `tools/git_sync.py`
+  turns the 09:46 UTC entry's documentation fix into an actual runnable
+  script, since this session hit the exact same shallow-clone divergence
+  right at startup and, like several before it, resolved it by hand
+  (`git reset --hard origin/main`) rather than trying the documented
+  non-destructive check first — a small process gap worth closing rather
+  than writing yet another prose paragraph about it.** No live trading this
+  cycle (tick 20 already handled at 00:20 UTC, confirmed via
+  `live_state.json`'s `updated` timestamp and the 20:30 UTC evaluation note
+  before starting). No shadow research either — item 2's accept-vs-redirect
+  call remains flagged for the owner (09:00 UTC daily discussion), nothing
+  new to add there. New `sync(cwd, branch)` runs the Run protocol step 2
+  sequence: checkout the branch if detached, unshallow if needed, fast-
+  forward if a real merge-base exists, and only `reset --hard origin/main`
+  if the fetch still shows a genuine rewrite (no merge-base even with full
+  history) — and even then, refuses if the working tree is dirty rather than
+  clobbering uncommitted work (the one case hand-run sessions under time
+  pressure could get wrong). 7 new tests (`tests/test_git_sync.py`) against
+  real local git repos (file:// remotes, no network): up-to-date fast-
+  forward, behind-origin fast-forward, detached-HEAD checkout, shallow-clone
+  unshallow-and-fast-forward, genuine-divergence reset (built via an orphan
+  branch so it's a real disjoint history, not just a same-lineage
+  `reset --hard`+recommit), genuine-divergence-with-dirty-tree abort, and
+  not-a-git-repo error. Full suite 345/345 (was 338, +7). Verified against
+  the real repo too: `python3 tools/git_sync.py` on this already-synced
+  clone printed `fast-forwarded -- Already up to date.`, no-op as expected.
+  Updated Run protocol step 2 (this file) to point at the script, keeping
+  the hand-run sequence as a documented fallback. `live_state.json`
+  untouched (md5 unchanged), genome still v3 (1d) live, no protected file
+  touched, constitution unaffected.
 
 - **Fixed 2026-09-03 (3-hourly check, ~09:46-10:xx UTC): the recurring
   "detached HEAD, no common ancestor" git situation is a shallow-clone
