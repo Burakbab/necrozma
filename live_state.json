@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 19,
-  "updated": "2026-09-02T00:22:38+00:00",
+  "ticks": 20,
+  "updated": "2026-09-03T00:22:19+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -165,7 +165,7 @@
         "avg_cost": 0.33248683104152005,
         "opened_ts": "2026-08-21 00:00:00+00:00",
         "peak_price": 0.3709,
-        "bars_held": 11,
+        "bars_held": 12,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -177,7 +177,7 @@
         "avg_cost": 11.366543573823721,
         "opened_ts": "2026-08-29 00:00:00+00:00",
         "peak_price": 11.434,
-        "bars_held": 3,
+        "bars_held": 4,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +188,7 @@
         "avg_cost": 1.3641817499999997,
         "opened_ts": "2026-08-30 00:00:00+00:00",
         "peak_price": 1.3798,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -772,6 +772,10 @@
       [
         "2026-09-01 00:00:00+00:00",
         11730.187051129285
+      ],
+      [
+        "2026-09-02 00:00:00+00:00",
+        11633.628343146107
       ]
     ],
     "peak_nav": 11730.187051129285,
@@ -4713,6 +4717,88 @@
           },
           {
             "symbol": "CRVUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [],
+        "notes": "regime bull (scale 1.00), breadth 96%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-09-03T00:22:19+00:00",
+      "bar": "2026-09-02 00:00:00+00:00",
+      "tick": 20,
+      "nav_before": 11633.63,
+      "nav_after": 11547.71,
+      "cash": 3866.86,
+      "cash_before": 3866.86,
+      "positions": {
+        "CRVUSDT": 3188.29,
+        "LINKUSDT": 2736.89,
+        "XRPUSDT": 1755.68
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-09-02 00:00:00+00:00",
+        "nav": 11633.628343146107,
+        "regime": "bull",
+        "breadth": 0.9629629629629629,
+        "cash_pct": 0.33238615206629396,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout +0.0%), momentum rank 1.00, slope +8.87%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.892,
+              "why": "confirmed trend: ma-spread +24.3%, slope +2.05%, rsi 71 in band"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +21.6%, slope +8.87%, rsi 67 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.915,
+              "why": "confirmed trend: ma-spread +30.0%, slope +1.97%, rsi 70 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [],
+        "vetoes": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "SOLUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "UNIUSDT",
             "side": "buy",
             "by": "risk_judge",
             "reason": "no room: size cap or cash floor"
