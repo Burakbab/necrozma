@@ -306,6 +306,34 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Found 2026-09-03 (3-hourly check, ~00:46-01:11 UTC): a fourth unconstrained-search
+  seed clears the fold gate again -- second clear in the sub-thread -- and again
+  fails the sealed holdout; updated tally is 4 seeds/7 generations, 2 fold-clears,
+  0 holdout-clears.** See "Next steps" item 2 and
+  `runs/2026-09-03-0111-shadow-4h-x6-seed9104.md`. Ran
+  `tools/shadow_4h_ramp_generation.py --recipe x6 --generations 2 --seed 9104`
+  (fresh seed, distinct from 9101/9102/9103) -- 2 real `EvolutionRun.generation()`
+  calls against real 4h data, unpatched `x6` seed, read-only. Generation 1's
+  `consult_moderate`-disabling candidate (fold fitness 0.0443) cleared
+  `dd_corrected_stats()`'s drawdown gate cleanly, then lost the sealed holdout
+  (-0.770 vs. champion -0.265 + margin 2.355) -- the second fold-clear in this
+  sub-thread (after seed 9102's cash-floor candidate), a different kind of
+  de-risking move hitting the same holdout wall. Generation 2 (6 candidates)
+  found nothing that cleared the gate. **This session's read: four seeds/seven
+  generations without a single holdout-clear, including two fold-clears that
+  both failed holdout cleanly for the same underlying reason, is consistent
+  enough that the evidence bar for continuing option (i) vs. making item 2's
+  accept-vs-redirect decision has shifted further toward the latter** -- not
+  closed here, still flagged as the next session/owner's call. `live_state.json`
+  untouched (md5 identical before/after), no protected file touched,
+  `python3 -m pytest -q` 338/338 baseline confirmed before starting (no code
+  changed this entry). Genome still v3 (1d) live, untouched. Also: this
+  session's clone again started detached with a local `main` sharing no common
+  ancestor with `origin/main` (same stale-ref-vs-force-push situation as the
+  prior two sessions) -- resolved with `git checkout main && git checkout -B
+  main origin/main` before starting, working tree was already clean, nothing
+  lost.
+
 - **Found 2026-09-02 (3-hourly check, ~21:47-22:12 UTC): a third unconstrained-search
   seed clears the fold gate zero times in 2 generations, unlike seed 9102 --
   1 of 5 generations across 3 seeds so far has ever cleared it.** See "Next
@@ -5627,6 +5655,21 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-03 ~00:46-01:11 UTC): a fourth seed clears the fold gate
+   again (second clear in the sub-thread) and again fails the sealed holdout --
+   sample is now 4 seeds/7 generations, 2 fold-clears, 0 clearing both.**
+   See "Current state" above and `runs/2026-09-03-0111-shadow-4h-x6-seed9104.md`.
+   `tools/shadow_4h_ramp_generation.py --recipe x6 --generations 2 --seed
+   9104` (unmodified tool, fresh seed): generation 1's `consult_moderate`-
+   disabling candidate cleared the real fold gate then lost the sealed
+   holdout (-0.770 vs. champion -0.265 + margin 2.355); generation 2 found
+   nothing that cleared the gate. **This session's read: four seeds/seven
+   generations without a single holdout-clear, two independent fold-clears
+   both failing holdout the same way, has shifted the evidence bar further
+   toward closing option (i) in favor of item 2's accept-vs-redirect
+   decision** -- not closed here, still the next session/owner's call. Does
+   not touch the owner-decision fork below.
+
    **Pointer (2026-09-02 ~21:47-22:12 UTC): a third seed clears the fold gate
    zero times in 2 generations -- sample is now 3 seeds/5 generations, only
    1 fold-clear (which failed holdout), 0 clearing both.** See "Current
