@@ -331,6 +331,44 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Current state
 
+- **Confirmed 2026-09-04 (3-hourly check, ~00:46-01:xx UTC): the recurring
+  "identical candidate across fresh seeds" pattern in the 4h-shadow-evolution
+  thread (item 2) is guaranteed by construction, not a coincidence — verified
+  by reading the code, not by running a sixth shadow seed.** No live trading
+  this cycle (tick 21 already handled at 00:20 UTC, confirmed via
+  `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-04-0020-daily-trading.md` before starting). `git_sync.py`
+  worked cleanly again (plain fast-forward, no divergence this time).
+  `agents.researcher.Researcher.propose()`'s own docstring already says
+  `from_diagnosis`/`structural` are "deterministic given the champion" and
+  that's *why* `exclude`/`researcher_memory` exists — but nothing tested that
+  claim directly, and three separate run notes (seeds 9102/9104/9105) read
+  the recurring `remove_agent`-on-`consult_moderate` candidate as merely
+  "suggestive" evidence of this rather than confirmed. New
+  `tests/test_researcher_structural_determinism.py` (6 tests) proves it
+  directly: `structural()` and `from_diagnosis()` return byte-identical
+  proposal sets across arbitrary RNG seeds for the same champion+diagnostics
+  (only `perturb()`, the blind-search leg, varies with seed), and a fresh
+  `Researcher.propose()` call with no `exclude` set — exactly what every
+  from-scratch shadow `EvolutionRun` starts with — is *guaranteed* to
+  re-propose removing `consult_moderate` at generation 1 regardless of seed;
+  `exclude`ing that one key removes it, confirming the fix already in the
+  codebase. **Correction this sharpens for item 2's tally**: the "5
+  seeds/9 generations, 3 fold-clears" framing in Next steps below counted 3
+  fold-clears as 3 independent pieces of evidence: they are one deterministic
+  proposal recurring three times because each shadow session started a
+  memory-less `EvolutionRun` rather than carrying `researcher_memory`
+  forward — real independent search evidence from this thread is closer to
+  "0 fold-clears from anything but this one guaranteed candidate," a
+  materially weaker basis than the existing tally implied. Does not decide
+  item 2's accept-vs-redirect fork (still the owner's call, already flagged
+  three times this week) — strengthens, not reverses, every prior session's
+  recommendation to stop running fresh `x6` seeds. Full suite 351/351 (was
+  345, +6 new). `live_state.json` untouched (md5 `81aa743fa71f116be9ba8dbf91d3de96`
+  unchanged before/after), no protected file touched, `tools/edit_bundle_module.py
+  sync --check` clean (test-only change, no `_SRC` module edited). Genome
+  still v3 (1d) live, untouched.
+
 - **Shipped 2026-09-03 (3-hourly check, ~21:46-22:xx UTC): `tools/git_sync.py`
   turns the 09:46 UTC entry's documentation fix into an actual runnable
   script, since this session hit the exact same shallow-clone divergence
@@ -1706,6 +1744,18 @@ every `evolve` call.
    by hindsight. This happens on its own; just don't break it.
 
 2. **4h bars for ~6× more observations and a tighter fitness estimate.**
+   **Pointer (2026-09-04 ~00:46-01:xx UTC): the "3 fold-clears" in the tally
+   just below are confirmed, by directly testing `Researcher.structural()`,
+   to be one deterministic candidate (`remove_agent` on `consult_moderate`)
+   guaranteed to recur at generation 1 of any memory-less `EvolutionRun`
+   against this champion, regardless of RNG seed — not 3 independent search
+   outcomes.** See "Current state" above and
+   `tests/test_researcher_structural_determinism.py`. Real independent
+   evidence from option (i) is closer to 0 fold-clears than 3; this makes the
+   existing "treat option (i) as exhausted" recommendation below stronger,
+   not weaker. Still does not decide the accept-vs-redirect fork itself —
+   still the owner's call.
+
    **Pointer (2026-09-03 ~03:46-04:16 UTC): a fifth seed clears the fold gate a
    third time, via the exact same `consult_moderate`-disabling mutation that
    cleared it last time (identical fold fitness) -- again fails the sealed
