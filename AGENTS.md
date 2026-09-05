@@ -350,6 +350,25 @@ Nothing below is new evidence — it's a pointer to work already done.
   item 4 (LLM-backed consults) or item 5 (short selling). Do not spend
   another cycle running a fresh seed against this recipe without one of
   these being decided first — see item 2's full history for why.
+  **Sharpened 2026-09-05 (weekend all-hands): this is a resource-allocation
+  call, not a blocked technical question — checked directly rather than
+  re-asserted.** The `consv1 + trailing_stop + ramp` stack has already been
+  run through the *real* gate logic (`EvolutionRun.generation()`/
+  `dd_corrected_stats()`, not shadow-only tooling): it cleared the real fold
+  gate on the day it was measured, but a 7-day fold-date-sensitivity check
+  found it fails 4-6 of 7 nearby daily shifts, and a fresh best-of-day pick
+  a day later hard-failed 6/7 shifts too — the pass is boundary-fragile and
+  flips with about a day of added data, not a stable result. It has never
+  been run against the sealed holdout at all (only the unpatched pre-ramp
+  genome reached holdout, and failed it). The mechanical next step —
+  `--recipe consv_trailing_ramp` through a full `evolve()` including the
+  sealed holdout and the multi-day robustness check — is already scripted
+  and would take no new tooling. So option (a) is not blocked on missing
+  engineering; it is "spend a real, consequential promotion attempt on a
+  genome family with a demonstrated fragile pass rate," which is exactly
+  the kind of call this file reserves for the owner. Recommend the owner
+  read this paragraph specifically, not just the summary above, before
+  deciding.
 - **Item 5 (short selling) — needs a human review + `evotrader.manifest`
   re-seal before Phase 1 can ship.** Design is done and a full implementation
   (`PaperBroker.short()`/`.cover()`, borrow accrual, 16 passing tests) was
