@@ -391,6 +391,50 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-05 (weekend all-hands, ~06:00-08:xx UTC): 45 more real
+  `evolve` generations against the live v3 (1d) champion in two batches (25
+  then 20), no promotion — cumulative candidates tested against v3 rose
+  280 → 924, stagnation counter 45 → 65 (the expected "wider steps" boldness
+  growth as a champion survives longer, not a new finding).** No live
+  trading this cycle (tick 22 already handled at 00:20 UTC, confirmed via
+  `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-05-0020-daily-trading.md` before starting) — deliberately:
+  weekend sessions are for evolution/self-improvement depth, not day-to-day
+  trading. Chose plain real-champion `evolve` over another 4h-shadow seed
+  because item 2 (4h-bar family) was freshly re-investigated this same
+  session (see next entry) and found to be a resource-allocation call, not
+  something more shadow search would sharpen; a large real-`evolve` push
+  against the actual live champion is the one form of "go deep on
+  evolution" available this session that isn't blocked on an owner
+  decision. Both batches verified before commit: `python3 -m pytest -q`
+  351/351 after each, `git diff --stat` showed only `live_state.json`
+  (researcher_memory's `tested` list growing plus the stagnation counter),
+  constitution verified `8b74865634b1db07` unchanged, no protected file
+  touched. Committed and pushed separately per batch
+  (`Evolve: 25 more generations...` then `Evolve: 20 more generations...`)
+  rather than held to one end-of-session commit. Champion v3 fitness held
+  flat at 1.055 across all 45 generations — every one of the ~630 new
+  candidates this session generated lost to it; reads as continued evidence
+  v3 sits in a real local optimum for blind/structural search from this
+  starting point, not as a null result worth investigating further on its
+  own (this is exactly what "accumulate live forward-test data" / ordinary
+  `evolve` cumulative search is supposed to look like most of the time).
+
+- **Sharpened 2026-09-05 (weekend all-hands, ~06:xx UTC): item 2's
+  "owner's call" framing checked directly against the real gate/holdout
+  rather than re-asserted — see the "Owner decisions pending" section
+  above for the full write-up (added to that section directly rather than
+  duplicated here).** Confirmed via a full read of the `consv1 +
+  trailing_stop + ramp` thread's run notes: the stack has cleared the real
+  fold gate once but flips to hard-fail within about a day of added data
+  (4-6 of 7 nearby daily shifts fail), has never reached the sealed
+  holdout, and the mechanical next step (`--recipe consv_trailing_ramp`
+  through a full `evolve()` including holdout) needs no new tooling — so
+  the block is genuinely "spend a real promotion attempt on a fragile
+  genome," a resource/risk-appetite decision, not a disguised technical
+  unknown. Read-only research (one Explore agent over existing run notes +
+  AGENTS.md), no code or state touched by this entry itself.
+
 - **Confirmed 2026-09-04 (3-hourly check, ~00:46-01:xx UTC): the recurring
   "identical candidate across fresh seeds" pattern in the 4h-shadow-evolution
   thread (item 2) is guaranteed by construction, not a coincidence — verified
