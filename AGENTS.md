@@ -391,6 +391,35 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Shipped 2026-09-05 (3-hourly check, ~09:46-10:xx UTC): the dashboard's
+  `genome` stat tile now surfaces the per-champion `researcher_memory`
+  tally (candidates tried, none better yet) instead of only the lifetime
+  generation count — a small, non-live-state-touching improvement picked
+  because items 2/5/6 are all genuinely blocked on an owner decision (see
+  "Owner decisions pending") and item 4 has no pending flagged case to
+  review, so a plain `evolve N` run against the real champion (this
+  scheduled task's own guidance: avoid touching `live_state.json` unless
+  actually promoting) wasn't the right default this cycle.** New
+  `evotrader_dashboard._genome_sub(live, champ, lineage)` reads
+  `researcher_memory.tested`/`champion_version` (already in
+  `live_state.json`, e.g. 924 tried against the live v3 champion as of this
+  writing) and appends "N challenger idea(s) tried since, none better yet"
+  to the existing "N generation(s) run" subtitle only when
+  `researcher_memory.champion_version` matches the current genome's
+  version — guards against showing a stale count right after a promotion,
+  before memory reseeds. New `tests/test_dashboard_champion_stat.py` (4
+  tests: matching-champion count shown, stale-memory mismatch omits it,
+  missing `researcher_memory` doesn't crash, empty `tested` list omits the
+  suffix) — first tests this file has ever had. Full suite 355/355 (was
+  351, +4). Rebuilt `index.html` (`EVO_STATE=... python3
+  evotrader_dashboard.py`) and confirmed the new text renders correctly
+  against the real live state; `live_state.json` itself untouched (no
+  diff, not even opened for writing) and no protected file touched.
+  Genome still v3 (1d) live, untouched. Daily bar already handled at 00:20
+  UTC (tick 22, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-05-0020-daily-trading.md` before starting); no tick this
+  cycle. `review-hard-calls` confirmed 0 pending.
+
 - **Run 2026-09-05 (weekend all-hands, ~06:00-08:xx UTC): 45 more real
   `evolve` generations against the live v3 (1d) champion in two batches (25
   then 20), no promotion — cumulative candidates tested against v3 rose

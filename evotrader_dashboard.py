@@ -108,6 +108,25 @@ def stat(label, value, sub="", tone=""):
     return f'''<div class="stat"><div class="stat-l">{html.escape(label)}</div>
       <div class="stat-v" style="color:{color}">{value}</div>
       <div class="stat-s">{sub}</div></div>'''
+
+
+def _genome_sub(live, champ, lineage) -> str:
+    """Subtitle for the genome stat tile.
+
+    `researcher_memory` counts every challenger idea tried against the
+    *current* champion specifically (reset on each promotion), which is a
+    more honest "how hard has search tried and failed" number for a general
+    audience than the raw lifetime generation count alone — it's the same
+    figure `holdout-pressure`/`fold-scheme` etc. already treat as the
+    per-champion multiple-testing tally.
+    """
+    sub = f"{len(lineage)} generation(s) run"
+    rm = live.get("researcher_memory") or {}
+    if rm.get("champion_version") == champ.get("version"):
+        tested = len(rm.get("tested") or [])
+        if tested:
+            sub += f" · {tested} challenger idea(s) tried since, none better yet"
+    return sub
  
  
 def build(out_path: str | None = None) -> str:
@@ -150,8 +169,7 @@ def build(out_path: str | None = None) -> str:
              f"{float(broker.get('cash', 0)) / max(nav_now, 1):.0%} of book"),
         stat("closed trades", f"{len(closed)}",
              f"{len(wins) / len(closed):.0%} winners" if closed else "none yet"),
-        stat("genome", f"v{champ.get('version', 1)}",
-             f"{len(lineage)} generation(s) run"),
+        stat("genome", f"v{champ.get('version', 1)}", _genome_sub(live, champ, lineage)),
     ])
  
     # ---- live NAV chart
