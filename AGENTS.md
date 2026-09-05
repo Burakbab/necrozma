@@ -391,6 +391,36 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-05 (3-hourly check, ~15:47-17:1x UTC): 10 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 1204 → 1344, boldness/stagnation counter
+  84 → 94.** No live trading this cycle (tick 22 already handled at 00:20
+  UTC, `live_state.json`'s `updated` timestamp confirmed before starting).
+  Same reasoning as the 12:46 UTC entry below for picking evolve: items
+  2/5/6 still genuinely blocked on an owner decision (no new response since
+  the 09:00 UTC daily discussion), item 4 has 0 pending hard-call reviews,
+  item 7 is feature-complete. Champion fitness held flat at 1.055 across
+  all 10 generations; a few generations' best fold-aggregate candidate beat
+  the champion's own fitness (up to 1.454) but none cleared the full gate —
+  same fold-clears-then-loses-holdout shape as every recent batch, not new.
+  **Operational note for future sessions**: the harness's own
+  `timeout N python3 evotrader_bundle.py evolve N` backgrounding killed a
+  25-generation attempt (exit 143) after ~45-50 minutes with zero progress
+  saved — some outer limit on that specific backgrounding path shorter than
+  a 25-generation run needs. This is distinct from Next-steps item 9's
+  `nohup`-inside-one-tool-call warning (which is about losing the tool's
+  own completion signal, not the process dying). Fix used here: a plain
+  detached `nohup python3 evotrader_bundle.py evolve N > log 2>&1 &`,
+  polled to completion with a `kill -0 <pid>` loop rather than relying on
+  either backgrounding path's own completion signal — worked cleanly for a
+  smaller (10-generation) batch. If a future session hits the same exit-143
+  killed-early symptom on a longer run, try this fix (or a smaller N) before
+  concluding `evolve` itself is broken. Verified before commit: `python3 -m
+  pytest -q` 355/355 (baseline, unchanged — no code touched), `git diff
+  --stat` showed only `live_state.json` (researcher_memory) and
+  `index.html` (dashboard rebuild), constitution verified `8b74865634b1db07`
+  unchanged, no protected file touched. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-05 (3-hourly check, ~12:46-13:5x UTC): 20 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 924 → 1204, stagnation counter 65 → 84.**
