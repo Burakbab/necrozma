@@ -391,6 +391,36 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-05 (3-hourly check, ~18:46-19:3x UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 1344 → 1554, boldness/stagnation counter
+  95 → 110.** No live trading this cycle (tick 22 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp before
+  starting). Fourth consecutive 3-hourly cycle today picking plain `evolve`
+  over anything else — same reasoning as the two batches below (items 2/5/6
+  still blocked on an owner decision with no new response since the 09:00
+  UTC daily discussion; item 4 has 0 pending hard-call reviews; item 7 is
+  feature-complete) — explicitly weighed whether repeating the same action a
+  fourth time was still worth it given three straight batches of zero new
+  information, and concluded yes: the multiple-testing margin's cost of
+  continuing is negligible (`sqrt(2*ln(n))` barely moves for a few hundred
+  more candidates) and nothing else is unblocked. Used the plain
+  `nohup ... &` + `Monitor`/`kill -0` polling pattern documented in the
+  15:47 UTC entry (worked cleanly, ~45 min for 15 generations). Champion
+  fitness held flat at 1.055 across all 15 generations; several generations'
+  best fold-aggregate candidate beat the champion's own raw fitness (up to
+  1.981) but none cleared the full gate — same fold-clears-then-loses-holdout
+  shape as every recent batch. Verified before commit: `python3 -m
+  pytest -q` 355/355 (baseline, unchanged — no code touched), `git diff
+  --stat` showed only `live_state.json` (researcher_memory) and
+  `index.html` (dashboard rebuild), constitution verified
+  `8b74865634b1db07` unchanged, no protected file touched. Genome still v3
+  (1d) live, untouched. **Flagged for the next session**: four straight
+  plain-evolve cycles today have produced consistent negative evidence but
+  no new information — worth considering a differently-shaped diagnostic
+  instead of a fifth identical batch, if the owner-decision landscape (items
+  2/5/6) still hasn't moved.
+
 - **Run 2026-09-05 (3-hourly check, ~15:47-17:1x UTC): 10 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 1204 → 1344, boldness/stagnation counter
