@@ -329,6 +329,47 @@ is no brokerage account in this design and there does not need to be one.
 
 ---
 
+## Owner decisions pending
+
+Three roadmap items (2, 5, 6 below) are each fully investigated as far as a
+scheduled session can take them and now sit on a decision only the owner can
+make. Added here 2026-09-05 (3-hourly check) so the next session/owner sees
+this in one place instead of reconstructing it from the "Next steps" log.
+Nothing below is new evidence — it's a pointer to work already done.
+
+- **Item 2 (4h-bar shadow evolution) — accept vs. redirect.** Five
+  unconstrained-search seeds / nine generations across the `x6` recipe found
+  one real gate-clearing move (disabling `consult_moderate`), confirmed
+  2026-09-04 to be a deterministic candidate the Researcher always proposes
+  first against this champion regardless of seed — not five independent
+  pieces of evidence, closer to zero. Flagged as "the owner's call" in run
+  notes since 2026-09-02 with no resolution yet. The choice: (a) accept the
+  hand-built `consv1 + trailing_stop + ramp` genome stack this thread
+  produced and move toward a real (non-shadow) promotion attempt for the 4h
+  genome family, or (b) park 4h-bar shadow evolution and redirect effort to
+  item 4 (LLM-backed consults) or item 5 (short selling). Do not spend
+  another cycle running a fresh seed against this recipe without one of
+  these being decided first — see item 2's full history for why.
+- **Item 5 (short selling) — needs a human review + `evotrader.manifest`
+  re-seal before Phase 1 can ship.** Design is done and a full implementation
+  (`PaperBroker.short()`/`.cover()`, borrow accrual, 16 passing tests) was
+  built and verified working 2026-08-30, then reverted in full because
+  `core/portfolio.py` is one of the two files `constitution.checksum()`
+  hashes — shipping it would trip `CONSTITUTION MODIFIED` for every run
+  after without a human re-seal in hand first. The design and the tests are
+  ready to re-apply the moment that sign-off exists; nothing else is
+  blocking this item.
+- **Item 6 (equities/FX) — needs a data source picked.** No code has a
+  reason to exist yet: `.env.example` already stages unused Alpaca
+  paper-trading credentials with zero references anywhere in the repo,
+  which looks like a forgotten or anticipatory placeholder rather than a
+  decision already made. A human needs to either confirm Alpaca is the
+  intended source or name a free historical-data mirror instead (analogous
+  to `data-api.binance.vision`) before the first isolated fetcher slice is
+  worth writing.
+
+---
+
 ## Current state
 
 - **Confirmed 2026-09-04 (3-hourly check, ~00:46-01:xx UTC): the recurring
