@@ -391,6 +391,29 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-05 (3-hourly check, ~12:46-13:5x UTC): 20 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 924 → 1204, stagnation counter 65 → 84.**
+  No live trading this cycle (tick 22 already handled at 00:20 UTC, confirmed
+  via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-05-0020-daily-trading.md` before starting). Picked plain
+  real-champion `evolve` over anything else because items 2/5/6 are still
+  genuinely blocked on an owner decision (see "Owner decisions pending"),
+  item 4 has 0 pending hard-call reviews (`review-hard-calls` confirmed),
+  and item 7 is feature-complete with no reason to keep widening it — so
+  accumulating more real cumulative search against the actual live champion
+  was the highest-value use of this slot, same reasoning as the weekend
+  all-hands entry below. Champion fitness held flat at 1.055 across all 20
+  generations — every one of the ~280 new candidates this cycle generated
+  lost to it, continued evidence for a real local optimum from this starting
+  point (`holdout-pressure` re-checked too: still only fold-clears that lose
+  the sealed holdout, nothing new). Verified before commit: `python3 -m
+  pytest -q` 355/355 (baseline, unchanged by this — no code touched),
+  `git diff --stat` showed only `live_state.json` (researcher_memory's
+  `tested` list growing plus the stagnation counter), constitution verified
+  `8b74865634b1db07` unchanged, no protected file touched. Genome still v3
+  (1d) live, untouched.
+
 - **Shipped 2026-09-05 (3-hourly check, ~09:46-10:xx UTC): the dashboard's
   `genome` stat tile now surfaces the per-champion `researcher_memory`
   tally (candidates tried, none better yet) instead of only the lifetime
