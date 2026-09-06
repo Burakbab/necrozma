@@ -391,6 +391,29 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-06 (3-hourly check, ~00:46-01:1x UTC): 10 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 1554 → 1694, boldness/stagnation counter
+  110 → 120.** No live trading this cycle (tick 23 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-06-0020-daily-trading.md` before starting). Checked the
+  prior session's flagged concern (four straight identical evolve batches
+  on 2026-09-05 with no new information) directly rather than repeating a
+  fifth batch blind: `review-hard-calls` still 0 pending, items 2/5/6 still
+  blocked with no new owner input since yesterday's 09:00 UTC daily
+  discussion, and re-ran `live-benchmark` (22 1d bars, excess -11.07%,
+  nowhere near item 0's 60-bar revisit-trigger threshold) and
+  `holdout-pressure` (same fold-clears-then-loses-holdout shape, nothing
+  new) as a freshness check before concluding no differently-shaped
+  diagnostic was actually ready to run instead. Champion fitness held flat
+  at 1.215 (today's evaluation basis) across all 10 generations; every new
+  candidate lost to it — same local optimum as every recent batch. Verified
+  before commit: `python3 -m pytest -q` 355/355 (baseline, unchanged — no
+  code touched), `git diff --stat` showed only `live_state.json`
+  (researcher_memory) and `index.html` (dashboard rebuild), constitution
+  verified `8b74865634b1db07` unchanged, no protected file touched. Genome
+  still v3 (1d) live, untouched.
+
 - **Run 2026-09-05 (3-hourly check, ~18:46-19:3x UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 1344 → 1554, boldness/stagnation counter
