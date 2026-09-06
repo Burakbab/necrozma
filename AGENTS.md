@@ -391,6 +391,31 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-06 (3-hourly check, ~03:47-04:2x UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 1694 → 1904, boldness/stagnation counter
+  120 → 134.** No live trading this cycle (tick 23 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-06-0020-daily-trading.md` before starting). Re-checked
+  whether anything had changed since the prior cycle's freshness pass before
+  running a sixth-in-a-row plain evolve batch: `review-hard-calls` still 0
+  pending, `live-benchmark` still 22 1d bars/-11.07% excess (unchanged,
+  nowhere near item 0's 60-bar revisit trigger — only 8 of the required 60
+  additional bars elapsed since the 2026-08-30 baseline of 15), and
+  `holdout-pressure` shows the same fold-clears-then-loses-holdout shape as
+  every recent run. Items 2/5/6 still genuinely blocked on an owner decision
+  with no new input since yesterday. Concluded, same as the prior cycle, that
+  nothing else was unblocked or differently-shaped enough to prefer over
+  continuing real cumulative search against the actual live champion.
+  Champion fitness held flat at 1.215 across all 15 generations; every new
+  candidate lost to it — same local optimum as every recent batch, not a new
+  finding. Verified before commit: only `updated`/`lineage`/`researcher_memory`
+  changed in `live_state.json` (genome, broker, journal all byte-identical —
+  confirmed by direct key-by-key comparison against the pre-run commit, not
+  just `git diff --stat`), `python3 -m pytest -q` 355/355 (baseline,
+  unchanged — no code touched), constitution verified `8b74865634b1db07`
+  unchanged, no protected file touched. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-06 (3-hourly check, ~00:46-01:1x UTC): 10 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 1554 → 1694, boldness/stagnation counter
