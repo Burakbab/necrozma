@@ -391,6 +391,68 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Shipped 2026-09-06 (3-hourly check, ~06:47-07:xx UTC): `Researcher.perturb`'s
+  boldness-driven widening was silently saturating into "always fully
+  randomize the genome," with zero local exploitation left — fixed to
+  reserve a fixed local slice of every batch regardless of stagnation.** Six
+  straight 3-hourly cycles (2026-09-05 12:46 through 2026-09-06 04:2x, see
+  the entries below) ran plain `evolve` against the live v3 champion and
+  found literally nothing new each time — same flat 1.215 fitness, same
+  local optimum. Rather than run a seventh identical batch, checked *why*
+  the search keeps landing in the same place: `perturb(n, n_genes=2,
+  boldness)` computes `jump_p = min(0.75, 0.2 + 0.12*boldness)` and
+  `genes_per = min(len(GENE_SPACE), n_genes + boldness//2)` — both are
+  capped, and `jump_p` saturates by boldness ≈4.6 while `genes_per`
+  saturates (at all 44 genes) by boldness ≈92. The live champion's
+  stagnation/boldness counter is already 134 (see the 3 entries below) — it
+  passed both saturation points roughly 40+ generations ago. Past that
+  point every blind-search candidate mutates the *entire* genome at once,
+  each gene independently getting a 75% chance of an outright uniform
+  redraw across its full allowed range (the remaining 25% "local jitter"
+  branch scales its own spread by the same unbounded `boldness`, so at this
+  level it isn't meaningfully more local either) — the docstring's intended
+  "widen search under stagnation, don't abandon it" design had already
+  become, in practice, "only ever fully randomize the genome," for a large
+  and growing fraction of this account's evolution history, without any
+  run note ever measuring the saturation points directly. Verified this
+  numerically before changing anything (`python3 -c` computing
+  `jump_p`/`spread`/`genes_per` across boldness 0/4/5/10/20/50/100/134 —
+  see the commit diff's new docstring for the exact figures) and confirmed
+  no prior "Current state" entry had flagged it. **Fix**: `perturb` now
+  reserves `max(1, n//4)` of every batch's candidates to always run at
+  boldness 0 (narrow, 1-2 gene, small jitter) regardless of how high the
+  real `boldness` argument is; the remaining candidates keep the existing
+  graduated-widening behavior unchanged. At `boldness=0` (every run's
+  starting point) behavior is byte-for-byte identical to before — verified
+  both by code inspection (the local-slice branch is gated on `boldness >
+  0`) and by the existing `test_propose_non_blind_proposals_are_seed_independent_only_perturb_varies`
+  test passing unmodified. New `tests/test_researcher_perturb_boldness.py`
+  (3 tests): boldness=0 unaffected, a high-boldness (134) batch still
+  contains both narrow (≤2-gene) and wide (full-genome) candidates, and the
+  local-slice sizing scales sanely with batch size. Full suite 358/358 (was
+  355, +3). This is a search-mechanism change, not a constitution or
+  fitness-function change — `agents/researcher.py` is not one of the two
+  files `constitution.checksum()` hashes (only `constitution` and
+  `core.portfolio` are), so no re-seal is needed, and it changes what
+  candidates get *proposed*, never the acceptance gates that decide whether
+  one gets promoted, so it cannot make a bad promotion more likely — it can
+  only make finding a genuinely better candidate somewhat more likely by
+  keeping local exploitation alive alongside wide exploration. Edited the
+  real `agents/researcher.py` (the actual source of truth per item 7) and
+  re-synced the bundle with `tools/edit_bundle_module.py sync` — `sync
+  --check` confirms bundle and real files match. Verified before commit:
+  `live_state.json` untouched (md5 identical before/after, this entry never
+  ran `evolve`/`tick`), constitution verified `8b74865634b1db07` unchanged,
+  no protected file touched, `tools/edit_bundle_module.py verify` clean.
+  Genome still v3 (1d) live, untouched. No live trading this cycle (tick 23
+  already handled at 00:20 UTC, confirmed via `live_state.json`'s `updated`
+  timestamp before starting). **Next**: the next `evolve` batch against the
+  live v3 champion will be the first to actually exercise this fix for
+  real — worth noting in that batch's run note whether the reserved local
+  slice ever finds anything the fully-saturated wide search couldn't in the
+  last 40+ generations, though a single batch either way won't be
+  conclusive on its own.
+
 - **Run 2026-09-06 (3-hourly check, ~03:47-04:2x UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 1694 → 1904, boldness/stagnation counter

@@ -219,13 +219,32 @@ class Researcher:
         A search that keeps failing in the same neighbourhood should widen its
         steps, not keep re-sampling the same basin — the local hill has been
         climbed, and what's left is either further away or isn't there.
+
+        But the widening is unbounded while `n` and the gene space are not:
+        `jump_p` saturates at its 0.75 cap by boldness ~4.6, and `genes_per`
+        saturates at every gene in `GENE_SPACE` by boldness ~(2*(len(paths) -
+        n_genes)). Past that point *every* candidate mutates the entire genome
+        at once with a 75% chance per gene of an outright uniform redraw (and
+        the remaining 25% "local jitter" branch scales its own spread by the
+        same unbounded `boldness`, so it isn't meaningfully more local) --
+        the graduated "widen, don't abandon, the search" design intent quietly
+        becomes "only ever fully randomize the genome," with zero exploitation
+        left around the current champion, for as long as boldness keeps
+        climbing after that. A long-unbeaten champion (say, 100+ stagnant
+        generations) gets a search that has already been doing this for most
+        of its life. Reserve a fixed quarter of every batch to always run at
+        boldness 0 -- narrow, local, exploitative -- so long stagnation adds
+        wide exploration on top of continued local search instead of
+        replacing it.
         """
         out: list[Mutation] = []
         paths = list(GENE_SPACE)
-        jump_p = min(0.75, 0.2 + 0.12 * boldness)
-        spread = 1.0 + 0.35 * boldness
-        genes_per = min(len(paths), n_genes + int(boldness // 2))
-        for _ in range(n):
+        n_local = max(1, n // 4) if boldness > 0 else 0
+        for i in range(n):
+            b = 0.0 if i < n_local else boldness
+            jump_p = min(0.75, 0.2 + 0.12 * b)
+            spread = 1.0 + 0.35 * b
+            genes_per = min(len(paths), n_genes + int(b // 2))
             picks = self.rng.sample(paths, k=min(genes_per, len(paths)))
             patch: dict[str, Any] = {}
             desc = []
