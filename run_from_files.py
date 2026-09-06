@@ -135,7 +135,11 @@ def _reconstruct_champion_genome(version, lineage):
     _SRC module -- it's plain CLI-script code, so it has to be duplicated
     here rather than imported). Used by `fold-dd-blindspot --also-version N`.
     Raises ValueError if `version` was never an accepted promotion recorded
-    in lineage (version 1, the seed, always succeeds and needs no patches)."""
+    in lineage (version 1, the seed, always succeeds and needs no patches).
+
+    The version-1 base MUST be `Genome()` (always the hardcoded SEED_GENOME,
+    no disk I/O), never `Genome.champion()` -- see the same fix and its full
+    reasoning in evotrader_bundle.py's copy of this function, 2026-09-06."""
     from core.genome import Genome
 
     patches_by_version = {}
@@ -144,7 +148,7 @@ def _reconstruct_champion_genome(version, lineage):
         if acc:
             patches_by_version[acc["new_version"]] = acc["patch"]
 
-    g = Genome.champion()
+    g = Genome()
     versions = {1: g}
     for v in sorted(patches_by_version):
         g = g.child(list(patches_by_version[v].items()), note=f"reconstructed-v{v}")

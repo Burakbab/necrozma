@@ -7,7 +7,7 @@ import pytest
 
 import core.market as market
 from core.genome import Genome
-from core.live import LiveAccount
+from core.live import LiveAccount, _trim_lineage
 from core.market import Replay
 
 from tests.helpers import synthetic_ohlcv
@@ -144,3 +144,64 @@ def test_hard_call_reviews_round_trip_through_save_and_load(tmp_path):
     reloaded = LiveAccount.load(path)
 
     assert reloaded.hard_call_reviews == acct.hard_call_reviews
+
+
+def _gen_entry(champion_version):
+    """A plain per-generation lineage entry -- no promotion."""
+    return {"champion_version": champion_version, "n_candidates": 5}
+
+
+def _accepted_entry(new_version):
+    return {"accepted": {"new_version": new_version, "patch": {}}}
+
+
+def test_trim_lineage_keeps_last_n_when_nothing_is_accepted():
+    lineage = [_gen_entry(1) for _ in range(250)]
+    trimmed = _trim_lineage(lineage, keep=200)
+    assert trimmed == lineage[-200:]
+
+
+def test_trim_lineage_never_drops_an_old_accepted_entry():
+    """The bug found 2026-09-06: a bare lineage[-200:] silently dropped the
+    v1->v2 promotion record once 200+ generations had run since it, breaking
+    every diagnostic that reconstructs a historical champion from lineage."""
+    lineage = [_accepted_entry(2)] + [_gen_entry(2) for _ in range(250)]
+    trimmed = _trim_lineage(lineage, keep=200)
+
+    accepted = [e for e in trimmed if e.get("accepted")]
+    assert accepted == [_accepted_entry(2)]
+    assert trimmed[1:] == lineage[-200:]
+
+
+def test_trim_lineage_preserves_multiple_old_accepted_entries_in_order():
+    lineage = ([_accepted_entry(2)] + [_gen_entry(2) for _ in range(50)]
+               + [_accepted_entry(3)] + [_gen_entry(3) for _ in range(250)])
+    trimmed = _trim_lineage(lineage, keep=200)
+
+    accepted = [e["accepted"]["new_version"] for e in trimmed if e.get("accepted")]
+    assert accepted == [2, 3]
+
+
+def test_trim_lineage_does_not_duplicate_an_accepted_entry_still_in_the_recent_window():
+    lineage = [_gen_entry(2) for _ in range(50)] + [_accepted_entry(3)] + [_gen_entry(3) for _ in range(10)]
+    trimmed = _trim_lineage(lineage, keep=200)
+
+    assert trimmed == lineage
+    assert sum(1 for e in trimmed if e.get("accepted")) == 1
+
+
+def test_trim_lineage_noop_under_the_cap():
+    lineage = [_gen_entry(1) for _ in range(10)]
+    assert _trim_lineage(lineage, keep=200) == lineage
+
+
+def test_save_uses_trim_lineage_not_a_bare_slice(tmp_path):
+    acct = LiveAccount({"genome": Genome().data})
+    acct.lineage = [_accepted_entry(2)] + [_gen_entry(2) for _ in range(250)]
+
+    path = str(tmp_path / "state.json")
+    acct.save(path)
+    reloaded = LiveAccount.load(path)
+
+    accepted = [e for e in reloaded.lineage if e.get("accepted")]
+    assert accepted == [_accepted_entry(2)]

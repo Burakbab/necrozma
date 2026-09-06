@@ -35,6 +35,29 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+def _trim_lineage(lineage: list[dict], keep: int = 200) -> list[dict]:
+    """Cap the persisted lineage at `keep` entries without ever dropping an
+    `accepted` promotion record.
+
+    Per-generation entries (the bulk of this list) are just descriptive
+    telemetry -- there can be thousands of them, so capping them at a
+    recency window is fine. An `accepted` entry is different: it is the
+    only durable record of a real promotion's patch, there are only ever a
+    handful across the account's whole life, and every diagnostic that
+    reconstructs a historical champion genome (`_reconstruct_champion_genome`,
+    and everything built on it: `fold-scheme --also-version`,
+    `succession-audit`, `holdout-pressure`) depends on all of them still
+    being there. A plain `lineage[-keep:]` silently drops an old promotion
+    once enough generations have run since it -- found 2026-09-06 when the
+    v1->v2 patch (recorded long before the 200-entry window this account has
+    since filled with v3 search) had already scrolled off.
+    """
+    recent = lineage[-keep:]
+    recent_ids = {id(e) for e in recent}
+    preserved = [e for e in lineage[:-keep] if e.get("accepted") and id(e) not in recent_ids]
+    return preserved + recent
+
+
 def live_prices(symbols: list[str]) -> dict[str, float]:
     """Current mid prices straight off the exchange."""
     out: dict[str, float] = {}
@@ -93,7 +116,7 @@ class LiveAccount:
             "genome": self.genome.data,
             "broker": self.broker.to_state(),
             "journal": self.journal[-400:],
-            "lineage": self.lineage[-200:],
+            "lineage": _trim_lineage(self.lineage),
             "researcher_memory": self.researcher_memory,
             "hard_call_reviews": self.hard_call_reviews,
         }
