@@ -391,6 +391,26 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-06 (3-hourly check, ~18:46-19:16 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 3298 → 3506, boldness/stagnation counter
+  234 → 249.** No live trading this cycle (tick 23 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp before starting).
+  Freshness checks before running: `review-hard-calls` 0 pending, items 2/5/6
+  still blocked with no new owner input. Champion fitness held flat at 1.215
+  across all 15 generations; every new candidate lost to it. Raw
+  best-of-generation fold-fitness beat the champion's own 1.215 in 8/15
+  generations this batch — a lower share (53%) than the last two batches
+  (76%, 75%), closer to the pre-boldness-fix baseline (48%); read as small-n
+  noise around a rate this file hasn't yet pinned down precisely, not a
+  reversal of the fix's effect (see `runs/2026-09-06-1916-evolve-batch-v3.md`).
+  Verified before commit: `python3 -m pytest -q` 366/366 (baseline,
+  unchanged — no code touched), direct key-by-key diff of `live_state.json`
+  showed only `lineage`/`researcher_memory`/`updated` changed (genome,
+  broker, journal byte-identical), constitution verified `8b74865634b1db07`
+  unchanged, `tools/edit_bundle_module.py verify` clean. Genome still v3
+  (1d) live, untouched.
+
 - **Run 2026-09-06 (3-hourly check, ~15:46-16:27 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 3090 → 3298, boldness/stagnation counter
