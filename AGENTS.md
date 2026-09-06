@@ -391,6 +391,109 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Fixed 2026-09-06 (weekend all-hands, ~08:xx UTC): two real lineage/genome-
+  reconstruction integrity bugs, found while chasing a failing test during
+  this session's own evolve batches — both now fixed and tested, and both
+  affect every past session's `--also-version N` / `succession-audit` /
+  `fold-scheme` numbers that ran in the same container after an `evolve`
+  call, not just this session.** See `runs/2026-09-06-0600-weekend-all-hands.md`
+  for the full account. Summary of each:
+  1. **`LiveAccount.save()`'s bare `lineage[-200:]` truncation silently
+     drops an old *accepted* promotion record** once enough generations
+     have run since it — the v1->v2 patch had already scrolled off after
+     this session's second evolve batch (135+ generations run against v3
+     alone; the account's whole life has run far more). Every diagnostic
+     that reconstructs a historical champion from lineage
+     (`_reconstruct_champion_genome`, and everything built on it) silently
+     breaks once this happens — confirmed directly:
+     `test_reconstructed_v3_matches_real_live_lineage_bit_exact` started
+     failing this session for exactly this reason. New `core.live._trim_lineage()`
+     keeps the last 200 entries as before but never drops an `accepted`
+     one, wherever it sits. The already-lost v1->v2 record was recovered
+     from a prior commit's `live_state.json` (still had it) and merged back
+     in — nothing was unrecoverable, but a future occurrence without a
+     recent commit to recover from would have permanently lost that
+     promotion's patch. 6 new tests, `tests/test_live_account.py`.
+  2. **`_reconstruct_champion_genome`'s version-1 base used `Genome.champion()`,
+     which reads whatever `state/genomes/champion.json` currently holds on
+     disk — and the `evolve` command unconditionally overwrites that file
+     with the *live* champion at the start of every run** (`g0.save("champion")`,
+     so it can diff before/after to detect a real promotion). So any
+     reconstruction diagnostic run in the same container *after* an `evolve`
+     call was silently rebuilding every requested version from the live
+     champion's genes instead of the true v1 seed — a patch only overwrites
+     the specific genes it names, so anything else still leaked in from the
+     wrong base. Confirmed live: `succession-audit` was reporting byte-identical
+     numbers for v1/v2/v3 this session, right after this session's own evolve
+     batches had overwritten `champion.json`. Fixed to use `Genome()` (the
+     hardcoded seed, no disk I/O) instead. 2 new regression tests reproduce
+     the exact stale-cache scenario (`tests/test_fold_scheme_reconstruction.py`).
+     Re-ran `succession-audit` against the real repo after the fix: v1/v2/v3
+     now come out properly distinct and match the historical record (v1
+     hard-fails on drawdown, v2 doesn't, v3 live doesn't — consistent with
+     the 2026-08-22 finding this diagnostic was built to report on).
+
+  **Why this matters for reading older "Current state" entries**: any past
+  session's `fold-scheme --also-version N`, `succession-audit`,
+  `promotion-excess-check`, or similar reconstruction-based diagnostic could
+  have silently returned wrong numbers for non-live versions *if that same
+  container had already run `evolve` earlier in the session* (a fresh
+  container, or a diagnostic run before any `evolve` call that session,
+  would have been unaffected — `Genome.champion()` only drifts from the true
+  seed after something writes to `state/genomes/champion.json`). This is
+  not a reason to distrust every historical number in this file; it is a
+  reason not to silently trust an old `--also-version` result either,
+  without knowing that session's exact command order. Not re-audited here —
+  that would mean re-running a lot of already-expensive diagnostics against
+  history no scheduled session can reconstruct (whether `state/genomes/`
+  was already polluted at the time is not recorded anywhere) — flagged so a
+  future session treats any specific old finding it actually depends on as
+  worth a fresh re-run rather than an inherited fact, not so this becomes a
+  standing project.
+
+  Neither fix touches the constitution or the checksummed surface (`core.live`
+  and the bundle's own CLI helpers aren't part of it, same precedent as every
+  prior fold-scheme/margin-curve/succession-audit change to this area). Full
+  suite 366/366 (was 358, +8). `tools/edit_bundle_module.py verify` clean.
+
+- **Run 2026-09-06 (weekend all-hands, ~06:00-08:xx UTC): two real `evolve`
+  batches (25 then 25) against the live v3 (1d) champion, no promotion —
+  cumulative candidates tried against v3 rose 1904 → 2602, boldness/
+  stagnation counter 134 → 184.** No live trading this cycle (tick 23
+  already handled at 00:20 UTC, confirmed via `live_state.json`'s `updated`
+  timestamp and `runs/2026-09-06-0020-daily-trading.md` before starting) —
+  deliberately, per this session's own instructions: weekend sessions are
+  for evolution/self-improvement depth, not day-to-day trading. Freshness
+  checks before starting: 0 pending hard-call reviews, `live-benchmark`
+  unchanged (-11.07% excess, 22 bars, nowhere near the 60-bar revisit
+  trigger), `holdout-pressure`/`margin-curve` both re-confirmed their
+  already-understood shape (fold-aggregate margin nearly saturated,
+  holdout margin still on the steep part of its curve — no new information,
+  both already closed threads per `margin-curve`'s own 2026-08-21 entry).
+  Items 2/5/6 still genuinely blocked on an owner decision. First batch
+  (25 generations) ran under the *pre-fix* `Researcher.perturb`; partway
+  through committing it, a concurrent session's `b73c243` landed (the
+  boldness-saturation fix — see the entry above this one, from a different
+  session on 2026-09-06 ~06:55 UTC), rebased cleanly, and this session's
+  second batch (25 more generations) ran under the *fixed* code specifically
+  to see whether restored local exploitation changed anything real, given
+  the live champion (boldness 134+ going in) was already well past both of
+  that fix's flagged saturation points. Champion fitness held flat at 1.215
+  across all 50 generations; no candidate cleared the full gate. **One
+  observation worth tracking, not yet a conclusion**: raw fold-fitness beat
+  the champion's own 1.215 in 17/25 generations in the post-fix batch vs.
+  12/25 in the pre-fix batch — consistent with the fix restoring more local
+  competitive search, but n=25 per batch is too small to call this settled;
+  a future session should keep an eye on this ratio across the next several
+  batches rather than treat one before/after pair as proof. Both batches
+  verified before commit: `python3 -m pytest -q` 358→366/366 (rising only
+  from the integrity-fix commit's own new tests, not from evolve itself),
+  only `live_state.json` changed each time (lineage/researcher_memory/
+  updated — genome, broker, journal byte-identical), constitution
+  `8b74865634b1db07` unchanged throughout, no protected file touched.
+  Genome still v3 (1d) live, untouched. Dashboard rebuilt after both
+  batches and the lineage repair above.
+
 - **Shipped 2026-09-06 (3-hourly check, ~06:47-07:xx UTC): `Researcher.perturb`'s
   boldness-driven widening was silently saturating into "always fully
   randomize the genome," with zero local exploitation left — fixed to
