@@ -391,6 +391,29 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-07 (3-hourly check, ~03:47-04:10 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 3937 → 4133 (counter at gen 1 → gen 15;
+  continues from the 01:29 UTC batch's ending count of 3923), boldness/
+  stagnation counter 280 → 294.** No live trading this cycle (tick 24 already
+  handled at 00:20 UTC, confirmed via `live_state.json`'s `updated` timestamp
+  and `runs/2026-09-07-0020-daily-trading.md`/`runs/2026-09-07-0129-evolve-batch-v3.md`
+  before starting). Freshness checks before running: `review-hard-calls` 0
+  pending, `holdout-pressure` same fold-clears-then-loses-holdout shape as
+  always, `live-benchmark` unchanged (23 1d bars, -12.60% excess, still far
+  from the 60-bar revisit trigger), items 2/5/6 still blocked with no new
+  owner input. Champion fitness held flat at 1.422 across all 15 generations;
+  every new candidate lost to it. Raw best-of-generation fold-fitness beat
+  the champion's own 1.422 in 13/15 generations this batch — see
+  `runs/2026-09-07-0410-evolve-batch-v3.md` for the batch detail (full log
+  captured cleanly this time, no truncation). Verified before commit:
+  `python3 -m pytest -q` 366/366 (baseline, unchanged — no code touched),
+  direct key-by-key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical), constitution verified `8b74865634b1db07` unchanged,
+  `tools/edit_bundle_module.py verify` clean. Genome still v3 (1d) live,
+  untouched.
+
 - **Run 2026-09-07 (3-hourly check, ~00:46-01:29 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 3714 → 3923, boldness/stagnation counter
