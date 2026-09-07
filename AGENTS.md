@@ -391,6 +391,58 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Fixed 2026-09-07 (3-hourly check, ~12:46-13:34 UTC): a real evolve-vs-disk
+  race in `EvolutionRun.run()`/`Genome.champion()` — caught before commit, no
+  live-account damage, but a genuine near-miss.** Started this cycle's `pytest
+  -q` baseline and a 15-generation `evolve` batch as two background processes
+  close together; the evolve batch finished suspiciously fast and had silently
+  evolved against the account's original 2026-08-15 seed genome (v1) instead
+  of the real live v3 champion for all 15 generations. Root cause:
+  `loop.evolve.EvolutionRun.run()` got its starting genome from
+  `Genome.champion()` — a disk read of the shared, unsandboxed
+  `state/genomes/champion.json` — instead of the genome already in memory,
+  and `evotrader_bundle.py`'s `evolve` command made its promotion decision
+  the same way at the end. `tests/test_run_from_files_matches_bundle.py`'s
+  `synthetic_universe_4y` fixture legitimately (and normally safely) runs a
+  real `EvolutionRun` against a fake seed genome and writes real archive
+  files under that same directory mid-test; running that concurrently with a
+  real `evolve` let my process read back the wrong genome mid-run. Had any
+  candidate cleared the (also-confused) gate, the live account's real v3
+  lineage could have been silently overwritten with a fabricated v1-based
+  promotion — it didn't happen only because nothing cleared the bar. Caught
+  immediately (checked `genome.version` after the run, saw `1` instead of
+  `3`) and discarded with `git checkout -- live_state.json` before any
+  commit — nothing bad was ever pushed. **Fix**: `EvolutionRun` now takes an
+  explicit `champion: Genome` argument and returns the actual final `Genome`
+  object from `run()`; all three call sites (`evotrader_bundle.py`'s
+  `evolve`, `run_from_files.py`'s `evolve`/`evolve-dry-run`) now thread the
+  genome through in memory instead of round-tripping through disk. Also
+  found and fixed the same still-open pattern in `promotion-excess-check`
+  (`genome_cache = {1: Genome.champion()}` → `Genome()`), which the
+  2026-09-06 `_reconstruct_champion_genome` fix's own language should have
+  covered but evidently didn't reach — read-only command, so this half is a
+  correctness fix for its own output, not a live-account safety fix. See
+  `runs/2026-09-07-1334-evolve-champion-disk-race-fix.md` for the full
+  writeup. Verified: full suite 366/366 (pure refactor, no new tests — the
+  existing `test_run_from_files_matches_bundle.py` evolve/evolve-dry-run
+  tests already exercise these exact paths end-to-end and passed), the three
+  most relevant test files re-run in isolation 30/30, `tools/edit_bundle_module.py
+  verify`/`sync --check` both clean, `py_compile` clean on all three touched
+  files, constitution `8b74865634b1db07` unchanged (neither touched file is
+  checksummed), `live_state.json` untouched by this cycle's actual commit
+  (only `evotrader_bundle.py`/`loop/evolve.py`/`run_from_files.py` changed).
+  Genome still v3 (1d) live, untouched. No live trading this cycle (today's
+  bar already handled at 00:20 UTC). **Process note for future sessions:
+  never run `pytest -q` and a real `evolve`/`evolve-dry-run` invocation
+  concurrently in the same container** — this fix removes the live path's
+  specific dependency that made this exact race possible, but keep the two
+  sequential regardless, since there is no similar guarantee for whatever
+  else might touch `state/genomes/` next. No 15-generation evolve batch
+  actually landed this cycle (the corrupted one was discarded and the time
+  went to root-causing this instead) — cumulative candidates tried against
+  v3 remain unchanged at 4551 from the 10:31 UTC batch; next cycle should
+  resume normal batches, now safe from this specific race.
+
 - **Run 2026-09-07 (3-hourly check, ~09:47-10:31 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 4343 → 4551, boldness/stagnation counter

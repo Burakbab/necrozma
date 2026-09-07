@@ -388,7 +388,6 @@ def _cmd_evolve_dry_run(acct) -> None:
     `evolve` command body -- but never call acct.save(), on any code path,
     win or lose. See the module docstring for the exact safety argument."""
     from core import market
-    from core.genome import Genome
     from loop.evolve import EvolutionRun
 
     n = 3
@@ -420,12 +419,12 @@ def _cmd_evolve_dry_run(acct) -> None:
         init_tested, init_stagnation = set(), 0
     init_holdout_draws = int(mem.get("holdout_draws", 0))
 
-    run = EvolutionRun(data, seed=seed, initial_tested=init_tested,
+    run = EvolutionRun(data, champion=g0, seed=seed, initial_tested=init_tested,
                        initial_stagnation=init_stagnation,
                        initial_champion_version=g0.version,
                        initial_holdout_draws=init_holdout_draws)
-    run.run(generations=n, n_blind=14)
-    final = Genome.champion()
+    res = run.run(generations=n, n_blind=14)
+    final = res["final_genome"]
     if final.version != g0.version:
         print(f"[evolve-dry-run] would have promoted champion v{g0.version} -> "
               f"v{final.version} -- NOT saved, live_state.json untouched")
@@ -463,7 +462,6 @@ def _cmd_evolve(acct, state_path) -> None:
     bundle's own `evolve` always passes seed=None); see the module
     docstring for why."""
     from core import market
-    from core.genome import Genome
     from loop.evolve import EvolutionRun
 
     n = 3
@@ -487,7 +485,7 @@ def _cmd_evolve(acct, state_path) -> None:
         init_tested, init_stagnation = set(), 0
     init_holdout_draws = int(mem.get("holdout_draws", 0))
 
-    run = EvolutionRun(data, seed=seed, initial_tested=init_tested,
+    run = EvolutionRun(data, champion=g0, seed=seed, initial_tested=init_tested,
                        initial_stagnation=init_stagnation,
                        initial_champion_version=g0.version,
                        initial_holdout_draws=init_holdout_draws)
@@ -499,7 +497,7 @@ def _cmd_evolve(acct, state_path) -> None:
         "stagnation": run.stagnation,
         "holdout_draws": run.holdout_draws,
     }
-    final = Genome.champion()
+    final = res["final_genome"]
     if final.version != g0.version:
         acct.genome = final
         acct.save(state_path)

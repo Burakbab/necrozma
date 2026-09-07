@@ -502,11 +502,25 @@ def dd_trust_continuous_stats(evaluator: "Evaluator", g: Genome, stats: dict[str
 
 
 class EvolutionRun:
-    def __init__(self, data: dict, seed: int | None = 7, verbose: bool = True,
+    def __init__(self, data: dict, champion: Genome, seed: int | None = 7, verbose: bool = True,
                  initial_tested: set | None = None, initial_stagnation: int = 0,
                  initial_champion_version: int | None = None,
                  initial_holdout_draws: int = 0):
         self.data = data
+        # The starting champion is passed in explicitly and kept in memory for
+        # the life of this run -- `run()` used to re-read `Genome.champion()`
+        # from disk instead, which is shared, unsandboxed global state
+        # (`core.genome.GENOME_DIR`) that anything else touching the same
+        # container can overwrite between this object's construction and
+        # `run()` actually reading it (a real `evolve` invocation always calls
+        # `g0.save("champion")` right before this, but that write and this
+        # read were never atomic with each other). Found 2026-09-07 when a
+        # concurrently-running test fixture that legitimately (and normally
+        # safely) writes fake genomes under the same `state/genomes/` during
+        # its own run raced a real live `evolve` invocation and silently swapped
+        # its champion for the wrong genome mid-run -- caught before commit only
+        # because the resulting run never actually cleared the promotion bar.
+        self.champion = champion
         self.evaluator = Evaluator(data)
         self.researcher = Researcher(seed)
         self.verbose = verbose
@@ -669,13 +683,13 @@ class EvolutionRun:
         return champion, gen_record
 
     def run(self, generations: int = 5, n_blind: int = 14) -> dict[str, Any]:
-        g = Genome.champion()
+        g = self.champion
         history = []
         for i in range(generations):
             self._say(f"\n--- generation {i + 1}/{generations}")
             g, rec = self.generation(g, n_blind=n_blind)
             history.append(rec)
-        return {"final_version": g.version, "generations": history}
+        return {"final_version": g.version, "final_genome": g, "generations": history}
 
     @staticmethod
     def _record(rec: dict) -> None:
