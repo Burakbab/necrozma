@@ -391,6 +391,25 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-07 (3-hourly check, ~06:46-07:11 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 4133 → 4343, boldness/stagnation counter
+  294 → 309.** No live trading this cycle (tick 24 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-07-0020-daily-trading.md`/`runs/2026-09-07-0410-evolve-batch-v3.md`
+  before starting). Freshness checks before running: `review-hard-calls` 0
+  pending, `live-benchmark` unchanged (23 1d bars, -12.60% excess, still far
+  from the 60-bar revisit trigger), items 2/5/6 still blocked with no new
+  owner input. Champion fitness held flat at 1.422 across all 15 generations;
+  every new candidate lost to it. Raw best-of-generation fold-fitness beat
+  the champion's own 1.422 in 9/15 generations this batch (60%) — see
+  `runs/2026-09-07-0711-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 366/366 (baseline, unchanged — no code touched), direct
+  key-by-key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical), constitution verified `8b74865634b1db07` unchanged. Genome
+  still v3 (1d) live, untouched.
+
 - **Run 2026-09-07 (3-hourly check, ~03:47-04:10 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 3937 → 4133 (counter at gen 1 → gen 15;
