@@ -391,6 +391,31 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-08 (3-hourly check, ~06:46-07:31 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 5384 → 5593, boldness/stagnation counter
+  384 → 399.** No live trading this cycle (tick 25 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-08-0020-daily-trading.md` before starting). Freshness checks
+  before running: `review-hard-calls` 0 pending (1 reviewed so far,
+  unchanged), items 2/5/6 still blocked with no new owner input; items
+  1/3/4/7/8 in the roadmap are closed or passive (item 7 feature-complete
+  relative to the bundle, item 8 closed for v3, item 4's infra shipped with
+  0 pending reviews) so this cycle ran the standing evolve batch rather than
+  a new engineering slice. Champion fitness held flat at 1.590 across all 15
+  generations; every new candidate lost to it. Raw best-of-generation
+  fold-fitness strictly beat the champion's own 1.590 in only 4/15
+  generations this batch (27%, generations 2/3/4/9) — the lowest beat-rate
+  of the last several batches (53%, 60%, 67% before this), with 4 more
+  generations tying exactly at 1.590 — see
+  `runs/2026-09-08-0731-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 366/366 (baseline, run strictly before `evolve`, unchanged —
+  no code touched), direct top-level key diff of `live_state.json` showed
+  only `lineage`/`researcher_memory`/`updated` changed (genome, broker,
+  journal byte-identical), constitution verified `8b74865634b1db07`
+  unchanged, `tools/edit_bundle_module.py verify`/`sync --check` both clean.
+  Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-08 (3-hourly check, ~03:46-04:27 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 5175 → 5384, boldness/stagnation counter
