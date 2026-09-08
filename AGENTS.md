@@ -382,6 +382,32 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-08 (3-hourly check, ~21:46-22:18 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 6429 → 6637, boldness/stagnation counter
+  459 → 474.** No live trading this cycle (tick 25 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-08-0020-daily-trading.md`/`runs/2026-09-08-2030-daily-evaluation.md`
+  before starting). Repo started in detached HEAD with the documented
+  shallow-clone false-divergence (AGENTS.md run-protocol step 2) — `python3
+  tools/git_sync.py` fast-forwarded cleanly, nothing discarded. Freshness
+  checks before running: `review-hard-calls` 0 pending, `holdout-pressure`
+  same fold-clears-then-loses-holdout shape as always, items 2/5/6 still
+  blocked with no new owner input, item 4 still 0 pending hard-call reviews.
+  Champion fitness held flat at 1.590 across all 15 generations; every new
+  candidate lost to it. Raw best-of-generation fold-fitness beat the
+  champion's own 1.590 in 7/15 generations this batch (47%), with 3 more
+  tying exactly — see `runs/2026-09-08-2218-evolve-batch-v3.md`. Verified
+  before commit: `python3 -m pytest -q` 384/384 (baseline, run strictly
+  before `evolve`, unchanged — no code touched), direct key-by-key diff of
+  `live_state.json` showed `lineage`/`researcher_memory`/`updated` changed
+  plus `broker.borrow_bps_per_bar` going from unset to its default `0.0`
+  (the short-selling schema field serialized for the first time, not a
+  trade — `cash`/`positions`/`nav_history` byte-identical), genome
+  byte-identical, constitution verified `726dfa4bac85891a` unchanged,
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean. Genome
+  still v3 (1d) live, untouched.
+
 - **Run 2026-09-08 (3-hourly check, ~18:46-19:14 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 6220 → 6429, boldness/stagnation counter
