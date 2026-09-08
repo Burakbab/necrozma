@@ -1,0 +1,13 @@
+# Force LF everywhere. constitution.checksum() hashes raw bytes of
+# constitution/__init__.py and core/portfolio.py; every real promotion and
+# every scheduled run happens in a Linux cloud container that writes LF, so
+# that's what evotrader.manifest was sealed against. Without this file, a
+# Windows checkout with core.autocrlf=true materializes those same two
+# files with CRLF and constitution.verify() reports CONSTITUTION MODIFIED
+# for a difference that is pure whitespace, not content — found 2026-09-08
+# while starting the short-selling implementation (12 tests in
+# tests/test_run_from_files_matches_bundle.py failed on exactly this before
+# any real edit was made). Does not affect evotrader_bundle.py's own live
+# path: EMBEDDED_SOURCES entries are single-line string literals with
+# escaped \n sequences, immune to checkout line-ending conversion.
+* text=auto eol=lf
