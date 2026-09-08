@@ -153,6 +153,15 @@ def build(out_path: str | None = None) -> str:
     start_cash = float(broker.get("start_cash", 10_000))
     nav_now = navs[-1] if navs else start_cash
     ret = nav_now / start_cash - 1
+    profit_line = (
+        f"<b>It has made money in absolute terms</b> ({ret:+.1%} since inception), "
+        "but it is currently losing to just buying and holding the same coins over "
+        "the same stretch — see the buy-and-hold comparison above. Making money while "
+        "trailing a passive alternative is not the same as the strategy adding value."
+        if ret >= 0 else
+        "<b>It is not currently profitable.</b> So far it has lost less than the market "
+        "did over the same stretch, which is a start, not a strategy."
+    )
     journal = live.get("journal", [])
     ticks = live.get("ticks", 0)
     started = str(live.get("started", ""))[:10]
@@ -431,10 +440,18 @@ The "past data" numbers above are the current ruleset replayed over history it w
 partly tuned on, which flatters it. The only numbers that carry real weight are the
 <b>live account</b> at the top and the <b>holdout</b> results inside the
 self-improvement log — those come from data the system never saw while tuning.<br><br>
-<b>It is not currently profitable.</b> So far it has lost less than the market did
-over the same stretch, which is a start, not a strategy. Beating its own earlier
-versions is not the same as being good — that's why the buy-and-hold comparison is
-printed next to every result and can't be quietly dropped.<br><br>
+{profit_line} Beating its own earlier versions is not the same as being good —
+that's why the buy-and-hold comparison is printed next to every result and can't
+be quietly dropped.<br><br>
+<b>Known issue, being tracked openly:</b> a bug in an early safety gate meant it
+only checked drawdown separately within each backtest window and couldn't see a
+loss that spanned two of them — since fixed, but the fix revealed that the
+current live ruleset's real, unbroken drawdown is worse than the safety limit
+it's supposed to respect. It hasn't been pulled: replacing it with an older
+version doesn't clear that same bar either, for different reasons, and swapping
+one non-compliant ruleset for another fixes nothing. It keeps trading while the
+search for one that actually clears the honest bar continues. Full detail in
+<code>AMENDMENTS.md</code> (2026-08-22 row) and <code>AGENTS.md</code>.<br><br>
 Nothing here is financial advice, and the system cannot promote itself to real
 money — that takes six months of evidence and a human signing off.
 </div></div>

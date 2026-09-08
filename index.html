@@ -85,7 +85,7 @@ footer{color:#5a6472;font-size:11.5px;margin-top:26px;text-align:center}
 .g-d{font-size:12.5px;color:#8b949e;line-height:1.6}
 </style></head><body><div class="wrap">
 <h1>Project Necrozma <span class="paper">paper money · not real</span></h1>
-<div class="sub">a trading system that rewrites itself · updated 2026-09-08 19:14 UTC</div>
+<div class="sub">a trading system that rewrites itself · updated 2026-09-08 21:42 UTC</div>
 
 <div class="hero">
 <div class="q">What am I looking at?</div>
@@ -116,11 +116,11 @@ but the account is imaginary.</p>
 <div class="panel"><h2>The account over time</h2>
 <div class="h2sub">What the imaginary $10,000 is worth now. The dashed line is where
 it started — above it means up, below means down.</div><svg viewBox="0 0 760 180" width="100%" height="180" role="img"
-      aria-label="live paper NAV"><defs><linearGradient id="g977"
+      aria-label="live paper NAV"><defs><linearGradient id="g2642"
       x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.28"/>
       <stop offset="100%" stop-color="#2dd4bf" stop-opacity="0"/></linearGradient></defs>
       <line x1="44" y1="154.0" x2="744" y2="154.0" stroke="#242c37" stroke-width="1"/><text x="38" y="157.0" fill="#5a6472" font-size="10" text-anchor="end">9,669</text><line x1="44" y1="87.0" x2="744" y2="87.0" stroke="#242c37" stroke-width="1"/><text x="38" y="90.0" fill="#5a6472" font-size="10" text-anchor="end">11,206</text><line x1="44" y1="20.0" x2="744" y2="20.0" stroke="#242c37" stroke-width="1"/><text x="38" y="23.0" fill="#5a6472" font-size="10" text-anchor="end">12,743</text><line x1="44" y1="139.6" x2="744" y2="139.6" stroke="#5a6472" stroke-width="1" stroke-dasharray="3 4"/><text x="746" y="142.6" fill="#5a6472" font-size="10" text-anchor="end">start</text>
-      <polygon points="44.0,154 44.0,139.6 73.2,138.0 102.3,138.2 131.5,140.4 160.7,141.0 189.8,124.8 219.0,106.4 248.2,70.7 277.3,75.9 306.5,76.2 335.7,72.9 364.8,84.1 394.0,79.9 423.2,72.8 452.3,86.1 481.5,83.5 510.7,94.3 539.8,74.5 569.0,64.2 598.2,68.4 627.3,54.5 656.5,64.8 685.7,48.9 714.8,33.0 744.0,44.3 744.0,154" fill="url(#g977)"/>
+      <polygon points="44.0,154 44.0,139.6 73.2,138.0 102.3,138.2 131.5,140.4 160.7,141.0 189.8,124.8 219.0,106.4 248.2,70.7 277.3,75.9 306.5,76.2 335.7,72.9 364.8,84.1 394.0,79.9 423.2,72.8 452.3,86.1 481.5,83.5 510.7,94.3 539.8,74.5 569.0,64.2 598.2,68.4 627.3,54.5 656.5,64.8 685.7,48.9 714.8,33.0 744.0,44.3 744.0,154" fill="url(#g2642)"/>
       <polyline points="44.0,139.6 73.2,138.0 102.3,138.2 131.5,140.4 160.7,141.0 189.8,124.8 219.0,106.4 248.2,70.7 277.3,75.9 306.5,76.2 335.7,72.9 364.8,84.1 394.0,79.9 423.2,72.8 452.3,86.1 481.5,83.5 510.7,94.3 539.8,74.5 569.0,64.2 598.2,68.4 627.3,54.5 656.5,64.8 685.7,48.9 714.8,33.0 744.0,44.3" fill="none" stroke="#2dd4bf" stroke-width="2"
         stroke-linejoin="round" stroke-linecap="round"/></svg></div>
 
@@ -221,10 +221,18 @@ The "past data" numbers above are the current ruleset replayed over history it w
 partly tuned on, which flatters it. The only numbers that carry real weight are the
 <b>live account</b> at the top and the <b>holdout</b> results inside the
 self-improvement log — those come from data the system never saw while tuning.<br><br>
-<b>It is not currently profitable.</b> So far it has lost less than the market did
-over the same stretch, which is a start, not a strategy. Beating its own earlier
-versions is not the same as being good — that's why the buy-and-hold comparison is
-printed next to every result and can't be quietly dropped.<br><br>
+<b>It has made money in absolute terms</b> (+21.9% since inception), but it is currently losing to just buying and holding the same coins over the same stretch — see the buy-and-hold comparison above. Making money while trailing a passive alternative is not the same as the strategy adding value. Beating its own earlier versions is not the same as being good —
+that's why the buy-and-hold comparison is printed next to every result and can't
+be quietly dropped.<br><br>
+<b>Known issue, being tracked openly:</b> a bug in an early safety gate meant it
+only checked drawdown separately within each backtest window and couldn't see a
+loss that spanned two of them — since fixed, but the fix revealed that the
+current live ruleset's real, unbroken drawdown is worse than the safety limit
+it's supposed to respect. It hasn't been pulled: replacing it with an older
+version doesn't clear that same bar either, for different reasons, and swapping
+one non-compliant ruleset for another fixes nothing. It keeps trading while the
+search for one that actually clears the honest bar continues. Full detail in
+<code>AMENDMENTS.md</code> (2026-08-22 row) and <code>AGENTS.md</code>.<br><br>
 Nothing here is financial advice, and the system cannot promote itself to real
 money — that takes six months of evidence and a human signing off.
 </div></div>

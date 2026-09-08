@@ -5,9 +5,16 @@ propose changes to it. If the thing that measures money can be edited by the
 thing being measured, every number downstream is fiction.
 
 Conventions:
-  - Long-only for v0.1 (shorting comes later, with borrow costs modelled).
   - Decision at close of bar i  ->  fill at open of bar i+1.
   - Fees and slippage always charged. A backtest without costs is a daydream.
+  - Short selling (Phase 1, 2026-09-08): `short()`/`cover()` mirror `buy()`/
+    `sell()`. A position's `qty` goes negative for a short — no new schema
+    field, just a sign. No leverage: `short()`'s target notional is capped
+    by `self.cash`, same proxy `buy()` uses. Borrow cost accrues against
+    cash every bar via `borrow_bps_per_bar`, a flat modelled constant in the
+    same family as `fee_bps`/`slippage_bps` (default 0.0 — a pre-Phase-1
+    saved state loads with no behavior change). Not yet wired into any
+    agent or the council; this is broker mechanics only.
 """
 from __future__ import annotations
 
@@ -22,7 +29,7 @@ import numpy as np
 class Fill:
     ts: str
     symbol: str
-    side: str            # "buy" | "sell"
+    side: str            # "buy" | "sell" | "short" | "cover"
     qty: float
     price: float         # effective price incl. slippage
     ref_price: float     # unslipped reference
@@ -42,7 +49,11 @@ class Position:
 
     @property
     def is_open(self) -> bool:
-        return self.qty > 1e-12
+        return abs(self.qty) > 1e-12
+
+    @property
+    def is_short(self) -> bool:
+        return self.qty < -1e-12
 
 
 @dataclass
@@ -60,16 +71,34 @@ class ClosedTrade:
     entry_agents: tuple[str, ...] = ()
 
 
+def _update_peak(pos: Position, price: float, just_opened: bool) -> None:
+    """Peak favors the position, not the price axis: highest seen for a
+    long (the trailing-stop reference for locking in gains as price rises),
+    lowest seen for a short (mirror image — gains accrue as price falls).
+    `just_opened` resets the peak to the entry price instead of comparing
+    against the dataclass default (0.0), which would never be beaten by a
+    real price on the short side.
+    """
+    if just_opened:
+        pos.peak_price = price
+    elif pos.qty < 0:
+        pos.peak_price = min(pos.peak_price, price)
+    else:
+        pos.peak_price = max(pos.peak_price, price)
+
+
 class PaperBroker:
     """Imaginary money, real accounting."""
 
     def __init__(self, cash: float = 10_000.0, fee_bps: float = 10.0,
-                 slippage_bps: float = 5.0, min_order: float = 25.0):
+                 slippage_bps: float = 5.0, min_order: float = 25.0,
+                 borrow_bps_per_bar: float = 0.0):
         self.start_cash = cash
         self.cash = cash
         self.fee_bps = fee_bps
         self.slippage_bps = slippage_bps
         self.min_order = min_order
+        self.borrow_bps_per_bar = borrow_bps_per_bar
         self.positions: dict[str, Position] = {}
         self.fills: list[Fill] = []
         self.closed: list[ClosedTrade] = []
@@ -111,6 +140,9 @@ class PaperBroker:
             reason: str = "", agents: tuple[str, ...] = ()) -> Fill | None:
         if self.halted or price is None or price <= 0:
             return None
+        existing = self.positions.get(symbol)
+        if existing and existing.qty < 0:
+            return None  # already short this symbol; cover first, no flip-in-one-call
         quote_amount = min(quote_amount, self.cash)
         if quote_amount < self.min_order:
             return None
@@ -121,26 +153,68 @@ class PaperBroker:
             return None
 
         pos = self.positions.setdefault(symbol, Position(symbol))
+        is_new = pos.opened_ts is None
         new_qty = pos.qty + qty
         pos.avg_cost = (pos.avg_cost * pos.qty + eff * qty) / new_qty if new_qty > 0 else eff
         pos.qty = new_qty
-        if pos.opened_ts is None:
+        if is_new:
             pos.opened_ts = ts
             pos.bars_held = 0
             pos.entry_agents = tuple(agents)
         elif agents:
             pos.entry_agents = tuple(sorted(set(pos.entry_agents) | set(agents)))
-        pos.peak_price = max(pos.peak_price, price)
+        _update_peak(pos, price, is_new)
         self.cash -= quote_amount
 
         f = Fill(ts, symbol, "buy", qty, eff, price, fee, reason)
         self.fills.append(f)
         return f
 
+    def short(self, ts: str, symbol: str, quote_amount: float, price: float,
+              reason: str = "", agents: tuple[str, ...] = ()) -> Fill | None:
+        """Open or add to a short. Mirrors `buy()`: `quote_amount` is a
+        target notional (capped by `self.cash` as the same no-leverage
+        buying-power proxy `buy()` uses, not actual cash spent — opening a
+        short *receives* cash), slippage works against the seller (you
+        receive less), fee comes out of the proceeds credited.
+        """
+        if self.halted or price is None or price <= 0:
+            return None
+        existing = self.positions.get(symbol)
+        if existing and existing.qty > 0:
+            return None  # already long this symbol; sell first, no flip-in-one-call
+        quote_amount = min(quote_amount, self.cash)
+        if quote_amount < self.min_order:
+            return None
+        eff = price * (1 - self.slippage_bps / 10_000)
+        qty = quote_amount / eff
+        fee = quote_amount * self.fee_bps / 10_000
+        if qty <= 0:
+            return None
+
+        pos = self.positions.setdefault(symbol, Position(symbol))
+        is_new = pos.opened_ts is None
+        new_qty = pos.qty - qty
+        pos.avg_cost = ((pos.avg_cost * abs(pos.qty) + eff * qty) / abs(new_qty)
+                        if new_qty < 0 else eff)
+        pos.qty = new_qty
+        if is_new:
+            pos.opened_ts = ts
+            pos.bars_held = 0
+            pos.entry_agents = tuple(agents)
+        elif agents:
+            pos.entry_agents = tuple(sorted(set(pos.entry_agents) | set(agents)))
+        _update_peak(pos, price, is_new)
+        self.cash += quote_amount - fee
+
+        f = Fill(ts, symbol, "short", qty, eff, price, fee, reason)
+        self.fills.append(f)
+        return f
+
     def sell(self, ts: str, symbol: str, fraction: float, price: float,
              reason: str = "") -> Fill | None:
         pos = self.positions.get(symbol)
-        if not pos or not pos.is_open or price is None or price <= 0:
+        if not pos or pos.qty <= 0 or price is None or price <= 0:
             return None
         fraction = max(0.0, min(1.0, fraction))
         qty = pos.qty * fraction
@@ -173,6 +247,46 @@ class PaperBroker:
         self.fills.append(f)
         return f
 
+    def cover(self, ts: str, symbol: str, fraction: float, price: float,
+              reason: str = "") -> Fill | None:
+        """Buy back some or all of a short. Mirrors `sell()`: slippage works
+        against the buyer this time (you pay more), profit when the cover
+        price is below the entry (short-sale) price.
+        """
+        pos = self.positions.get(symbol)
+        if not pos or pos.qty >= 0 or price is None or price <= 0:
+            return None
+        fraction = max(0.0, min(1.0, fraction))
+        qty = abs(pos.qty) * fraction
+        if qty <= 0:
+            return None
+        eff = price * (1 + self.slippage_bps / 10_000)
+        gross = qty * eff
+        fee = gross * self.fee_bps / 10_000
+        cost = gross + fee
+        if gross < self.min_order and fraction < 1.0:
+            return None  # don't trade dust
+
+        pnl = (pos.avg_cost - eff) * qty - fee
+        self.cash -= cost
+        entry_ts = pos.opened_ts or ts
+        entry_px = pos.avg_cost
+        bars = pos.bars_held
+        pos.qty += qty
+
+        self.closed.append(ClosedTrade(
+            symbol=symbol, qty=qty, entry_price=entry_px, exit_price=eff,
+            entry_ts=entry_ts, exit_ts=ts, pnl=pnl,
+            pnl_pct=(entry_px - eff) / entry_px if entry_px > 0 else 0.0,
+            bars_held=bars, exit_reason=reason, entry_agents=pos.entry_agents))
+
+        if not pos.is_open:
+            self.positions.pop(symbol, None)
+
+        f = Fill(ts, symbol, "cover", qty, eff, price, fee, reason)
+        self.fills.append(f)
+        return f
+
     # -- bookkeeping -------------------------------------------------------
     def mark(self, ts: str, prices: dict[str, float], dd_halt: float = 0.25,
              cooldown: int = 20) -> float:
@@ -189,7 +303,10 @@ class PaperBroker:
                 pos.bars_held += 1
                 px = prices.get(sym)
                 if px:
-                    pos.peak_price = max(pos.peak_price, px)
+                    _update_peak(pos, px, just_opened=False)
+                    if pos.qty < 0 and self.borrow_bps_per_bar > 0:
+                        self.cash -= (self.borrow_bps_per_bar * abs(pos.qty) * px
+                                      / 10_000)
         nav = self.equity(prices)
         self.nav_history.append((ts, nav))
         self.just_halted = False
@@ -258,6 +375,7 @@ class PaperBroker:
             "start_cash": self.start_cash, "cash": self.cash,
             "fee_bps": self.fee_bps, "slippage_bps": self.slippage_bps,
             "min_order": self.min_order,
+            "borrow_bps_per_bar": self.borrow_bps_per_bar,
             "positions": {s: asdict(p) for s, p in self.positions.items() if p.is_open},
             "fills": [asdict(f) for f in self.fills],
             "closed": [asdict(t) for t in self.closed],
@@ -270,7 +388,8 @@ class PaperBroker:
     @classmethod
     def from_state(cls, st: dict[str, Any]) -> "PaperBroker":
         b = cls(cash=st.get("start_cash", 10_000.0), fee_bps=st.get("fee_bps", 10.0),
-                slippage_bps=st.get("slippage_bps", 5.0), min_order=st.get("min_order", 25.0))
+                slippage_bps=st.get("slippage_bps", 5.0), min_order=st.get("min_order", 25.0),
+                borrow_bps_per_bar=st.get("borrow_bps_per_bar", 0.0))
         b.cash = st.get("cash", b.cash)
         b.positions = {s: Position(**{**p, "entry_agents": tuple(p.get("entry_agents", ()))})
                        for s, p in st.get("positions", {}).items()}

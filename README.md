@@ -114,9 +114,13 @@ spans a fold boundary. Under an honest, unbroken replay, genome v3's true
 drawdown is worse than the 40% hard-fail threshold the gate is supposed to
 enforce, though the gate itself never saw that at promotion time. The gate has
 since been fixed for every future promotion decision (see `AMENDMENTS.md`,
-2026-08-22 row); whether the current champion should be re-evaluated or replaced
-now that its real drawdown is visible is still an open decision, not yet acted
-on. See `AGENTS.md`'s "Current state" for the full mechanism and reasoning.
+2026-08-22 row). **Decided 2026-09-08:** v3 stays live rather than being
+rolled back — `succession-audit` found neither v1 nor v2 clears the corrected
+gate either, each for a different reason, so demoting to either just swaps one
+non-compliant genome for another. Search for a genome that actually clears the
+fully-corrected gate continues; that is the real bar for the next promotion
+now, not parity with v3's grandfathered status. See `AGENTS.md`'s "Owner
+decisions pending" and "Current state" for the full mechanism and reasoning.
 
 Real money is gated behind six months of positive walk-forward, a live paper run
 that matches its own backtest within tolerance, and explicit sign-off. The system

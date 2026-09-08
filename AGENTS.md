@@ -314,7 +314,7 @@ and check `AMENDMENTS.md` first.
 | `core/`, `agents/`, `loop/`, `constitution/` | real, normally-importable copies of every module `evotrader_bundle.py` embeds in `_SRC`, added 2026-08-23 (weekend all-hands) as item 7's unflatten — see "Current state" and `runs/2026-08-23-0600-weekend-all-hands.md`. **Not the live path**: only the equivalence test and `run_from_files.py` import these; `evotrader_bundle.py` is untouched and still what every scheduled command actually runs. Kept byte-identical to the bundle's `_SRC` entries by `tests/test_unflattened_files_match_bundle.py` — edit a module with `tools/edit_bundle_module.py`, then hand-sync (or re-extract) the real file, or the test fails. |
 | `run_from_files.py` | read-only CLI entrypoint (`summary`/`signals`/`holdout-pressure`/`regime`) that runs against the real files above instead of the bundle, added 2026-08-23 (3-hourly check) as a safe first step of item 7's cutover, extended the same day with two more read-only diagnostics — see "Current state" and `runs/2026-08-23-0946-run-from-files-entrypoint.md` / `runs/2026-08-23-1254-run-from-files-diagnostics.md`. **Not wired into any scheduled run** — `evotrader_bundle.py` is still what every scheduled command executes. |
 | `evotrader_dashboard.py` | dashboard builder (zero external deps, hand-rolled SVG) |
-| `evotrader.manifest` | constitution checksum (`8b74865634b1db07` as of 2026-08-21's `HOLDOUT_SIGMA` amendment — rotates on every constitution change, don't hardcode-trust this table over the file itself) — the anti-tampering seal |
+| `evotrader.manifest` | constitution checksum (`726dfa4bac85891a` as of 2026-09-08's short-selling amendment — rotates on every constitution change, don't hardcode-trust this table over the file itself) — the anti-tampering seal |
 | `live_state.json` | **the account**: cash, positions, trade ledger, NAV history, current genome, evolution lineage, researcher memory |
 | `AMENDMENTS.md` | the constitution amendment log — every gate change, argued in writing |
 | `runs/` | one dated note per scheduled run |
@@ -334,54 +334,42 @@ is no brokerage account in this design and there does not need to be one.
 
 ## Owner decisions pending
 
-Three roadmap items (2, 5, 6 below) are each fully investigated as far as a
-scheduled session can take them and now sit on a decision only the owner can
-make. Added here 2026-09-05 (3-hourly check) so the next session/owner sees
-this in one place instead of reconstructing it from the "Next steps" log.
-Nothing below is new evidence — it's a pointer to work already done.
+Three of the four items below (2, 5, and the v3 drawdown question) were
+resolved by the owner on 2026-09-08, after sitting since 2026-09-02/09-05
+with no response. Recorded here with the decision and what changed as a
+result, so a future session doesn't re-litigate them. Item 6 is still open.
 
-- **Item 2 (4h-bar shadow evolution) — accept vs. redirect.** Five
-  unconstrained-search seeds / nine generations across the `x6` recipe found
-  one real gate-clearing move (disabling `consult_moderate`), confirmed
-  2026-09-04 to be a deterministic candidate the Researcher always proposes
-  first against this champion regardless of seed — not five independent
-  pieces of evidence, closer to zero. Flagged as "the owner's call" in run
-  notes since 2026-09-02 with no resolution yet. The choice: (a) accept the
-  hand-built `consv1 + trailing_stop + ramp` genome stack this thread
-  produced and move toward a real (non-shadow) promotion attempt for the 4h
-  genome family, or (b) park 4h-bar shadow evolution and redirect effort to
-  item 4 (LLM-backed consults) or item 5 (short selling). Do not spend
-  another cycle running a fresh seed against this recipe without one of
-  these being decided first — see item 2's full history for why.
-  **Sharpened 2026-09-05 (weekend all-hands): this is a resource-allocation
-  call, not a blocked technical question — checked directly rather than
-  re-asserted.** The `consv1 + trailing_stop + ramp` stack has already been
-  run through the *real* gate logic (`EvolutionRun.generation()`/
-  `dd_corrected_stats()`, not shadow-only tooling): it cleared the real fold
-  gate on the day it was measured, but a 7-day fold-date-sensitivity check
-  found it fails 4-6 of 7 nearby daily shifts, and a fresh best-of-day pick
-  a day later hard-failed 6/7 shifts too — the pass is boundary-fragile and
-  flips with about a day of added data, not a stable result. It has never
-  been run against the sealed holdout at all (only the unpatched pre-ramp
-  genome reached holdout, and failed it). The mechanical next step —
-  `--recipe consv_trailing_ramp` through a full `evolve()` including the
-  sealed holdout and the multi-day robustness check — is already scripted
-  and would take no new tooling. So option (a) is not blocked on missing
-  engineering; it is "spend a real, consequential promotion attempt on a
-  genome family with a demonstrated fragile pass rate," which is exactly
-  the kind of call this file reserves for the owner. Recommend the owner
-  read this paragraph specifically, not just the summary above, before
-  deciding.
-- **Item 5 (short selling) — needs a human review + `evotrader.manifest`
-  re-seal before Phase 1 can ship.** Design is done and a full implementation
-  (`PaperBroker.short()`/`.cover()`, borrow accrual, 16 passing tests) was
-  built and verified working 2026-08-30, then reverted in full because
-  `core/portfolio.py` is one of the two files `constitution.checksum()`
-  hashes — shipping it would trip `CONSTITUTION MODIFIED` for every run
-  after without a human re-seal in hand first. The design and the tests are
-  ready to re-apply the moment that sign-off exists; nothing else is
-  blocking this item.
-- **Item 6 (equities/FX) — needs a data source picked.** No code has a
+- **v3's true drawdown breaches its own safety gate (found 2026-08-22,
+  decided 2026-09-08): leave it live, keep searching, show the risk
+  openly.** `succession-audit` had already checked the alternative: neither
+  v1 nor v2 clears the corrected `dd_corrected_stats()` gate either (each
+  fails for a different reason), so demoting to either one trades a known
+  problem for a different known problem rather than fixing anything.
+  Decision: v3 stays champion, search for a genome that actually clears the
+  fully-corrected gate continues (this *is* the real bar for v4 now, not
+  parity with v3's grandfathered status), and the drawdown breach is
+  surfaced on the public dashboard rather than left as a fact only visible
+  in this file and `AMENDMENTS.md`'s 2026-08-22 row. **Not yet done: add
+  the risk to `evotrader_dashboard.py`'s output** — check on the next
+  session touching the dashboard whether this has been added; if not, it's
+  the concrete follow-up this decision implies.
+- **Item 2 (4h-bar shadow evolution), decided 2026-09-08: parked, redirect
+  effort.** The `consv1 + trailing_stop + ramp` stack's real gate pass
+  turned out to be boundary-fragile (fails 4-6 of 7 nearby-day shifts) and
+  the underlying candidate is deterministic regardless of seed — not real
+  signal. Do not run another 4h-bar generation against this recipe. Redirect
+  cycles to item 4 (LLM-backed consults) — item 5 is no longer available as
+  a redirect target, see below.
+- **Item 5 (short selling), decided 2026-09-08: shipped.** Owner approved
+  re-applying the 2026-08-30 design verbatim. Re-implemented against the
+  current `core/portfolio.py` (18 tests, `tests/test_short_selling.py`, full
+  suite 384/384), `evotrader.manifest` re-sealed `8b74865634b1db07` →
+  `726dfa4bac85891a`, `AMENDMENTS.md` row added same commit. `live_state.json`
+  untouched throughout — this is broker mechanics only, **not yet wired into
+  any agent or the council**. Whether/how the Researcher should be allowed
+  to propose short positions is a separate, un-scoped design question, not
+  decided by this shipment.
+- **Item 6 (equities/FX) — still needs a data source picked.** No code has a
   reason to exist yet: `.env.example` already stages unused Alpaca
   paper-trading credentials with zero references anywhere in the repo,
   which looks like a forgotten or anticipatory placeholder rather than a
