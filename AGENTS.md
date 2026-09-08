@@ -391,6 +391,31 @@ Nothing below is new evidence — it's a pointer to work already done.
 
 ## Current state
 
+- **Run 2026-09-08 (3-hourly check, ~00:47-01:xx UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 4969 → 5175, boldness/stagnation counter
+  354 → 369.** No live trading this cycle (tick 25 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-08-0020-daily-trading.md` before starting). Freshness checks
+  before running: `review-hard-calls` 0 pending (1 reviewed so far,
+  unchanged), `live-benchmark` now 24 1d bars / -14.83% excess (up from 23
+  bars / -12.60%, still far from the 60-bar revisit trigger), items 2/5/6
+  still blocked with no new owner input. Champion fitness held flat at 1.590
+  across all 15 generations; every new candidate lost to it. Raw
+  best-of-generation fold-fitness beat the champion's own 1.590 in 10/15
+  generations this batch (67%) — see `runs/2026-09-08-0047-evolve-batch-v3.md`,
+  which also records this session briefly recreating the item-9
+  nohup-`&`-detachment footgun via a background-launch wrapper (caught
+  immediately: the wrapper's own "completed" signal fired while the real
+  process was still on generation 1/15; polled the real PID with `kill -0`
+  until it actually exited before touching any state). Verified before
+  commit: `python3 -m pytest -q` 366/366 (baseline, run strictly before
+  `evolve`, unchanged — no code touched), direct top-level key diff of
+  `live_state.json` showed only `lineage`/`researcher_memory`/`updated`
+  changed (genome, broker, journal byte-identical), constitution verified
+  `8b74865634b1db07` unchanged, `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-07 (3-hourly check, ~21:49-22:17 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 4760 → 4969, boldness/stagnation counter
