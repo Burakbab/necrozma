@@ -99,6 +99,9 @@ python3 evotrader_bundle.py tick        # one live paper tick, real prices
 python3 evotrader_bundle.py summary     # account status, no trading
 python3 evotrader_bundle.py signals     # today's decision in plain language
 python3 evotrader_bundle.py evolve N    # N generations of self-improvement
+                                         # (long-running: background this command directly if
+                                         #  needed, NEVER `nohup ... &` in one tool call — see
+                                         #  Next-steps item 9, hit 5+ times this week already)
 python3 evotrader_bundle.py anatomy     # P&L post-mortem on every closed trade
 python3 evotrader_bundle.py consults    # are the three consults actually independent?
 python3 evotrader_bundle.py costs       # fee/slippage perturbation sensitivity
@@ -3349,6 +3352,17 @@ every `evolve` call.
    evotrader_bundle.py evolve N` command directly — no `nohup`/`&` combo —
    so the tool's own completion notification lines up with the process
    actually exiting.
+
+   **Pointer (2026-09-08, 20:30 UTC daily evaluation):** this had recurred
+   5 times in a single week per the `Current state` log (09-06, 09-07 x2,
+   09-08 x2), each caught with no harm but each re-spending attention on
+   the same rediscovery. Since this roadmap position (far down the file)
+   was evidently not visible enough at the moment the command gets typed,
+   an inline warning was added directly next to `evolve N` in the ###
+   Commands listing near the top of the file instead. If it keeps
+   recurring after that, doc placement isn't the fix and something more
+   mechanical (a wrapper script, a pre-flight check) is probably
+   warranted.
 
 ---
 
