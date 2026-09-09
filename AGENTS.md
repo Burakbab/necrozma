@@ -382,6 +382,35 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~09:46-10:11 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 7264 → 7471, boldness/stagnation counter
+  519 → 534.** No live trading this cycle (tick 26 already handled at 00:20
+  UTC, confirmed before starting). Repo started in detached HEAD with local
+  `main` stale and showing no merge-base against `origin/main` (shallow
+  clone); resolved by hand with `git reset --hard origin/main` before
+  noticing `tools/git_sync.py` should have been tried first — ran it
+  afterward and confirmed it agreed (`already up to date`), nothing lost,
+  but next session should reach for the tool first even when the divergence
+  looks like a real rewrite. **Third consecutive batch at 100% fold-clear
+  rate** (raw best-of-generation fold-fitness beat the champion's 0.977 in
+  all 15 generations), following the two 100% batches at ~00:46-01:19 UTC
+  and ~03:51-04:27 UTC that the 04:28 UTC note flagged as worth watching for
+  a third repeat. Re-checked with `holdout-pressure`: total real draws now
+  69 (up from 57), every one still lost, margin ~6.36-6.41 this batch —
+  consistent with (not a complication of) the 07:11 UTC finding that the
+  champion's fold-aggregate fitness collapsed to 0.977 (a `rolling_folds()`
+  window/regime artifact) while the sealed-holdout margin stayed flat-to-growing.
+  Three 100% batches in a row is the expected consequence of a fixed, lower
+  fold bar, not a new search-quality change — see
+  `runs/2026-09-09-1011-evolve-batch-v3-third-100pct.md`. Verified before
+  commit: `python3 -m pytest -q` 384/384 (baseline, run strictly before
+  `evolve`, unchanged — no code touched), direct key-by-key diff of
+  `live_state.json` showed only `lineage`/`researcher_memory`/`updated`
+  changed (genome, broker, journal byte-identical), constitution verified
+  `726dfa4bac85891a` unchanged, `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~06:46-07:11 UTC): closed the two-batch
   "100% fold-clear rate" flag with a specific explanation, plus a third
   `evolve` batch (14/15, 93%) — cumulative candidates tried against v3 rose
