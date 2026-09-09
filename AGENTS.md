@@ -382,6 +382,38 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~12:46-13:22 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 7471 → 7680, boldness/stagnation counter
+  534 → 549.** No live trading this cycle (tick 26 already handled at 00:20
+  UTC, confirmed before starting). Repo started in detached HEAD with local
+  `main` stale against `origin/main` (shallow-clone false-divergence);
+  resolved with `git checkout main && git reset --hard origin/main` directly
+  rather than reaching for `tools/git_sync.py` first — same lapse the 10:11
+  UTC entry already flagged, still not fixed by writing it down once.
+  `review-hard-calls` still 0 pending; `holdout-pressure` unchanged from the
+  10:11 UTC check (still 69 draws, every one lost — no new batch had run
+  between the two checks). Champion fitness held flat at 0.977 across all 15
+  generations; every new candidate lost to it. Raw best-of-generation
+  fold-fitness beat the champion's own 0.977 in all 12 generations whose
+  output survived — see the process mistake below — consistent with the
+  fourth-in-a-row 100%-range batch under the already-explained
+  fold-aggregate-collapse artifact (07:11 UTC entry), not a new
+  search-quality change. **Process mistake this cycle**: the backgrounded
+  `evolve` command was piped through `tail -60` before being written to its
+  own log file, permanently losing generations 1-3's output — the file is
+  the only record for a backgrounded command, so truncating it before
+  capture (rather than when later displaying an already-complete file)
+  throws away data with no way to recover it; next time background the
+  plain command with no pipe, or use `tee` instead of `tail` — see
+  `runs/2026-09-09-1322-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 384/384 both before (baseline) and after `evolve`, run
+  strictly sequentially; direct key-by-key diff of `live_state.json` showed
+  only `lineage`/`researcher_memory`/`updated` changed (genome, broker,
+  journal byte-identical); constitution verified `726dfa4bac85891a`
+  unchanged; `tools/edit_bundle_module.py verify`/`sync --check` both clean.
+  Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~09:46-10:11 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 7264 → 7471, boldness/stagnation counter
@@ -3505,6 +3537,14 @@ every `evolve` call.
    `&`. **Rule of thumb for future sessions: never put a trailing `&` in a
    command string that is also run with the tool's `run_in_background`
    option — pick exactly one backgrounding mechanism, not both.**
+
+   **Related mistake, different shape (2026-09-09, ~13:00 UTC 3-hourly
+   check):** backgrounding `evolve` correctly (single mechanism) but piping
+   its stdout through `tail -60` before it ever reached the log file lost
+   3 of 15 generations' output permanently, since the file is the only
+   record of a backgrounded command — don't truncate before capture; pipe to
+   `tee`, or don't pipe at all, and `tail` only when later *displaying* an
+   already-complete file.
 
 ---
 
