@@ -382,6 +382,36 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~03:51-04:27 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 6847 → 7055, boldness/stagnation counter
+  490 → 505.** No live trading this cycle (tick 26 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-09-0020-daily-trading.md`/`runs/2026-09-09-0119-evolve-batch-v3.md`
+  before starting — this is the day's second evolve batch). `review-hard-calls`
+  still 0 pending (item 4 has no real case yet); items 2/6 still blocked per
+  "Owner decisions pending"; item 5's council-wiring question remains
+  un-scoped, not something to decide unilaterally, so this cycle ran the
+  standing evolve batch. Champion fitness held flat at 0.977 across all 15
+  generations; every new candidate lost to it. Raw best-of-generation
+  fold-fitness beat the champion's own 0.977 in **15/15 generations this
+  batch (100%)**, the second consecutive batch at 100% (previous batch,
+  ~00:46-01:19 UTC, also 100%) — still read as the standing
+  fold-clears-then-loses-holdout pattern, not a new finding, but now two in a
+  row at the highest rate this file has tracked; worth a future session's
+  attention if a third batch repeats it — see
+  `runs/2026-09-09-0428-evolve-batch-v3.md`, which also records this session
+  recreating the item-9 nohup-`&`-in-one-call footgun yet again (caught
+  immediately by the session itself, not an external reviewer: polled the
+  real PID with `kill -0` in a separate backgrounded loop to actual exit
+  before touching any state, no harm). Verified before commit: `python3 -m
+  pytest -q` 384/384 (baseline, run strictly before `evolve`, unchanged — no
+  code touched), direct key-by-key Python-equality diff of `live_state.json`
+  showed only `lineage`/`researcher_memory`/`updated` changed (`genome`,
+  `broker`, `journal` byte-identical, genome version still 3), constitution
+  verified `726dfa4bac85891a` unchanged, `tools/edit_bundle_module.py
+  verify`/`sync --check` both clean. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~00:46-01:19 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 6637 → 6847, boldness/stagnation counter
