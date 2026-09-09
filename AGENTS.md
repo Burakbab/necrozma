@@ -382,6 +382,33 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~06:46-07:11 UTC): closed the two-batch
+  "100% fold-clear rate" flag with a specific explanation, plus a third
+  `evolve` batch (14/15, 93%) — cumulative candidates tried against v3 rose
+  7055 → 7264, boldness/stagnation counter 505 → 519.** No live trading
+  this cycle (tick 26 already handled at 00:20 UTC, confirmed before
+  starting). Repo started in detached HEAD with the documented shallow-clone
+  false-divergence (local `main` stale at `4f15e68` from 2026-09-04);
+  `python3 tools/git_sync.py` fast-forwarded cleanly. **Finding: the
+  fold-clear-rate spike is fully explained by the champion's own recomputed
+  fold-aggregate fitness collapsing 1.590 → 0.977 (~38%) between the
+  2026-09-08 22:18 UTC and 2026-09-09 01:19 UTC batches — a
+  `rolling_folds()` window/regime artifact, not a search-quality change.**
+  Checked directly with the existing `holdout-pressure` diagnostic (reads
+  `acct.lineage`, no new code): the sealed-holdout margin has *not*
+  collapsed the same way — champion holdout fitness stayed in a tight
+  ~1.06-1.20 band and the margin by which it beats every challenger has if
+  anything grown slightly (~6.05 → ~6.36) across all 57 recorded draws,
+  every one lost. A lower fold bar is just easier for the same-shaped
+  candidate distribution to clear by chance; this is the standing
+  fold-clears-then-loses-holdout pattern holding up exactly as designed, no
+  bug, no fix needed — see
+  `runs/2026-09-09-0711-evolve-batch-v3-holdout-pressure-explained.md` for
+  the full breakdown and the batch's own verification (pytest 384/384,
+  `live_state.json` diff limited to `lineage`/`researcher_memory`/`updated`,
+  constitution `726dfa4bac85891a` unchanged, bundle verify/sync clean).
+  Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~03:51-04:27 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 6847 → 7055, boldness/stagnation counter
