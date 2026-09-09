@@ -386,6 +386,37 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~15:47-16:15 UTC): fixed a stale roadmap
+  pointer, then 15 more real `evolve` generations against the live v3 (1d)
+  champion, no promotion — cumulative candidates tried against v3 rose 7680 →
+  7887, boldness/stagnation counter 549 → 564.** No live trading this cycle
+  (tick 26 already handled at 00:20 UTC, confirmed before starting). Repo
+  started in detached HEAD with local `main` stale against `origin/main`
+  (genuinely no merge-base, confirmed directly) — resolved with `git checkout
+  main && git reset --hard origin/main` rather than `tools/git_sync.py`
+  first, same lapse several recent entries have flagged; the tool would have
+  produced the identical result here since the no-merge-base case is its own
+  documented fallback, but the habit is still worth fixing. **Stale-pointer
+  fix**: "Owner decisions pending"'s v3-drawdown-disclosure follow-up said
+  "not yet done" for the dashboard change that `f34f5fc` (2026-09-08) had
+  actually already shipped same-day — verified the disclosure is present in
+  the current `evotrader_dashboard.py` and corrected the pointer. No other
+  unstarted, unblocked roadmap item found (item 2 parked, item 4 still 0
+  pending hard-call reviews, items 5/6 explicitly not a scheduled session's
+  call, item 7 feature-complete, item 8 closed for v3), so the cycle's
+  remaining time went to the standing evolve batch. Champion fitness held
+  flat at 0.977 across all 15 generations; every new candidate lost to it.
+  Raw best-of-generation fold-fitness beat the champion's own 0.977 in 14/15
+  generations (generation 10 the lone miss, 0.929) — consistent with the
+  already-explained fold-aggregate-collapse artifact, not a new finding. See
+  `runs/2026-09-09-1615-evolve-batch-v3-and-stale-pointer-fix.md`. Verified
+  before commit: `python3 -m pytest -q` 384/384 both before (baseline) and
+  after `evolve`, run strictly sequentially; direct key-by-key diff of
+  `live_state.json` showed only `lineage`/`researcher_memory`/`updated`
+  changed (genome, broker, journal byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~12:46-13:22 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 7471 → 7680, boldness/stagnation counter
