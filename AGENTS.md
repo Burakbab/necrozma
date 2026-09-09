@@ -349,10 +349,14 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   fully-corrected gate continues (this *is* the real bar for v4 now, not
   parity with v3's grandfathered status), and the drawdown breach is
   surfaced on the public dashboard rather than left as a fact only visible
-  in this file and `AMENDMENTS.md`'s 2026-08-22 row. **Not yet done: add
-  the risk to `evotrader_dashboard.py`'s output** — check on the next
-  session touching the dashboard whether this has been added; if not, it's
-  the concrete follow-up this decision implies.
+  in this file and `AMENDMENTS.md`'s 2026-08-22 row. **Done 2026-09-08 (same
+  commit as the decision, `f34f5fc`): `evotrader_dashboard.py`'s "Honest
+  caveats" panel carries a "Known issue, being tracked openly" paragraph
+  naming the fold-boundary drawdown bug, that the fix revealed the live
+  ruleset breaches its own gate, and why it hasn't been pulled — verified
+  present in the current file 2026-09-09. This pointer was stale (still said
+  "not yet done") for about a day; caught by the 2026-09-09 ~15:47 UTC
+  3-hourly check while looking for the highest-value open item.
 - **Item 2 (4h-bar shadow evolution), decided 2026-09-08: parked, redirect
   effort.** The `consv1 + trailing_stop + ramp` stack's real gate pass
   turned out to be boundary-fragile (fails 4-6 of 7 nearby-day shifts) and
