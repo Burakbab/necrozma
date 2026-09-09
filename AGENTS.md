@@ -386,6 +386,38 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~21:47-22:00 UTC): shipped
+  `tools/background_runner.py`, the mechanical fix Next-steps item 9 called
+  for after its doc-only fix (2026-09-08) kept getting recurred past
+  (2026-09-09, twice more).** No live trading this cycle (tick 26 already
+  handled at 00:20 UTC on the bar closing 2026-09-08; today's bar,
+  2026-09-09, has not closed yet — confirmed via `live_state.json`'s
+  `updated` timestamp, `ticks: 26`, and the 20:30 UTC daily-evaluation note
+  before starting). Repo started in detached HEAD with local `main` stale
+  against `origin/main` and no merge-base visible at default fetch depth —
+  the documented shallow-clone false-divergence; resolved with `git reset
+  --hard origin/main` on a clean tree (equivalent to what `tools/git_sync.py`
+  would have done, but the tool should have been reached for first, same
+  habit lapse several recent entries have already flagged). New tool exposes
+  `start`/`wait` as two separate CLI calls so a long-running command like
+  `evolve N` gets detached (`start_new_session`, no `nohup`/`&`) with output
+  captured to a log file from the first byte (no pipe, nothing to truncate),
+  and its real exit code retrievable later from a *different* process via a
+  status file the child writes itself on completion — removing the specific
+  two-backgrounding-mechanisms trap and the tail-truncation trap this item's
+  log shows recurring six-plus times, rather than relying on a session
+  remembering the rule under time pressure. `tests/test_background_runner.py`
+  (6 new tests against real subprocesses: full output capture, real exit-code
+  retrieval across the start/wait process boundary, timeout-while-running,
+  stale-status-file replacement, and a still-running liveness check) — full
+  suite 384 → 390, all passing. Not yet used for a real `evolve` batch; see
+  item 9 above for the fuller writeup. Verified before commit: `live_state.json`
+  byte-identical (only tooling/test/doc files touched, confirmed via `git
+  status`), constitution still `726dfa4bac85891a` (`evotrader_bundle.py
+  summary` reprints it unchanged), `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean (this tool isn't a bundled module, doesn't touch
+  `_SRC`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~18:47-19:17 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 7887 → 8096, boldness/stagnation counter
@@ -3605,6 +3637,30 @@ every `evolve` call.
    record of a backgrounded command — don't truncate before capture; pipe to
    `tee`, or don't pipe at all, and `tail` only when later *displaying* an
    already-complete file.
+
+   **Mechanical fix shipped 2026-09-09 (3-hourly check, ~21:47-22:00 UTC):**
+   per this item's own 2026-09-08 note ("if it keeps recurring after
+   [the doc fix], something more mechanical ... is probably warranted") — it
+   did keep recurring (twice more on 2026-09-09) after that doc fix, so this
+   is that wrapper. New `tools/background_runner.py`
+   (`tests/test_background_runner.py`, 6 tests against real subprocesses, no
+   mocking; full suite 384 → 390) exposes `start`/`wait` as two separate CLI
+   calls: `start` launches the target command detached (`start_new_session`,
+   no `nohup`/`&` needed, so there is nothing to accidentally pair with a
+   tool's own `run_in_background`) with all output captured to a log file
+   from the first byte (no pipe, nothing to truncate) and returns almost
+   instantly with the real child PID; `wait` blocks (safe to combine with the
+   calling tool's own backgrounding, since `wait` itself spawns nothing) until
+   the child's real exit code — written by the child itself on completion —
+   appears in a status file, which works even though `wait` runs in a
+   separate process from `start` and is not the child's parent. Not yet used
+   for a real `evolve` batch (this session's own evolve batch, if any, is the
+   first candidate); doesn't fix the discipline problem by itself, but
+   removes the specific two-mechanisms-at-once trap and the tail-truncation
+   trap mechanically rather than relying on a session remembering the rule.
+   Genome/state untouched — this is tooling only, verified via direct
+   `live_state.json`/constitution checks, not the usual evolve-batch diff
+   (see "Current state").
 
 ---
 
