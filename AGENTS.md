@@ -386,6 +386,31 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~18:47-19:17 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 7887 → 8096, boldness/stagnation counter
+  564 → 579.** No live trading this cycle (tick 26 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and the prior
+  session's run notes before starting). Repo started in detached HEAD but
+  HEAD already matched `origin/main` byte-for-byte — only local `main` was
+  stale, not a real divergence; resolved with `git checkout -B main
+  origin/main`. `review-hard-calls` still 0 pending; no other unstarted,
+  unblocked roadmap item found, so the cycle's remaining time went to the
+  standing evolve batch. Champion fitness held flat at 0.977 across all 15
+  generations; every new candidate lost to it. Raw best-of-generation
+  fold-fitness beat the champion's own 0.977 in 15/15 generations (100%) — a
+  fourth batch in a row at or near 100%, still fully explained by the
+  2026-09-09 07:11 UTC fold-aggregate-collapse finding, not a new
+  search-quality change; `holdout-pressure` confirms the sealed-holdout side
+  is not weakening (231 draws, all lost, margin ~6.60, up slightly from
+  ~6.54) — see `runs/2026-09-09-1917-evolve-batch-v3.md`. Verified before
+  commit: `python3 -m pytest -q` 384/384 both before (baseline) and after
+  `evolve`, run strictly sequentially; direct key-by-key diff of
+  `live_state.json` showed only `lineage`/`researcher_memory`/`updated`
+  changed (genome, broker, journal byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~15:47-16:15 UTC): fixed a stale roadmap
   pointer, then 15 more real `evolve` generations against the live v3 (1d)
   champion, no promotion — cumulative candidates tried against v3 rose 7680 →
