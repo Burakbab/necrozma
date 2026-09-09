@@ -382,6 +382,33 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-09 (3-hourly check, ~00:46-01:19 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 6637 → 6847, boldness/stagnation counter
+  475 → 489.** No live trading this cycle (tick 26 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-09-0020-daily-trading.md` before starting). `review-hard-calls`
+  still 0 pending (item 4 has no real case yet). Champion fitness held flat
+  at 0.977 across all 15 generations; every new candidate lost to it. Raw
+  best-of-generation fold-fitness beat the champion's own 0.977 in **15/15
+  generations this batch (100%)** — the highest beat-rate recorded in this
+  file's recent tracking (prior batches ranged 27-73%); read as more evidence
+  for the standing fold-clears-then-loses-holdout pattern
+  (`holdout-pressure`), not a new finding, but flagged in case the rate stays
+  this high — see `runs/2026-09-09-0119-evolve-batch-v3.md`. **Also recreated
+  the item-9 nohup/`&` footgun via a new path this cycle** (Bash tool's own
+  `run_in_background: true` combined with a trailing shell `&` in the same
+  command, rather than the `nohup ... &` string form logged five times
+  previously) — caught immediately via `updated` timestamp + `kill -0` on the
+  real PID before touching any state, no harm; see the run note for the
+  distinct trigger shape. Verified before commit: `python3 -m pytest -q`
+  384/384 (baseline, run strictly before `evolve`, unchanged — no code
+  touched), direct key-by-key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical), constitution verified `726dfa4bac85891a` unchanged,
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean. Genome
+  still v3 (1d) live, untouched.
+
 - **Run 2026-09-08 (3-hourly check, ~21:46-22:18 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 6429 → 6637, boldness/stagnation counter
@@ -3377,6 +3404,21 @@ every `evolve` call.
    recurring after that, doc placement isn't the fix and something more
    mechanical (a wrapper script, a pre-flight check) is probably
    warranted.
+
+   **New trigger shape (2026-09-09, 00:46 UTC 3-hourly check):** recurred a
+   sixth time, but via a different mechanism than any prior instance — not a
+   `nohup ... &` string, but a tool-level `run_in_background: true` combined
+   with a trailing shell `&` inside the same command. The two-line wrapper
+   (launch python in background, echo its PID) finished almost instantly and
+   the tool reported the whole call "completed", while the real `evolve`
+   process kept running detached for ~29 more minutes. Caught immediately
+   (`updated` timestamp unchanged, `kill -0 <pid>` still alive), no harm — see
+   `runs/2026-09-09-0119-evolve-batch-v3.md`. The inline `### Commands`
+   warning added 2026-09-08 doesn't cover this shape since it warns against
+   `nohup`, not against pairing the tool's own backgrounding with a shell
+   `&`. **Rule of thumb for future sessions: never put a trailing `&` in a
+   command string that is also run with the tool's `run_in_background`
+   option — pick exactly one backgrounding mechanism, not both.**
 
 ---
 
