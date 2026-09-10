@@ -386,6 +386,34 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-10 (3-hourly check, ~06:47-07:16 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 8512 → 8722, boldness/stagnation counter
+  609 → 624.** No live trading this cycle (tick 27 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and the prior
+  04:32 UTC run note before starting). Repo started in detached HEAD with
+  local `main` stale at `4f15e68` (2026-09-04, no merge-base against
+  `origin/main`'s `cdbc5be`); resolved with `git checkout main && git reset
+  --hard origin/main` on a clean tree rather than reaching for
+  `tools/git_sync.py` first — same recurring habit lapse many prior entries
+  have flagged, still not fixed. Freshness checks before running:
+  `review-hard-calls` still 0 pending, `holdout-pressure` unchanged in shape
+  (237 draws, all lost, margin ~6.6), items 2/5/6 still not a scheduled
+  session's call — so the cycle ran the standing evolve batch via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), which again
+  worked exactly as designed (instant start, real PID, ~29-minute wait, real
+  exit code 0, no truncation). Champion's fold-aggregate fitness held flat at
+  1.469 across all 15 generations. Raw best-of-generation fold-fitness beat
+  the champion's own 1.469 in 10/15 generations, tied in 3, lost in 2 — an
+  ordinary batch. See `runs/2026-09-10-0724-evolve-batch-v3.md`. Verified
+  before commit: `python3 -m pytest -q` 390/390 both before (baseline) and
+  after `evolve`; direct key-by-key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical); constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`) since `lineage`/`researcher_memory` counts feed its
+  genome panel. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-10 (3-hourly check, ~03:47-04:32 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 8305 → 8512, boldness/stagnation counter
