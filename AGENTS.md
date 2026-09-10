@@ -386,6 +386,42 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-10 (3-hourly check, ~00:46-01:13 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 8110 → 8305, boldness/stagnation counter
+  580 → 594. First real use of `tools/background_runner.py` (shipped
+  2026-09-09 but unused until now): worked exactly as designed.** No live
+  trading this cycle (tick 27 already handled at 00:20 UTC, confirmed via
+  `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-10-0020-daily-trading.md` before starting). Repo started in
+  detached HEAD with local `main` badly stale (60+ commits behind, no shared
+  tip visible at shallow depth); resolved with `git checkout -B main
+  origin/main` on a clean tree (no local commits to lose). Freshness checks:
+  `review-hard-calls` still 0 pending, `holdout-pressure` unchanged in shape,
+  items 2/5/6 still not a scheduled session's call — so the cycle ran the
+  standing evolve batch, using `background_runner.py`'s `start`/`wait` pair
+  instead of the tool call's own backgrounding: `start` returned in well
+  under a second with the real child PID and a log capturing all 15
+  generations' output from the first byte, `wait` (itself backgrounded via
+  the calling tool, since `wait` spawns nothing so this doesn't recreate the
+  item-9 two-mechanisms trap) blocked the full ~22 minutes and returned the
+  real exit code from the child's own status-file write
+  (`{"exited": true, "exit_code": 0, "waited_seconds": 1320.03}`). No
+  nohup/`&`, no truncated log — recommend this as the default way to run
+  `evolve N` going forward. Champion's recomputed fold-aggregate fitness this
+  batch: 1.469 (not the 0.977 seen in several 2026-09-09 batches — expected
+  `rolling_folds()` window drift as "now" advances, already documented, not
+  a new finding). Raw best-of-generation fold-fitness beat the champion's own
+  1.469 in 12/15 generations, tied in 2, lost once — an ordinary batch, no
+  streak. See
+  `runs/2026-09-10-0113-evolve-batch-v3-background-runner-first-use.md`.
+  Verified before commit: `python3 -m pytest -q` 390/390 both before
+  (baseline) and after `evolve`; direct key-by-key diff of `live_state.json`
+  showed only `lineage`/`researcher_memory`/`updated` changed (genome,
+  broker, journal byte-identical); constitution verified `726dfa4bac85891a`
+  unchanged; `tools/edit_bundle_module.py verify`/`sync --check` both clean.
+  Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-09 (3-hourly check, ~21:47-22:00 UTC): shipped
   `tools/background_runner.py`, the mechanical fix Next-steps item 9 called
   for after its doc-only fix (2026-09-08) kept getting recurred past
@@ -3653,14 +3689,20 @@ every `evolve` call.
    calling tool's own backgrounding, since `wait` itself spawns nothing) until
    the child's real exit code — written by the child itself on completion —
    appears in a status file, which works even though `wait` runs in a
-   separate process from `start` and is not the child's parent. Not yet used
-   for a real `evolve` batch (this session's own evolve batch, if any, is the
-   first candidate); doesn't fix the discipline problem by itself, but
-   removes the specific two-mechanisms-at-once trap and the tail-truncation
-   trap mechanically rather than relying on a session remembering the rule.
-   Genome/state untouched — this is tooling only, verified via direct
-   `live_state.json`/constitution checks, not the usual evolve-batch diff
-   (see "Current state").
+   separate process from `start` and is not the child's parent. Genome/state
+   untouched at ship time — that was tooling only, verified via direct
+   `live_state.json`/constitution checks, not the usual evolve-batch diff.
+
+   **First real `evolve` batch confirmed 2026-09-10 (3-hourly check,
+   ~00:46-01:13 UTC): worked exactly as designed, no issues.** `start`
+   returned in well under a second with the real child PID; `wait` blocked
+   the full ~22-minute run and returned the real exit code from the child's
+   own status-file write; the log file captured all 15 generations' output
+   from the first byte, nothing truncated. See "Current state" and
+   `runs/2026-09-10-0113-evolve-batch-v3-background-runner-first-use.md`.
+   Recommended as the default way to run `evolve N` from here on — no
+   nohup/`&`, nothing to accidentally pair with a tool's own
+   `run_in_background`.
 
 ---
 
