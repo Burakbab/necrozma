@@ -386,6 +386,33 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-10 (3-hourly check, ~09:46-10:33 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 8722 → 8940, boldness/stagnation counter
+  624 → 639.** No live trading this cycle (tick 27 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp before starting).
+  Repo started in detached HEAD with local `main` stale at `4f15e68`
+  (2026-09-04); this time actually used `python3 tools/git_sync.py` instead
+  of hand-rolling `git reset --hard` (the habit lapse several prior entries
+  flagged) — it unshallowed, found a real merge-base, and fast-forwarded
+  cleanly. Freshness checks before running: `review-hard-calls` still 0
+  pending (1 reviewed so far, unchanged), `holdout-pressure` 237 → 241 draws
+  after this run (every one still lost, margin ~6.6-6.62, unchanged in
+  shape), items 2/5/6 still not a scheduled session's call — so the cycle ran
+  the standing evolve batch via `tools/background_runner.py` (`start` +
+  backgrounded `wait`), which again worked exactly as designed. Champion's
+  fold-aggregate fitness held flat at 1.469 across all 15 generations. Raw
+  best-of-generation fold-fitness beat the champion's own 1.469 in 12/15
+  generations, lost in 3 — an ordinary batch. See
+  `runs/2026-09-10-1033-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 390/390 both before (baseline) and after `evolve`; direct
+  key-by-key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py
+  verify`/`sync --check` both clean; dashboard rebuilt (`index.html`).
+  Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-10 (3-hourly check, ~06:47-07:16 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 8512 → 8722, boldness/stagnation counter
