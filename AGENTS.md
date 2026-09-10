@@ -386,6 +386,35 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-10 (3-hourly check, ~21:47-23:13 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 9344 → 9551, boldness/stagnation counter
+  669 → 684.** No live trading this cycle (tick 27 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and the 20:30
+  UTC daily-evaluation note before starting). Repo started in detached HEAD
+  with local `main` stale at `4f15e68` (2026-09-04) against `origin/main`'s
+  `098066a`, no merge-base at default fetch depth; resolved with `git
+  checkout main && git reset --hard origin/main` on a clean tree after
+  confirming the detached HEAD already matched `origin/main`'s tip
+  byte-for-byte — same recurring habit lapse many prior entries have
+  flagged (`tools/git_sync.py` should be tried first), still not fixed.
+  Freshness checks before running: `review-hard-calls` still 0 pending (1
+  reviewed so far, unchanged), `holdout-pressure` 245 → 248 draws after this
+  run (every one still lost, margin ~6.60-6.64, unchanged in shape), items
+  2/5/6 still not a scheduled session's call — so the cycle ran the standing
+  evolve batch via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), which again worked exactly as designed. Champion's fold-aggregate
+  fitness held flat at 1.469 across all 15 generations. Raw
+  best-of-generation fold-fitness beat the champion's own 1.469 in 9/15
+  generations, lost in 6 — an ordinary batch. See
+  `runs/2026-09-10-2313-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 390/390 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical); constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Archived 2026-09-10 (3-hourly check, ~18:47-19:xx UTC): item 2's now-resolved
   4h-bar shadow-evolution pointer history moved to its own archive file, cutting
   this file from 264KB back to 189KB — it had grown past the 256KB single-read
