@@ -21,3 +21,7 @@ venv/
 # Private working docs — local only, never committed.
 # Agent-facing context lives in AGENTS.md; run notes go in runs/.
 docs/
+
+# Scratch output from tools/background_runner.py when a session logs an
+# evolve batch under runs/ instead of /tmp — runs/ is for dated notes only.
+runs/*.log
