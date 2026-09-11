@@ -386,6 +386,34 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-11 (3-hourly check, ~00:48-01:18 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 9593 → 9802, boldness/stagnation counter
+  687 → 702.** No live trading this cycle (tick 28 already handled at 00:20
+  UTC, confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-11-0020-daily-trading.md`/`runs/2026-09-11-0030-evolve-batch-v3.md`
+  before starting — that same-day evolve batch was the daily protocol's own
+  3-generation shadow run, separate from this cycle's standing 15-generation
+  batch). Repo started in detached HEAD with local `main` stale at `4f15e68`
+  (2026-09-04); `python3 tools/git_sync.py` unshallowed, found a real
+  merge-base, and fast-forwarded cleanly — no habit lapse this time.
+  Freshness checks before running: `review-hard-calls` still 0 pending (1
+  reviewed so far, unchanged), items 2/5/6 still not a scheduled session's
+  call — so the cycle ran the standing evolve batch via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), which again
+  worked exactly as designed. Champion's fold-aggregate fitness held flat at
+  1.656 across all 15 generations. Raw best-of-generation fold-fitness beat
+  the champion's own 1.656 in 6/15 generations, tied in 3, lost in 6 — an
+  ordinary batch. `holdout-pressure` 248 → 249 draws, every one still lost,
+  margin unchanged in shape (~6.6). See
+  `runs/2026-09-11-0118-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 390/390 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical); constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-10 (3-hourly check, ~21:47-23:13 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 9344 → 9551, boldness/stagnation counter
