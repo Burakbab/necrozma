@@ -3010,6 +3010,36 @@ every `evolve` call.
    nohup/`&`, nothing to accidentally pair with a tool's own
    `run_in_background`.
 
+10. **Dashboard's "genome" stat tile can show a stale/wrong version when
+    `state/genomes/champion.json` disagrees with `live_state.json`.**
+    Confirmed on today's tick 28 commit (`8379290`, 2026-09-11 00:26 UTC,
+    caught by the 20:30 UTC daily evaluation): the published `index.html`
+    showed "genome v1 / 5 generation(s) run" while `live_state.json`'s
+    `genome.version` was correctly 3 the whole time (confirmed by
+    `runs/2026-09-11-0020-daily-trading.md` and by `evotrader_bundle.py
+    tick`'s own logged `genome_version: 3`). The next commit 9 minutes
+    later (`5a21d96`, 00:35 UTC, the day's first evolve batch) silently
+    corrected the same tile back to "v3". Root cause:
+    `evotrader_dashboard.py`'s `build()` does `champ = _read(P_CHAMP, {})
+    or live.get("genome", {}) or {}` (`P_CHAMP` =
+    `state/genomes/champion.json`) and prefers that on-disk cache over
+    `live_state.json`, the documented source of truth — the same class of
+    staleness already tracked above (`_reconstruct_champion_genome`'s
+    `Genome.champion()` read, ~line 1573) reading a `champion.json` left
+    over from an earlier point in the container's lifetime. Since
+    `state/` is gitignored and only gets freshly overwritten with the
+    live champion when `evolve` itself runs, a dashboard rebuild that
+    happens before that container's first `evolve` call — exactly what
+    the daily-trading tick's own rebuild step does — can render a version
+    number that's behind reality, published live until the next commit
+    happens to overwrite it. Fix direction: have the genome stat tile
+    trust `live_state.json`'s `genome.version` unconditionally (only fall
+    back to `champion.json` for fields not present in `live_state`), or
+    at minimum assert `champ.get("version") == live.get("genome",
+    {}).get("version")` before using the disk copy. Not fixed here —
+    flagging for a future session, since it's a mechanism/display
+    correctness bug, not a trading-strategy call.
+
 ---
 
 ## Measured 2026-08-16 — read before proposing more genes
