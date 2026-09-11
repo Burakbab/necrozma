@@ -386,6 +386,39 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-11 (3-hourly check, ~15:46-16:33 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 10632 → 10842, boldness/stagnation
+  counter 762 → 777.** No live trading this cycle (tick 28 already handled
+  at 00:20 UTC, and this same 3-hourly slot's own earlier standing evolve
+  batch already ran at ~12:46-13:14 UTC — confirmed via `live_state.json`'s
+  `updated` timestamp and `runs/2026-09-11-0020-daily-trading.md`/
+  `runs/2026-09-11-1313-evolve-batch-v3.md` before starting). Repo started
+  in detached HEAD with local `main` stale at `4f15e68` (2026-09-04); `git
+  pull` failed with "You are not currently on a branch" (expected — cloud
+  clone starts detached); resolved with `git checkout main && git reset
+  --hard origin/main` after confirming the detached HEAD tip already matched
+  `origin/main` byte-for-byte, so nothing local was lost. Freshness checks
+  before running: `review-hard-calls` still 0 pending (1 reviewed so far,
+  unchanged), items 2/5/6 still not a scheduled session's call, item 4 still
+  blocked on a real hard-call flag (none pending), item 7 feature-complete
+  with nothing actionable pending a migration-policy decision — so the cycle
+  ran the standing evolve batch via `tools/background_runner.py` (`start` +
+  backgrounded `wait`), which again worked exactly as designed (~37.9-minute
+  wait, real exit code 0, no truncation). Champion's fold-aggregate fitness
+  held flat at 1.656 across all 15 generations. Raw best-of-generation
+  fold-fitness beat the champion's own 1.656 in 2/15 generations, tied in 4,
+  lost in 9 — a quieter batch than the last several but still ordinary.
+  `holdout-pressure` draw count unchanged at 253 (no candidate cleared the
+  fold-aggregate gate far enough to reach a sealed-holdout draw this batch).
+  See `runs/2026-09-11-1633-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 390/390 both before (baseline) and after `evolve`;
+  direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical); constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-11 (3-hourly check, ~12:46-13:14 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 10425 → 10632, boldness/stagnation counter
