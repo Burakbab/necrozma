@@ -386,6 +386,27 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-11 (3-hourly check, ~21:47-21:55 UTC): fixed the dashboard
+  stale-genome-version bug (Next steps item 10), which was live on the
+  public dashboard right now, not just a past incident.** No live trading
+  this cycle (tick 28 already handled at 00:20 UTC, and this slot's own
+  standing evolve batch already ran ~18:47-19:14 UTC — confirmed via
+  `live_state.json`'s `updated` timestamp before starting). The
+  currently-committed `index.html` (from that ~19:14 UTC evolve batch's
+  commit) was showing "v1 / 5 generation(s) run" while `live_state.json`'s
+  real `genome.version` was 3 throughout — `evotrader_dashboard.py`'s
+  `build()` preferred the gitignored per-container `state/genomes/
+  champion.json` cache over `live_state.json` for the genome stat tile.
+  Fixed by flipping the precedence (`champ = live.get("genome") or
+  _read(P_CHAMP, {}) or {}`) — `champ` is only ever read for its `version`
+  field, so no other field needed a fallback path. New regression test in
+  `tests/test_dashboard_champion_stat.py`
+  (`test_build_prefers_live_state_genome_over_stale_champion_cache`).
+  `python3 -m pytest -q` 391/391 (390 baseline + 1 new). Rebuilt
+  `index.html`, confirmed it now shows the correct "v3". See
+  `runs/2026-09-11-2152-dashboard-stale-genome-fix.md`. No trading, no
+  genome, no constitution change.
+
 - **Run 2026-09-11 (3-hourly check, ~18:47-19:14 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 10842 → 11048, boldness/stagnation
@@ -3039,6 +3060,23 @@ every `evolve` call.
     {}).get("version")` before using the disk copy. Not fixed here —
     flagging for a future session, since it's a mechanism/display
     correctness bug, not a trading-strategy call.
+
+    **Fixed 2026-09-11 (3-hourly check, ~21:47 UTC): `build()` now prefers
+    `live.get("genome")` over the disk cache** (`evotrader_dashboard.py`,
+    `champ = live.get("genome") or _read(P_CHAMP, {}) or {}` — was the
+    other way around). `champ` is only ever used for its `version` field
+    (the stat tile and `_genome_sub`'s champion-memory match), so no other
+    field needed a fallback rule. New regression test
+    `tests/test_dashboard_champion_stat.py::test_build_prefers_live_state_genome_over_stale_champion_cache`
+    builds against a scratch `live_state.json` (version 3) and a
+    deliberately stale scratch `champion.json` (version 1) and asserts the
+    rendered page shows v3. Rebuilding `index.html` in this container with
+    the fix applied actually flipped the previously-committed page from a
+    stale "v1 / 5 generation(s) run" back to the correct "v3 / ... 11048
+    challenger idea(s) tried" — the exact staleness this item described was
+    live on the public dashboard again at the start of this cycle, not just
+    a historical 9-minute blip. `python3 -m pytest -q` 391/391 (390 baseline
+    + 1 new test). No trading, no genome, no constitution change.
 
 ---
 

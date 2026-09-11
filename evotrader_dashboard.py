@@ -145,7 +145,11 @@ def build(out_path: str | None = None) -> str:
             continue
         _seen.add(k)
         lineage.append(rec)
-    champ = _read(P_CHAMP, {}) or live.get("genome", {}) or {}
+    # live_state.json is the source of truth; state/genomes/champion.json is a
+    # gitignored per-container cache that can lag behind it until evolve next
+    # overwrites it (a stale copy briefly published a wrong genome version on
+    # the public dashboard, see AGENTS.md Next steps item 10).
+    champ = live.get("genome") or _read(P_CHAMP, {}) or {}
  
     broker = live.get("broker", {})
     nav_hist = broker.get("nav_history", [])
