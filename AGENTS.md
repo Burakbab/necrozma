@@ -386,6 +386,41 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-12 (3-hourly check, ~03:50-04:24 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 11257 → 11465, boldness/stagnation
+  counter 807 → 822.** No live trading this cycle (tick 29 already handled at
+  00:20 UTC, confirmed via `live_state.json`'s `updated` timestamp before
+  starting). Repo started in detached HEAD, local `main` 4 commits behind
+  `origin/main`; `git checkout main && git merge --ff-only origin/main`
+  fast-forwarded cleanly. Freshness checks before running: `review-hard-calls`
+  still 0 pending (1 reviewed so far, unchanged), item 4 still blocked on a
+  real hard-call flag (none pending), items 2/5/6 still not a scheduled
+  session's call, item 7 feature-complete — so the cycle ran the standing
+  evolve batch via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), ~26.7-minute real run, exit code 0, no truncation. Champion's
+  fold-aggregate fitness held flat at 1.508 across all 15 generations. Raw
+  best-of-generation fold-fitness beat the champion's own 1.508 in 7/15
+  generations, tied in 2, lost in 6 — livelier than several recent batches,
+  still no promotion. `holdout-pressure` draw count 255 → 257, both new draws
+  still lost, margin unchanged in shape (~6.66). See
+  `runs/2026-09-12-0424-evolve-batch-v3.md`. **One flake encountered and
+  investigated, not a regression:** the post-batch full `python3 -m pytest -q`
+  run showed 2 failures
+  (`test_run_from_files_matches_bundle_output[holdout-pressure]`/
+  `[holdout-margin-audit]`, the `after == before` real-`live_state.json`
+  byte-identity assertion) that did not reproduce — re-running just those two
+  tests passed, and a second full-suite run came back 391/391 clean, with no
+  code changes and no stray `evolve`/`pytest` process found in between. Flagged
+  in the run note in case it recurs; nothing fixed since nothing reproducible
+  was found. Verified before commit: `python3 -m pytest -q` 391/391 baseline
+  (before `evolve`) and 391/391 on the confirming re-run (after); direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker
+  byte-identical); constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-12 (3-hourly check, ~00:46-01:30 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 11048 → 11257, boldness/stagnation
