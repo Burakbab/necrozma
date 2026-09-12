@@ -386,6 +386,19 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-12 (weekend all-hands, ~06:00 UTC): re-measured the
+  moderate/risky consult-correlation finding from "Measured 2026-08-16"
+  against live v3 — see that section's new addendum above.** No promotion, no
+  code change, read-only `consults` diagnostic only. Headline: the echo has
+  weakened a lot (moderate/risky +0.39→+0.172 overall) but not gone, and its
+  worst regimes are unchanged (bear/crisis). Roadmap items 1-10 were all
+  checked first and confirmed closed/blocked/passive (no new owner-decision
+  items surfaced by the 06:00 UTC scope) before picking this as the
+  highest-value unblocked, non-owner-gated activity alongside a deep `evolve`
+  batch (see below). No live trading this cycle (tick 29 already handled at
+  00:20 UTC, confirmed via `live_state.json`'s `updated` timestamp before
+  starting).
+
 - **Run 2026-09-12 (3-hourly check, ~03:50-04:24 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 11257 → 11465, boldness/stagnation
@@ -3168,6 +3181,29 @@ bear, +0.58 in crisis**. The conservative consult is a genuinely independent
 theory; the other two are close to one theory at two speeds, so the Risk
 Judge's "agreement" signal is partly reading its own echo. Run
 `evotrader_bundle.py consults` after any roster change.
+
+   **Re-measured 2026-09-12 (weekend all-hands, 06:00 UTC): the moderate/risky
+   echo has substantially weakened under v3, the same "search quietly fixed it"
+   pattern item 8 found for the conservative entry/exit asymmetry.** This
+   instruction ("run after any roster change") had not actually been followed
+   since this finding shipped — 13+ generations and two promotions (v1→v2→v3)
+   had happened since, with nobody re-checking. Current numbers against live
+   v3 (1386 logged bars, 10269 proposal points): conservative/moderate
+   **+0.101** (0.5% overlap, 34 shared), conservative/risky **−0.045** (1.0%
+   overlap, 1.5% same-side — genuinely near-independent now), moderate/risky
+   **+0.172** overall (32.9% overlap, 96.1% same-side when both act — down
+   from +0.39/93.2%, but still the one real echo). By regime: moderate/risky
+   +0.45 bear, +0.43 crisis, +0.05 chop, **−0.41 bull** — bear/crisis are
+   still the two regimes where the echo is strongest, same shape as
+   2026-08-16 (+0.51/+0.58), just smaller in magnitude; bull flipped sign
+   entirely (was not broken out by regime in 2026-08-16 to compare directly).
+   Reading: unlike item 8, this has not fully search-corrected away — the
+   Risk Judge's agreement signal in bear/crisis still partly reads its own
+   echo, just less so than 18 generations ago. Not treated as a promotion
+   candidate or a proposal here (no gene change), just the overdue
+   re-measurement this section itself calls for. Worth another check after
+   the next promotion, same as always, rather than treating this number as
+   settled.
 
 **3. The damage is broad, not tail-shaped.** The top 5 losses are only **11% of
 gross loss**, so this is not a fat-tail problem — expectancy is just thin
