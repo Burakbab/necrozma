@@ -386,6 +386,35 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-12 (3-hourly check, ~00:46-01:30 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 11048 → 11257, boldness/stagnation
+  counter 792 → 807.** No live trading this cycle (tick 29 already handled at
+  00:20 UTC, confirmed via `live_state.json`'s `updated` timestamp
+  `2026-09-12T00:22:42+00:00` and `runs/2026-09-12-0020-daily-trading.md`
+  before starting). Repo started in detached HEAD with local `main` 3 commits
+  behind `origin/main`; `git checkout main && git pull --rebase origin main`
+  fast-forwarded cleanly (a real fast-forward, no reset needed). Freshness
+  checks before running: `review-hard-calls` still 0 pending (1 reviewed so
+  far, unchanged), `holdout-pressure` unchanged at 253 draws (every one still
+  lost, margin unchanged in shape ~6.6-6.65), items 2/5/6 still not a
+  scheduled session's call, item 4 still blocked on a real hard-call flag
+  (none pending), item 7 feature-complete — so the cycle ran the standing
+  evolve batch via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), which again worked exactly as designed (~35.9-minute wait, real
+  exit code 0, no truncation). Champion's fold-aggregate fitness held flat at
+  1.508 across all 15 generations (naturally different from recent runs'
+  1.656/1.469 — the fold-aggregate window slides with "now", so day-to-day
+  drift here is expected). Raw best-of-generation fold-fitness beat the
+  champion's own 1.508 in 4/15 generations, tied in 2, lost in 9 — an
+  ordinary batch. See `runs/2026-09-12-0130-evolve-batch-v3.md`. Verified
+  before commit: `python3 -m pytest -q` 391/391 both before (baseline) and
+  after `evolve`; direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical); constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-11 (3-hourly check, ~21:47-21:55 UTC): fixed the dashboard
   stale-genome-version bug (Next steps item 10), which was live on the
   public dashboard right now, not just a past incident.** No live trading
