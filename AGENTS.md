@@ -386,6 +386,35 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-12 (3-hourly check, ~06:46-07:11 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 11465 → 11672, boldness/stagnation counter
+  822 → 837.** No live trading this cycle (tick 29 already handled at 00:20
+  UTC, and this same 3-hourly slot's own earlier ~06:00 UTC weekend all-hands
+  session had already re-measured the consult-correlation finding — confirmed
+  via `live_state.json`'s `updated` timestamp `2026-09-12T04:16:58+00:00`,
+  from the prior ~03:50-04:24 UTC evolve batch, before starting). Repo started
+  in detached HEAD, local `main` behind `origin/main` by 6 commits; `git
+  checkout main && git pull origin main` fast-forwarded cleanly. Freshness
+  checks before running: `review-hard-calls` still 0 pending (1 reviewed so
+  far, unchanged), `holdout-pressure` at 257 draws going in, items 2/5/6
+  still not a scheduled session's call, item 4 still blocked on a real
+  hard-call flag (none pending), items 7/9/10 resolved — so the cycle ran the
+  standing evolve batch via `tools/background_runner.py` (`start` + `wait`),
+  which again worked exactly as designed (~25-minute wait, real exit code 0,
+  no truncation). Champion's fold-aggregate fitness held flat at 1.508 across
+  all 15 generations. Raw best-of-generation fold-fitness beat the champion's
+  own 1.508 in 12/15 generations, tied in 1, lost in 2 — a livelier-than-usual
+  batch, still no promotion. `holdout-pressure` draw count 257 → 259, both
+  new draws still lost, margin unchanged in shape (~6.667). See
+  `runs/2026-09-12-0713-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 391/391 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal
+  byte-identical); constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-12 (weekend all-hands, ~06:00 UTC): re-measured the
   moderate/risky consult-correlation finding from "Measured 2026-08-16"
   against live v3 — see that section's new addendum above.** No promotion, no
