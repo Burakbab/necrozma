@@ -386,6 +386,37 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-13 (3-hourly check, ~12:47-13:19 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 14380 → 14589, boldness/stagnation counter
+  1033 → 1047.** No live trading this cycle (tick 30 already handled at 00:20
+  UTC, `live_state.json` `updated` `2026-09-13T07:16:05+00:00` from the
+  weekend all-hands' evolve batch, confirmed before starting). Repo started 24
+  commits behind `origin/main` in detached HEAD; `git checkout main && git
+  pull origin main` fast-forwarded cleanly, no divergence. Freshness checks
+  before running: `review-hard-calls` still 0 pending (1 reviewed so far,
+  unchanged), `holdout-pressure` at 310 draws going in, items 2/5/6 still not
+  a scheduled session's call, item 4 still blocked on a real hard-call flag
+  (none pending), items 7/8/9/10 resolved/feature-complete — so the cycle ran
+  the standing evolve batch via `tools/background_runner.py` (`start` +
+  backgrounded `wait`), ~23.8-minute real run, exit code 0, no truncation.
+  Champion's fold-aggregate fitness held flat at 1.057 across all 15
+  generations. Raw best-of-generation fold-fitness beat the champion's own
+  1.057 in **15/15 generations** (range 1.115-1.925) — same lively pattern as
+  the last several batches; per the weekend all-hands' already-recorded
+  `fold-date-sensitivity` finding (low trailing-window fitness day → more
+  candidates clear the bar by construction), this is expected and was **not**
+  re-investigated, per that session's own guidance not to re-run the
+  diagnostic reflexively on every lively batch. `holdout-pressure` draw count
+  rose 310 → 316 (+6 new losing draws), margin unchanged in shape (~6.78-6.79)
+  — no promotion. See `runs/2026-09-13-1247-evolve-batch-v3.md`. Verified
+  before commit: `python3 -m pytest -q` 396/396 both before (baseline) and
+  after `evolve`; direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews untouched); constitution verified `726dfa4bac85891a`
+  unchanged; `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  dashboard rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-13 (3-hourly check, ~09:47-10:20 UTC): fixed the short-position
   sign-landmine the weekend all-hands session found and scoped (item 5,
   commit `5c680cc`'s `tests/test_short_position_sign_landmine.py`) — the four
