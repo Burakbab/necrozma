@@ -386,6 +386,51 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-13 (weekend all-hands, ~06:00-07:20 UTC): two threads — a
+  short-position sign-semantics landmine found and tested for item 5, and a
+  45-generation `evolve` batch that resolved the "third consecutive lively
+  batch" question the last three 3-hourly sessions had been flagging.** See
+  `runs/2026-09-13-0600-weekend-all-hands.md` for the full write-up; item 5's
+  own entry below has the landmine detail. **Landmine, commit `5c680cc`
+  (pushed separately, before the evolve batch below finished):**
+  `PaperBroker.position_weight()` (Phase 1 short mechanics, shipped
+  2026-09-08) already returns a negative weight for an open short, and that
+  weight flows unmodified into `Briefing.open_positions`, where eight call
+  sites across all three consults and both judges assume non-positive means
+  "flat" — sharpest at `SuperiorJudge`'s hard concentration cap, which
+  *loosens* past its intended limit for a shorted symbol instead of
+  tightening. Verified with 5 new tests
+  (`tests/test_short_position_sign_landmine.py`) built on the real broker
+  mechanics, not hand-typed weights; full suite 396/396; no protected file
+  touched, no re-seal needed. **Evolve batch**: 45 more real generations
+  against v3 (1d), no promotion — cumulative candidates tried against v3 rose
+  13755 → 14380, champion's fold-aggregate fitness held flat at 1.057. Raw
+  best-of-generation fold-fitness beat the champion's own 1.057 in **41/45
+  generations (91%)** — the most extreme of three consecutive lively batches
+  (14/15, 15/15, then this). `holdout-pressure` draw count rose 284 → 310 (+26
+  losing draws), margin unchanged in shape (~6.77) — no promotion.
+  **Ran `fold-date-sensitivity` as the prior session's own flagged next
+  step, and it explains the pattern**: today's aggregate_fitness (1.057) sits
+  near the bottom of a 7-day as-of range that swings up to 1.656 purely from
+  the trailing 4-year window sliding a few days — the "beat the bar" ratio is
+  measured against *today's* specific (unusually low this week) fitness
+  number, so more candidates clear it by construction on a low-fitness day,
+  independent of whether the search is finding anything genuinely better.
+  Three consecutive lively batches are explained by three consecutive
+  low-window days, not a change in search quality or champion staleness.
+  **Guidance for future sessions**: a lively beat-ratio on its own isn't
+  informative — check it against `fold-date-sensitivity` only when the
+  ratio is unusual *and* the day's own fitness isn't an obvious recent-window
+  low; don't re-run this reflexively on every lively batch now that the
+  mechanism is documented. Verified before commit: `python3 -m pytest -q`
+  396/396 both before (baseline, includes the 5 landmine tests) and after
+  `evolve`; direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed; constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/
+  `sync --check` both clean; dashboard rebuilt (`index.html`). Genome still
+  v3 (1d) live, untouched. No live trading this session (tick 30 already
+  handled at 00:20 UTC well before this session started).
+
 - **Run 2026-09-13 (3-hourly check, ~03:46-04:13 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 13548 → 13755, boldness/stagnation counter
