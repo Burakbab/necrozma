@@ -47,6 +47,18 @@ class Briefing:
     open_positions: dict[str, float]  # symbol -> weight
 
 
+def is_long(weight: float) -> bool:
+    """True for an open long position weight (positive, per
+    `PaperBroker.position_weight()`'s signed-qty convention)."""
+    return weight > 0.0
+
+
+def is_short(weight: float) -> bool:
+    """True for an open short position weight (negative, per
+    `PaperBroker.position_weight()`'s signed-qty convention)."""
+    return weight < 0.0
+
+
 @dataclass(frozen=True)
 class Intent:
     agent: str

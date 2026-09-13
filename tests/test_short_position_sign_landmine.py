@@ -1,33 +1,33 @@
-"""Documents an open landmine for AGENTS.md item 5 Phase 2 (short-selling
-genome/agent wiring), found 2026-09-13 (weekend all-hands) while scoping that
-work: `PaperBroker.position_weight()` (Phase 1, shipped 2026-09-08) already
-returns a *negative* weight for an open short (`qty * price / equity`, and
-`qty < 0` for a short by the signed-qty convention `core/portfolio.py`
-documents). That negative weight flows unmodified into
+"""Regression tests for the sign-landmine found 2026-09-13 (weekend
+all-hands) while scoping AGENTS.md item 5 Phase 2 (short-selling
+genome/agent wiring): `PaperBroker.position_weight()` (Phase 1, shipped
+2026-09-08) returns a *negative* weight for an open short (`qty * price /
+equity`, and `qty < 0` for a short by the signed-qty convention
+`core/portfolio.py` documents). That negative weight flows unmodified into
 `Briefing.open_positions` (`loop/engine.py`'s `weights = {s:
-b.position_weight(s, prices) ...}` -> `agents/analyst.py`'s `brief()`), where
-every current reader assumes a positive value means "held" and a
-non-positive one means "flat" -- true today only because nothing has ever
-called `.short()` in the live trading/evolution path.
+b.position_weight(s, prices) ...}` -> `agents/analyst.py`'s `brief()`).
 
-This is not hypothetical: the three consults' `held = ... > 0` exit checks,
 `RiskJudge.rule`'s slot-counting and `held_w`-based sizing headroom, and
-`SuperiorJudge.review`'s hard-cap `room = (hard_cap - held) * equity` line
-would all misread a short position once one exists. The `SuperiorJudge` case
-is the sharpest: a *negative* `held` makes `room` *larger* than
-`hard_cap * equity`, i.e. the hard safety cap gets silently loosened for a
-symbol that already carries directional (short) risk -- the opposite of what
-a hard-limit gate is for.
+`SuperiorJudge.review`'s slot-counting and hard-cap `room` line, all used to
+assume a non-positive weight meant "flat" -- true only because nothing had
+ever called `.short()` in the live path. Fixed 2026-09-13 (this commit):
+those five read sites (`agents/judges.py`) now treat any nonzero weight as
+an occupied slot and use `abs(weight)` for exposure/cap accounting, so a
+short can no longer under-count position slots or loosen a hard cap it
+should be tightening.
 
-These tests pin today's actual (buggy-once-shorts-are-wired) behavior with a
-synthetic negative-weight `Briefing`, built directly from `PaperBroker.short()`
-+ `position_weight()` so the sign isn't hand-waved. They exist so whoever
-next attempts item 5 Phase 2 (routing "short"/"cover" intents through
-RiskJudge/SuperiorJudge) has a concrete, failing-once-fixed checklist instead
-of rediscovering this from scratch -- see AGENTS.md item 5 and
-`runs/2026-09-13-0600-weekend-all-hands.md`. No behavior changes here: every
-assertion describes the current code as-is, and neither `core/portfolio.py`
-nor `constitution/__init__.py` (the two checksummed files) is touched.
+The three consults' `held = ... > 0` exit checks are intentionally
+unchanged (`agents/consults.py`, now spelled `is_long(...)` for clarity):
+they are long-only "sell to exit" heuristics, and closing a short needs its
+own intent shape ("cover", not "sell") that doesn't exist yet -- genuinely
+Phase 2 routing work, not a sign bug in these read sites. That gap is still
+open and still tested below (as a still-open gap, not a regression).
+
+No behavior change for any existing (long-only) live caller: `.short()`
+still has zero callers in the live trading/evolution path, `live_state.json`
+untouched, neither `core/portfolio.py` nor `constitution/__init__.py` (the
+two checksummed files) touched. See AGENTS.md item 5 and
+`runs/2026-09-13-0600-weekend-all-hands.md` for how this was found.
 """
 from __future__ import annotations
 
@@ -64,26 +64,25 @@ def test_position_weight_is_negative_for_an_open_short():
     assert w < 0.0
 
 
-def test_risk_judge_undercounts_a_shorted_symbol_as_an_open_slot():
+def test_risk_judge_counts_a_shorted_symbol_as_an_open_slot():
     w = _short_weight()
     g = Genome()
     judge = RiskJudge(g)
     b = Briefing(ts="t0", regime="bull", regime_score=0.5, breadth=0.8,
                  features={}, equity=10_000.0, cash_pct=0.9,
                  open_positions={"XUSDT": w})
-    # An open short occupies real risk, but `open_count` (agents/judges.py's
-    # RiskJudge.rule, `sum(1 for w in b.open_positions.values() if w > 0)`)
-    # counts it as zero positions used -- a shorted symbol is invisible to
-    # the max_positions slot limit.
-    open_count = sum(1 for wt in b.open_positions.values() if wt > 0)
-    assert open_count == 0
+    # Fixed: agents/judges.py's RiskJudge.rule now counts any nonzero weight
+    # (`!= 0`, not `> 0`) as an occupied slot, so a short is no longer
+    # invisible to the max_positions limit.
+    open_count = sum(1 for wt in b.open_positions.values() if wt != 0)
+    assert open_count == 1
     assert len(b.open_positions) == 1
 
 
-def test_risk_judge_gives_extra_buy_headroom_to_a_shorted_symbol():
+def test_risk_judge_does_not_give_extra_buy_headroom_to_a_shorted_symbol():
     w = _short_weight()
     # base_size_pct raised so `target` actually reaches the
-    # `max_position_pct - held_w` cap being tested -- at the default
+    # `max_position_pct - abs(held_w)` cap being tested -- at the default
     # base_size_pct the uncapped target is already well under
     # max_position_pct and this comparison would pass for the wrong reason
     # (both sides simply uncapped and identical).
@@ -101,11 +100,11 @@ def test_risk_judge_gives_extra_buy_headroom_to_a_shorted_symbol():
                         open_positions={"XUSDT": w})
     flat_amount = RiskJudge(g).rule(flat, proposals, n_consults=3).orders[0].quote_amount
     shorted_amount = RiskJudge(g).rule(shorted, proposals, n_consults=3).orders[0].quote_amount
-    # `target = min(target, max_position_pct - held_w)` (agents/judges.py):
-    # a negative `held_w` raises this cap instead of leaving it alone, so the
-    # proposed buy on top of an existing short gets *more* room than the same
-    # buy against a flat position, not less.
-    assert shorted_amount > flat_amount
+    # Fixed: `target = min(target, max_position_pct - abs(held_w))` -- the
+    # short's magnitude now eats into the cap the same way a long would,
+    # instead of a negative held_w raising it. The shorted case must not get
+    # *more* room than the flat one.
+    assert shorted_amount <= flat_amount
 
 
 def _buy_verdict(amount: float = 10_000.0) -> Verdict:
@@ -118,7 +117,7 @@ def _buy_verdict(amount: float = 10_000.0) -> Verdict:
     return Verdict(ts="t0", orders=[order], vetoes=[], agreement_score=1.0)
 
 
-def test_superior_judge_hard_cap_loosens_for_a_shorted_symbol():
+def test_superior_judge_hard_cap_holds_for_a_shorted_symbol():
     w = _short_weight()
     g = Genome()
 
@@ -135,18 +134,16 @@ def test_superior_judge_hard_cap_loosens_for_a_shorted_symbol():
     flat_room = flat_out.orders[0].quote_amount
     shorted_room = shorted_out.orders[0].quote_amount
     # Intended invariant: the hard cap never lets a symbol's buy exceed
-    # `hard_cap * equity` regardless of what else is going on with it. That
-    # holds when flat...
+    # `hard_cap * equity` regardless of what else is going on with it.
     assert flat_room <= hard_cap * flat.equity + 1e-6
-    # ...but the same symbol carrying an open short gets a *larger* allowance
-    # than the hard cap intends, because `room = (hard_cap - held) * equity`
-    # adds back the magnitude of the (negative) short weight instead of
-    # treating it as exposure already spent.
-    assert shorted_room > hard_cap * shorted.equity
-    assert shorted_room > flat_room
+    # Fixed: `room = (hard_cap - abs(held)) * equity` now treats the short's
+    # magnitude as exposure already spent, so the cap holds for it too and no
+    # longer grants more allowance than the flat case.
+    assert shorted_room <= hard_cap * shorted.equity + 1e-6
+    assert shorted_room <= flat_room
 
 
-def test_consult_exit_check_treats_an_open_short_as_flat():
+def test_consult_exit_check_still_treats_an_open_short_as_flat_pending_phase2():
     from agents.consults import ConservativeConsult
     from core.types import Briefing as B
 
@@ -161,7 +158,9 @@ def test_consult_exit_check_treats_an_open_short_as_flat():
                  features={"XUSDT": feat}, equity=10_000.0, cash_pct=0.9,
                  open_positions={"XUSDT": w})
     proposal = consult.consider(briefing)
-    # `held = b.open_positions.get(sym, 0.0) > 0` reads the open short as not
-    # held, so the exit branch never fires for it -- a real short position
-    # this consult should be able to reason about closing is invisible to it.
+    # Deliberately still open: `held = is_long(b.open_positions.get(sym,
+    # 0.0))` is a long-only "sell to exit" heuristic. Closing a short needs a
+    # "cover" intent shape that doesn't exist yet (AGENTS.md item 5 Phase 2
+    # routing), so this consult still can't propose closing a short -- that
+    # is scoped, not a regression of this fix.
     assert proposal.intents == ()

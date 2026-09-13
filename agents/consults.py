@@ -15,7 +15,7 @@ the raw material the Researcher mines to work out which reasoning actually pays.
 from __future__ import annotations
 
 from core.genome import Genome
-from core.types import Briefing, Intent, Proposal
+from core.types import Briefing, Intent, Proposal, is_long
 
 
 class BaseConsult:
@@ -47,7 +47,10 @@ class RiskyConsult(BaseConsult):
         g = self.genes
         out: list[Intent] = []
         for sym, f in b.features.items():
-            held = b.open_positions.get(sym, 0.0) > 0
+            # long-only exit check: an open short reads as "not held" here on
+            # purpose -- covering a short needs its own intent shape, not yet
+            # wired (AGENTS.md item 5 Phase 2).
+            held = is_long(b.open_positions.get(sym, 0.0))
 
             if held and (f.rsi > g.get("exit_rsi", 88) or f.trend < g.get("exit_trend_below", -0.03)):
                 out.append(Intent(self.name, sym, "sell", 0.8, 0, (
@@ -74,7 +77,9 @@ class ConservativeConsult(BaseConsult):
         g = self.genes
         out: list[Intent] = []
         for sym, f in b.features.items():
-            held = b.open_positions.get(sym, 0.0) > 0
+            # long-only exit check: see RiskyConsult's for why a short reads
+            # as "not held" here (AGENTS.md item 5 Phase 2 gap).
+            held = is_long(b.open_positions.get(sym, 0.0))
 
             if held and f.rsi > g.get("exit_rsi", 68):
                 out.append(Intent(self.name, sym, "sell", 0.7, 0,
@@ -105,7 +110,9 @@ class ModerateConsult(BaseConsult):
         g = self.genes
         out: list[Intent] = []
         for sym, f in b.features.items():
-            held = b.open_positions.get(sym, 0.0) > 0
+            # long-only exit check: see RiskyConsult's for why a short reads
+            # as "not held" here (AGENTS.md item 5 Phase 2 gap).
+            held = is_long(b.open_positions.get(sym, 0.0))
 
             if held and (f.trend < g.get("exit_trend_below", 0.0) or f.rsi > g.get("exit_rsi", 80)):
                 out.append(Intent(self.name, sym, "sell", 0.65, 0, (

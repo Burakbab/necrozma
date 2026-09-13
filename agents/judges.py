@@ -79,7 +79,9 @@ class RiskJudge:
                            f"regime {b.regime}: entries closed", self.name)
 
         # ---- entries, best-scored first
-        open_count = sum(1 for w in b.open_positions.values() if w > 0)
+        # A short occupies a real slot too (position_weight() is negative for
+        # one) -- count any nonzero exposure, not just longs.
+        open_count = sum(1 for w in b.open_positions.values() if w != 0)
         cash_avail = b.equity * max(0.0, b.cash_pct - g.get("cash_floor_pct", 0.05))
 
         scored = []
@@ -105,16 +107,18 @@ class RiskJudge:
                                    f"conviction {conv:.2f} below floor"))
                 continue
             held_w = b.open_positions.get(sym, 0.0)
-            if held_w > 0 and not g.get("scale_in_allowed", True):
+            if held_w != 0 and not g.get("scale_in_allowed", True):
                 vetoes.append(Veto(sym, "buy", self.name, "already held; scale-in disabled"))
                 continue
-            if held_w <= 0 and open_count >= max_pos:
+            if held_w == 0 and open_count >= max_pos:
                 vetoes.append(Veto(sym, "buy", self.name,
                                    f"position slots full ({open_count}/{max_pos})"))
                 continue
 
             target = float(g.get("base_size_pct", 0.12)) * score * regime_scale
-            target = min(target, float(g.get("max_position_pct", 0.25)) - held_w)
+            # abs(): existing exposure (long or short) eats into the position
+            # cap either way -- a short must not raise the allowance instead.
+            target = min(target, float(g.get("max_position_pct", 0.25)) - abs(held_w))
             # Room/slot accounting (cash_avail, open_count) is always figured
             # against the full un-ramped amount -- the ramp holds capital
             # back, it doesn't free that capital up for extra lower-priority
@@ -136,7 +140,7 @@ class RiskJudge:
                 reason_chain=[f"{i.agent}: {i.rationale}" for i in intents],
                 conviction=conv, agreement=share))
             cash_avail -= full_amount
-            if held_w <= 0:
+            if held_w == 0:
                 open_count += 1
 
         agreement = (sum(o.agreement for o in orders) / len(orders)) if orders else 0.0
@@ -181,7 +185,9 @@ class SuperiorJudge:
             return Verdict(v.ts, kept, vetoes, v.agreement_score,
                            v.notes + " | crisis lockdown", self.name)
 
-        open_count = sum(1 for w in b.open_positions.values() if w > 0)
+        # Same nonzero-exposure counting as RiskJudge.rule -- a short still
+        # occupies a slot.
+        open_count = sum(1 for w in b.open_positions.values() if w != 0)
         new_positions = 0
         max_new = int(g.get("max_new_positions_per_bar", 3))
         hard_max_pos = int(g.get("hard_max_positions", 8))
@@ -191,7 +197,7 @@ class SuperiorJudge:
 
         for o in buys:
             held = b.open_positions.get(o.symbol, 0.0)
-            if held <= 0:
+            if held == 0:
                 if open_count + new_positions >= hard_max_pos:
                     vetoes.append(Veto(o.symbol, "buy", self.name, "hard position-count limit"))
                     self._log(f"{b.ts} blocked {o.symbol}: hard position limit")
@@ -200,7 +206,9 @@ class SuperiorJudge:
                     vetoes.append(Veto(o.symbol, "buy", self.name, "new-position rate limit"))
                     self._log(f"{b.ts} blocked {o.symbol}: rate limit")
                     continue
-            room = (hard_cap - held) * b.equity
+            # abs(): a short's magnitude is exposure already spent against the
+            # hard cap, same as a long's -- must not add room back for it.
+            room = (hard_cap - abs(held)) * b.equity
             amt = min(o.quote_amount, room, spend_budget)
             if amt <= 0:
                 vetoes.append(Veto(o.symbol, "buy", self.name, "hard concentration limit"))
@@ -212,7 +220,7 @@ class SuperiorJudge:
             o.reason_chain.append(f"{self.name}: approved (cap-checked)")
             kept.append(o)
             spend_budget -= amt
-            if held <= 0:
+            if held == 0:
                 new_positions += 1
 
         return Verdict(v.ts, kept, vetoes, v.agreement_score, v.notes, self.name)

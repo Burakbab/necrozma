@@ -386,6 +386,57 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-13 (3-hourly check, ~09:47-10:20 UTC): fixed the short-position
+  sign-landmine the weekend all-hands session found and scoped (item 5,
+  commit `5c680cc`'s `tests/test_short_position_sign_landmine.py`) — the four
+  bugs in `agents/judges.py` are closed, the three consults' exit-check gap
+  is deliberately left open pending real Phase 2 routing.** No live trading
+  this cycle (tick 30 already handled at 00:20 UTC, `live_state.json`
+  `updated` `2026-09-13T07:16:05+00:00` from the weekend all-hands' evolve
+  batch, confirmed before starting — repo was already on `main` up to date
+  with `origin/main`, no divergence to resolve). Freshness checks: item 4
+  still blocked on a real hard-call flag (none pending), items 2/6 still not
+  a scheduled session's call — so this cycle picked up item 5's own
+  concretely-scoped next step instead of another routine `evolve` batch.
+  **Fix**: `agents/judges.py`'s five `open_positions` read sites
+  (`RiskJudge.rule`'s entry slot-count and `held_w`-based sizing headroom,
+  `SuperiorJudge.review`'s slot-count and hard-cap `room` line) now treat any
+  nonzero weight as an occupied position (`!= 0`/`== 0` instead of `> 0`/`<=
+  0`) and use `abs(weight)` wherever the code was subtracting exposure from a
+  cap, so a short can no longer under-count slots or loosen a hard limit it
+  should tighten. New `is_long`/`is_short` helpers added to `core/types.py`;
+  `agents/consults.py`'s three `held = ... > 0` exit checks now spell that as
+  `is_long(...)` for clarity but are **deliberately left unchanged in
+  behavior** — closing a short needs a "cover" intent shape that doesn't
+  exist yet, genuinely Phase 2 routing work, not a sign bug in these
+  particular read sites (recording this explicitly so a future session
+  doesn't assume that gap was also closed here). `tests/test_short_position_sign_landmine.py`
+  rewritten in place: the file now regression-tests the four fixed
+  RiskJudge/SuperiorJudge behaviors directly (a shorted symbol counts as an
+  open slot, gets no extra buy headroom, and the hard cap holds for it) and
+  keeps one test documenting the still-open consult-exit gap as scoped, not
+  a bug. **One real gotcha hit and resolved**: after editing `agents/judges.py`/
+  `agents/consults.py`/`core/types.py` directly, the two new RiskJudge/
+  SuperiorJudge regression tests failed *only* under `pytest`, not under a
+  plain `python3 -c` import — root cause was `tests/conftest.py` importing
+  `evotrader_bundle` at collection time, whose meta-path finder serves
+  `agents.judges`/`agents.consults`/`core.types` from the bundle's own
+  embedded `_SRC` (pre-fix) rather than the edited real files, so the tests
+  were exercising stale logic. Fixed by running `tools/edit_bundle_module.py
+  sync` (the documented step after any real-file edit) before re-running the
+  suite — obvious in hindsight, but the initial failure output (asserting
+  against numbers that looked like the *old* bug) was momentarily
+  confusing, so flagging the specific symptom (`pytest`-only failure,
+  identical assertion passes via bare `python3 -c`) in case it recurs.
+  Verified before commit: `python3 -m pytest -q` 396/396 (390 baseline + the
+  existing 5 landmine tests, same count since this rewrote rather than
+  added tests) after `sync`; `tools/edit_bundle_module.py verify`/
+  `sync --check` both clean; constitution verified `726dfa4bac85891a`
+  unchanged (neither `agents/judges.py`, `agents/consults.py` nor
+  `core/types.py` is `_PROTECTED`); `live_state.json` untouched (git status
+  confirms only code + bundle + test files changed); no dashboard rebuild
+  needed (no state change). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-13 (weekend all-hands, ~06:00-07:20 UTC): two threads — a
   short-position sign-semantics landmine found and tested for item 5, and a
   45-generation `evolve` batch that resolved the "third consecutive lively
@@ -3173,6 +3224,26 @@ every `evolve` call.
    2026-08-30 design pass flagged still need owner sign-off. No behavior
    changed by this finding: it is test-only, `live_state.json` untouched,
    constitution checksum unchanged, `.short()` still has zero live callers.
+
+   **Fixed 2026-09-13 (3-hourly check, ~09:47-10:20 UTC): the four
+   `agents/judges.py` accounting bugs above are closed — see "Current
+   state" above.** `RiskJudge.rule`'s slot-count and `held_w`-based sizing
+   headroom, and `SuperiorJudge.review`'s slot-count and hard-cap `room`
+   line, all now treat a short's nonzero weight as an occupied slot and use
+   `abs(weight)` for exposure accounting, so a short can no longer
+   under-count slots or loosen the hard concentration cap. **Still open,
+   deliberately not touched by this fix**: the three consults'
+   `held = is_long(...)` exit checks (renamed for clarity, behavior
+   unchanged) still can't propose closing a short — that needs a "cover"
+   intent shape distinct from "sell" that doesn't exist yet. **Concretely
+   scoped next step for whoever attempts the remainder of Phase 2 wiring**:
+   design and add that cover-intent shape (likely a new `Intent.side` value,
+   or an explicit `is_short(...)` branch per consult that emits a
+   differently-typed exit intent), thread it through `RiskJudge.rule`'s
+   exits-first loop (currently only handles `side == "sell"`), and only then
+   consider routing real "short"/"cover" orders through to `PaperBroker`.
+   Until that exists, `.short()` still has zero live callers and none of
+   this is reachable from the live trading path.
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
