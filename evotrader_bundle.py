@@ -3651,8 +3651,20 @@ def main():
 
         interval = g0.bar_interval
         print(f"[live-benchmark] loading {len(g0.universe)}-symbol universe "
-              f"({interval} bars) ...", flush=True)
-        data = market.load_universe(g0.universe, interval, 4.0)
+              f"({interval} bars, refreshing to current) ...", flush=True)
+        # This diagnostic's whole point is "vs today" -- market.load_universe's
+        # default (refresh=False) only ever extends a local cache backward for
+        # more history, never forward for new bars, so a cache more than a few
+        # days old silently produces a stale (or, if the live account's own
+        # nav_history has moved past the cached window entirely, empty)
+        # comparison instead of a loud error explaining why. Found 2026-09-12:
+        # a local machine whose cache hadn't been touched since 2026-08-16
+        # returned "benchmark window too short / no data" with no indication
+        # the real cause was a 27-day-stale cache, not missing/bad data.
+        # Every cloud scheduled run starts from an empty state/cache/ anyway
+        # (ephemeral container), so refresh=True costs nothing there and only
+        # matters for a long-lived local checkout like this one.
+        data = market.load_universe(g0.universe, interval, 4.0, refresh=True)
         if not data:
             print("no market data")
             sys.exit(1)
