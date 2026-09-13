@@ -58,11 +58,7 @@ class Council:
             # A breaker that freezes new entries but keeps the existing book is
             # theatre — the damage is already in the positions you hold.
             held = {o.symbol for o in forced}
-            for sym, pos in list(b.positions.items()):
-                if pos.is_open and sym not in held:
-                    forced.append(Order(symbol=sym, side="sell", fraction=1.0,
-                                        reason_chain=["circuit_breaker: flatten book"],
-                                        conviction=1.0, agreement=1.0))
+            forced.extend(_flatten_orders(b, held))
         if forced:
             self.trader.execute(ts, forced, fill_prices)
 
@@ -94,6 +90,29 @@ class Council:
                 "hard_call": flag_hard_call(final.orders, b.just_halted, overrides_this_bar,
                                             nav=nav, min_size_pct=0.10),
             })
+
+
+def _flatten_orders(broker: PaperBroker, held: set[str]) -> list[Order]:
+    """Forced full-exit order for every open position not already covered by
+    `held` (Guardian's own forced exits) -- one bar's worth of "circuit
+    breaker tripped, get flat" orders.
+
+    Side-aware since 2026-09-13 (found alongside the same-day
+    `agents/trader.py` forced-exit sign landmine): a short position
+    (`pos.is_short`, `Position.qty < 0`) needs `side="cover"`, not "sell" --
+    `PaperBroker.sell()` rejects a negative-qty position outright, so the
+    unmirrored version would have silently failed to flatten an open short
+    exactly when the circuit breaker most needs the book flat. No behavior
+    change for any existing caller: `.short()` still has zero callers in the
+    live trading/evolution path, so `pos.is_short` is never true there.
+    """
+    out: list[Order] = []
+    for sym, pos in list(broker.positions.items()):
+        if pos.is_open and sym not in held:
+            out.append(Order(symbol=sym, side=("cover" if pos.is_short else "sell"),
+                             fraction=1.0, reason_chain=["circuit_breaker: flatten book"],
+                             conviction=1.0, agreement=1.0))
+    return out
 
 
 def benchmark_buy_hold(replay: Replay, symbols: list[str], start: int, end: int,

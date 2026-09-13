@@ -8,6 +8,21 @@ in the system has to be unconditionally willing to sell.
 Trader has no discretion at all. It takes approved orders and puts them
 through the broker at the next open. Keeping judgement out of execution means
 a bad fill is a broker-model bug, never a strategy question.
+
+Both are sign-aware for a short position (`Position.qty < 0`, per
+`core/portfolio.py`'s Phase 1 convention) as of 2026-09-13: `forced_exits`'s
+`pnl`/`from_peak` formulas were written long-only and, unmirrored, read a
+rising price against an open short as a *gain* instead of the loss it is
+(and vice versa) -- wrong sign on every stop/trailing-stop/take-profit
+check. It also always emitted `side="sell"`, which `PaperBroker.sell()`
+rejects outright for a short (`pos.qty <= 0` guard). `Trader.execute`'s
+sell-or-buy ternary had the mirror problem: a `"cover"` order would have
+fallen into the `buy()` branch. Found while scoping AGENTS.md item 5 Phase
+2 (the `agents/judges.py` open_positions sign-landmine fixed earlier
+2026-09-13 didn't cover this file). No behavior change for any existing
+caller: `.short()` still has zero callers in the live trading/evolution
+path, so `Position.qty` is never negative there and every branch below
+still takes the long-only path it always did.
 """
 from __future__ import annotations
 
@@ -38,8 +53,15 @@ class Guardian:
                 continue
             if pos.bars_held < min_bars:
                 continue
-            pnl = px / pos.avg_cost - 1
-            from_peak = (px / pos.peak_price - 1) if pos.peak_price > 0 else 0.0
+            # A short profits when price falls, and its peak (set by
+            # `_update_peak` to the *lowest* price seen) is its best point --
+            # both formulas mirror the long ones around that.
+            if pos.is_short:
+                pnl = (pos.avg_cost - px) / pos.avg_cost
+                from_peak = (pos.peak_price - px) / pos.peak_price if pos.peak_price > 0 else 0.0
+            else:
+                pnl = px / pos.avg_cost - 1
+                from_peak = (px / pos.peak_price - 1) if pos.peak_price > 0 else 0.0
 
             reason = None
             if pnl <= stop:
@@ -52,8 +74,8 @@ class Guardian:
                 reason = f"time stop ({pos.bars_held} bars, {pnl:+.1%})"
 
             if reason:
-                out.append(Order(symbol=sym, side="sell", fraction=1.0,
-                                 reason_chain=[f"{self.name}: {reason}"],
+                out.append(Order(symbol=sym, side=("cover" if pos.is_short else "sell"),
+                                 fraction=1.0, reason_chain=[f"{self.name}: {reason}"],
                                  conviction=1.0, agreement=1.0))
         return out
 
@@ -69,8 +91,9 @@ class Trader:
     def execute(self, ts: str, orders: list[Order],
                 fill_prices: dict[str, float]) -> list[dict]:
         log: list[dict] = []
-        # sells first — they fund the buys
-        for o in sorted(orders, key=lambda x: 0 if x.side == "sell" else 1):
+        exit_sides = ("sell", "cover")
+        # exits first — they fund the entries
+        for o in sorted(orders, key=lambda x: 0 if x.side in exit_sides else 1):
             px = fill_prices.get(o.symbol)
             if px is None:
                 self.rejected += 1
@@ -79,8 +102,16 @@ class Trader:
             reason = " | ".join(o.reason_chain[-2:])
             agents = tuple(sorted({r.split(":")[0].strip() for r in o.reason_chain
                                    if ":" in r and r.split(":")[0].strip().startswith("consult")}))
-            f = (self.broker.sell(ts, o.symbol, o.fraction, px, reason) if o.side == "sell"
-                 else self.broker.buy(ts, o.symbol, o.quote_amount, px, reason, agents))
+            if o.side == "sell":
+                f = self.broker.sell(ts, o.symbol, o.fraction, px, reason)
+            elif o.side == "cover":
+                f = self.broker.cover(ts, o.symbol, o.fraction, px, reason)
+            elif o.side == "buy":
+                f = self.broker.buy(ts, o.symbol, o.quote_amount, px, reason, agents)
+            elif o.side == "short":
+                f = self.broker.short(ts, o.symbol, o.quote_amount, px, reason, agents)
+            else:
+                f = None
             if f is None:
                 self.rejected += 1
                 log.append({"symbol": o.symbol, "side": o.side, "status": "rejected"})

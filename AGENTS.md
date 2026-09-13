@@ -386,6 +386,50 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-13 (3-hourly check, ~21:47-21:58 UTC): found and fixed a
+  second short-position sign landmine, in `agents/trader.py`/`loop/engine.py`
+  this time — a different file pair from the `agents/judges.py` one fixed
+  earlier today (~09:47-10:20 UTC).** No live trading this cycle (tick 30
+  already handled at 00:20 UTC, `live_state.json` `updated`
+  `2026-09-13T19:11:27+00:00` from the prior ~18:47-19:11 UTC evolve batch,
+  confirmed before starting). Repo started 27 commits behind `origin/main` in
+  detached HEAD; `git checkout main && git pull origin main` fast-forwarded
+  cleanly. Continuing AGENTS.md item 5 Phase 2's own flagged next step
+  (design the "cover" exit shape), a closer read of the forced-exit path
+  turned up a bug the morning's `open_positions`-focused audit didn't cover:
+  `Guardian.forced_exits` computed `pnl`/`from_peak` with long-only formulas,
+  so a short position would have every stop-loss/trailing-stop/take-profit
+  check backwards (a price rise against a short misread as a gain, a price
+  fall misread as a loss), and it always emitted `side="sell"`, which
+  `PaperBroker.sell()` rejects outright for a short. `Trader.execute`'s
+  sell-or-buy ternary had the mirror bug (a `"cover"` order would fall into
+  `buy()`), and `loop/engine.py`'s circuit-breaker flatten-the-book path had
+  the same always-`"sell"` problem. **Fixed**: `Guardian.forced_exits` now
+  branches on `pos.is_short` for both formulas (mirrored around
+  `avg_cost`/`peak_price`, matching `PaperBroker.cover()`'s own `pnl_pct`
+  convention) and emits `"cover"` for a short; `Trader.execute` now
+  dispatches all four `Fill.side` values explicitly instead of a two-way
+  ternary; `loop/engine.py`'s inline flatten loop is factored into a new pure
+  `_flatten_orders(broker, held)` helper, also side-aware. New
+  `tests/test_short_forced_exit_landmine.py` (10 tests, built on real
+  `PaperBroker.short()`/`.cover()` mechanics) — verified each test actually
+  depends on the fix by reverting the code via `git stash` and confirming the
+  import itself fails against the pre-fix `loop/engine.py`. See
+  `runs/2026-09-13-2158-short-forced-exit-sign-landmine-fix.md`. **No
+  behavior change for any existing caller**: `.short()` still has zero
+  callers in the live trading/evolution path, so every branch still takes
+  the long-only path it always took. Verified before commit: `python3 -m
+  pytest -q` 406/406 (396 baseline + 10 new); `tools/edit_bundle_module.py
+  sync` run after editing the real files, `sync --check`/`verify` both
+  clean; constitution verified `726dfa4bac85891a` unchanged (neither
+  `core/portfolio.py` nor `constitution/__init__.py` touched);
+  `live_state.json` untouched (`updated` unchanged); no dashboard rebuild
+  needed (no state change). Genome still v3 (1d) live, untouched. **Still
+  open**: the three consults still can't *propose* closing a short — that
+  discretionary "cover" intent (as opposed to this session's mandatory
+  Guardian-level safety net) remains the concretely-scoped next step for
+  whoever continues Phase 2 wiring.
+
 - **Run 2026-09-13 (3-hourly check, ~18:47-19:11 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 14797 → 15003, boldness/stagnation counter
@@ -3335,6 +3379,30 @@ every `evolve` call.
    consider routing real "short"/"cover" orders through to `PaperBroker`.
    Until that exists, `.short()` still has zero live callers and none of
    this is reachable from the live trading path.
+
+   **Found and fixed 2026-09-13 (3-hourly check, ~21:47-21:58 UTC): a second
+   sign landmine, in a different file pair than the one above** — see
+   "Current state" and
+   `runs/2026-09-13-2158-short-forced-exit-sign-landmine-fix.md`.
+   `Guardian.forced_exits` (`agents/trader.py`) computed `pnl`/`from_peak`
+   with long-only formulas, so every stop-loss/trailing-stop/take-profit/
+   time-stop check would be backwards for an open short, and it always
+   emitted `side="sell"`, which `PaperBroker.sell()` rejects outright for a
+   short. `Trader.execute`'s sell-or-buy ternary had the mirror bug (a
+   `"cover"` order falling into `buy()`), and `loop/engine.py`'s
+   circuit-breaker flatten-the-book path had the same always-`"sell"`
+   problem. All three fixed and sign-aware now (`Guardian.forced_exits`
+   branches on `pos.is_short`; `Trader.execute` dispatches all four
+   `Fill.side` values explicitly; the flatten logic is a new pure
+   `_flatten_orders(broker, held)` helper). 10 new tests
+   (`tests/test_short_forced_exit_landmine.py`), full suite 406/406. No
+   behavior change for any existing caller (`.short()` still has zero live
+   callers). **Still open, unchanged by this fix**: the discretionary
+   consult-level "cover" intent described in the paragraph above this one —
+   this session fixed the *mandatory* Guardian-level safety net (stops/
+   trailing-stop/take-profit/circuit-breaker), not the consults' own exit
+   proposals, which is still the concretely-scoped next step for whoever
+   continues Phase 2 wiring.
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
