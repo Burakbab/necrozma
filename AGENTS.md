@@ -3080,6 +3080,55 @@ every `evolve` call.
    mechanics too. The design itself held up under real implementation and is
    worth keeping as the starting point once that sign-off exists.
 
+   **Shipped 2026-09-08 (owner decision, see "Owner decisions pending"
+   above): Phase 1 re-applied for real.** `core/portfolio.py`'s
+   `short()`/`cover()` + `borrow_bps_per_bar` accrual now exist live
+   (`tests/test_short_selling.py`, 18 tests, full suite 384/384),
+   `evotrader.manifest` re-sealed `8b74865634b1db07` → `726dfa4bac85891a`,
+   `AMENDMENTS.md` row added same commit. Broker mechanics only — nothing
+   in the live trading/evolution path calls `.short()` yet, and
+   `live_state.json` was untouched. "Whether/how the Researcher should be
+   allowed to propose short positions" (Phase 2) was explicitly left
+   un-scoped by this shipment.
+
+   **Found 2026-09-13 (weekend all-hands): a concrete landmine Phase 2 must
+   clear first, sharper than the original "five files" framing — see
+   `runs/2026-09-13-0600-weekend-all-hands.md` and
+   `tests/test_short_position_sign_landmine.py` (5 new tests, full suite
+   396/396).** `PaperBroker.position_weight()` already returns a *negative*
+   weight for an open short (verified directly:
+   `qty * price / equity` with `qty < 0`), and that weight flows unmodified
+   into `Briefing.open_positions` via `loop/engine.py`'s
+   `weights = {s: b.position_weight(s, prices) ...}` →
+   `agents/analyst.py`'s `brief()`. Every current reader of
+   `open_positions` — all three consults' `held = ... > 0` exit checks, and
+   five separate spots across `RiskJudge.rule`/`SuperiorJudge.review`
+   (slot-counting, `held_w`-based buy-sizing headroom, and the hard-cap
+   `room = (hard_cap - held) * equity` line) — assumes a non-positive
+   weight means "flat," true today only because nothing has ever called
+   `.short()` in the live path. Confirmed by direct test, not just code
+   reading: a shorted symbol (a) is invisible to `max_positions`/
+   `hard_max_positions` slot limits, (b) gets a *larger* buy-sizing
+   allowance than the same symbol flat (the negative `held_w` raises the
+   `max_position_pct - held_w` cap instead of leaving it alone), and (c)
+   most importantly, `SuperiorJudge`'s hard concentration cap — the one
+   gate documented as a hard limit, not a tunable — actually *loosens*
+   beyond `hard_max_position_pct * equity` for a symbol that already
+   carries directional risk, exactly backwards from what a hard-limit gate
+   is for. **Concretely scoped next step for whoever attempts Phase 2
+   wiring**: fix these read sites to be sign-aware (e.g. `abs(weight)` for
+   exposure/slot accounting, explicit `is_long`/`is_short` helpers for the
+   consults' exit checks) *before* routing any "short"/"cover" intent
+   through `RiskJudge`/`SuperiorJudge` — wiring the routing first would
+   ship a live safety-cap regression the moment a short is ever open. None
+   of the five affected call sites live in a `_PROTECTED` file
+   (`agents/judges.py`, `agents/consults.py` are both ordinary strategy-layer
+   files), so fixing them needs no constitution re-seal — only the eventual
+   `MAX_DD_HARD_FAIL`/short-exposure-cap constitution questions the original
+   2026-08-30 design pass flagged still need owner sign-off. No behavior
+   changed by this finding: it is test-only, `live_state.json` untouched,
+   constitution checksum unchanged, `.short()` still has zero live callers.
+
 6. **Equities/FX** behind the same `MarketData` interface.
 
    **Design pass done 2026-09-02 (3-hourly check, ~15:46-16:05 UTC), no code
