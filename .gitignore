@@ -25,3 +25,6 @@ docs/
 # Scratch output from tools/background_runner.py when a session logs an
 # evolve batch under runs/ instead of /tmp — runs/ is for dated notes only.
 runs/*.log
+
+# Scratch background_runner.py log/status files kept outside runs/.
+.runlogs/
