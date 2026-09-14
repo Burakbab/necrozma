@@ -15,7 +15,7 @@ the raw material the Researcher mines to work out which reasoning actually pays.
 from __future__ import annotations
 
 from core.genome import Genome
-from core.types import Briefing, Intent, Proposal, is_long
+from core.types import Briefing, Intent, Proposal, is_long, is_short
 
 
 class BaseConsult:
@@ -47,14 +47,22 @@ class RiskyConsult(BaseConsult):
         g = self.genes
         out: list[Intent] = []
         for sym, f in b.features.items():
-            # long-only exit check: an open short reads as "not held" here on
-            # purpose -- covering a short needs its own intent shape, not yet
-            # wired (AGENTS.md item 5 Phase 2).
-            held = is_long(b.open_positions.get(sym, 0.0))
+            weight = b.open_positions.get(sym, 0.0)
 
-            if held and (f.rsi > g.get("exit_rsi", 88) or f.trend < g.get("exit_trend_below", -0.03)):
+            if is_long(weight) and (f.rsi > g.get("exit_rsi", 88) or f.trend < g.get("exit_trend_below", -0.03)):
                 out.append(Intent(self.name, sym, "sell", 0.8, 0, (
                     f"leadership lost: rsi {f.rsi:.0f}, trend {f.trend:+.1%}"), dict(g)))
+                continue
+
+            # Mirror of the long exit above, for an open short (AGENTS.md
+            # item 5 Phase 2's cover-intent shape): the long side exits when
+            # rsi is too high or trend has broken down; the short's thesis
+            # ("momentum is failing") is invalidated by the opposite -- rsi
+            # too low (bounce risk) or trend recovering back up.
+            if is_short(weight) and (f.rsi < 100 - g.get("exit_rsi", 88)
+                                      or f.trend > -g.get("exit_trend_below", -0.03)):
+                out.append(Intent(self.name, sym, "cover", 0.8, 0, (
+                    f"breakdown thesis reversing: rsi {f.rsi:.0f}, trend {f.trend:+.1%}"), dict(g)))
                 continue
 
             if (f.breakout >= g.get("min_breakout", -0.02)
@@ -77,13 +85,18 @@ class ConservativeConsult(BaseConsult):
         g = self.genes
         out: list[Intent] = []
         for sym, f in b.features.items():
-            # long-only exit check: see RiskyConsult's for why a short reads
-            # as "not held" here (AGENTS.md item 5 Phase 2 gap).
-            held = is_long(b.open_positions.get(sym, 0.0))
+            weight = b.open_positions.get(sym, 0.0)
 
-            if held and f.rsi > g.get("exit_rsi", 68):
+            if is_long(weight) and f.rsi > g.get("exit_rsi", 68):
                 out.append(Intent(self.name, sym, "sell", 0.7, 0,
                                   f"mean reversion complete: rsi {f.rsi:.0f}", dict(g)))
+                continue
+
+            # Mirror for an open short, see RiskyConsult's for the reasoning
+            # (AGENTS.md item 5 Phase 2 cover-intent shape).
+            if is_short(weight) and f.rsi < 100 - g.get("exit_rsi", 68):
+                out.append(Intent(self.name, sym, "cover", 0.7, 0,
+                                  f"reversion thesis spent: rsi {f.rsi:.0f}", dict(g)))
                 continue
 
             if f.vol > g.get("max_vol", 1.10):
@@ -110,13 +123,19 @@ class ModerateConsult(BaseConsult):
         g = self.genes
         out: list[Intent] = []
         for sym, f in b.features.items():
-            # long-only exit check: see RiskyConsult's for why a short reads
-            # as "not held" here (AGENTS.md item 5 Phase 2 gap).
-            held = is_long(b.open_positions.get(sym, 0.0))
+            weight = b.open_positions.get(sym, 0.0)
 
-            if held and (f.trend < g.get("exit_trend_below", 0.0) or f.rsi > g.get("exit_rsi", 80)):
+            if is_long(weight) and (f.trend < g.get("exit_trend_below", 0.0) or f.rsi > g.get("exit_rsi", 80)):
                 out.append(Intent(self.name, sym, "sell", 0.65, 0, (
                     f"trend broke: trend {f.trend:+.1%}, rsi {f.rsi:.0f}"), dict(g)))
+                continue
+
+            # Mirror for an open short, see RiskyConsult's for the reasoning
+            # (AGENTS.md item 5 Phase 2 cover-intent shape).
+            if is_short(weight) and (f.trend > -g.get("exit_trend_below", 0.0)
+                                      or f.rsi < 100 - g.get("exit_rsi", 80)):
+                out.append(Intent(self.name, sym, "cover", 0.65, 0, (
+                    f"trend recovered: trend {f.trend:+.1%}, rsi {f.rsi:.0f}"), dict(g)))
                 continue
 
             if f.vol > g.get("max_vol", 1.6):

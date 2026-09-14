@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from core.genome import Genome
-from core.types import Briefing, Order, Proposal, Verdict, Veto
+from core.types import Briefing, Order, Proposal, Verdict, Veto, is_long, is_short
 
 
 class RiskJudge:
@@ -46,29 +46,40 @@ class RiskJudge:
 
         buys: dict[str, list] = defaultdict(list)
         sells: dict[str, list] = defaultdict(list)
+        covers: dict[str, list] = defaultdict(list)
         for p in proposals:
             for it in p.intents:
-                (buys if it.side == "buy" else sells)[it.symbol].append(it)
+                if it.side == "buy":
+                    buys[it.symbol].append(it)
+                elif it.side == "cover":
+                    covers[it.symbol].append(it)
+                elif it.side == "sell":
+                    sells[it.symbol].append(it)
+                # "hold" (and anything else) carries no order-side effect.
 
         # ---- exits first. Always. Freeing risk before adding it is the whole
         # difference between a portfolio and a collection of hopes.
-        for sym, intents in sells.items():
-            if b.open_positions.get(sym, 0.0) <= 0:
-                continue
-            conv = max(i.conviction for i in intents)
-            share = len(intents) / max(n_consults, 1)
-            score = conv * (0.5 + 0.5 * share)
-            if score >= g.get("sell_conviction_threshold", 0.35):
-                frac = 1.0 if share >= 0.67 else 0.5
-                orders.append(Order(
-                    symbol=sym, side="sell", fraction=frac,
-                    reason_chain=[f"{i.agent}: {i.rationale}" for i in intents],
-                    conviction=conv, agreement=share))
-            else:
-                vetoes.append(Veto(sym, "sell", self.name,
-                                   f"exit conviction {score:.2f} below threshold"))
+        def _exit(intents_by_symbol: dict[str, list], side: str, still_open) -> None:
+            for sym, intents in intents_by_symbol.items():
+                if not still_open(b.open_positions.get(sym, 0.0)):
+                    continue
+                conv = max(i.conviction for i in intents)
+                share = len(intents) / max(n_consults, 1)
+                score = conv * (0.5 + 0.5 * share)
+                if score >= g.get("sell_conviction_threshold", 0.35):
+                    frac = 1.0 if share >= 0.67 else 0.5
+                    orders.append(Order(
+                        symbol=sym, side=side, fraction=frac,
+                        reason_chain=[f"{i.agent}: {i.rationale}" for i in intents],
+                        conviction=conv, agreement=share))
+                else:
+                    vetoes.append(Veto(sym, side, self.name,
+                                       f"exit conviction {score:.2f} below threshold"))
 
-        selling = {o.symbol for o in orders if o.side == "sell"}
+        _exit(sells, "sell", is_long)
+        _exit(covers, "cover", is_short)
+
+        selling = {o.symbol for o in orders if o.side in ("sell", "cover")}
         regime_scale = float(g.get("regime_scale", {}).get(b.regime, 0.5))
 
         if regime_scale <= 0.0 and buys:
@@ -167,9 +178,9 @@ class SuperiorJudge:
         kept: list[Order] = []
         vetoes = list(v.vetoes)
 
-        sells = [o for o in v.orders if o.side == "sell"]
+        exits = [o for o in v.orders if o.side in ("sell", "cover")]
         buys = [o for o in v.orders if o.side == "buy"]
-        kept.extend(sells)  # exits are never blocked. Ever.
+        kept.extend(exits)  # exits are never blocked. Ever.
 
         if halted:
             for o in buys:

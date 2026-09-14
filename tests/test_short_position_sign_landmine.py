@@ -16,12 +16,13 @@ an occupied slot and use `abs(weight)` for exposure/cap accounting, so a
 short can no longer under-count position slots or loosen a hard cap it
 should be tightening.
 
-The three consults' `held = ... > 0` exit checks are intentionally
-unchanged (`agents/consults.py`, now spelled `is_long(...)` for clarity):
-they are long-only "sell to exit" heuristics, and closing a short needs its
-own intent shape ("cover", not "sell") that doesn't exist yet -- genuinely
-Phase 2 routing work, not a sign bug in these read sites. That gap is still
-open and still tested below (as a still-open gap, not a regression).
+The three consults' `held = ... > 0` exit checks were, at the time this file
+was first written, intentionally left long-only (`agents/consults.py`,
+spelled `is_long(...)` for clarity): closing a short needed its own intent
+shape ("cover", not "sell") that didn't exist yet. That gap is now closed
+(see `tests/test_cover_intent_wiring.py` for the "cover" intent shape and
+its routing through `RiskJudge`/`SuperiorJudge`) -- the test below now
+checks the consult's mirrored short-exit condition instead of the old gap.
 
 No behavior change for any existing (long-only) live caller: `.short()`
 still has zero callers in the live trading/evolution path, `live_state.json`
@@ -143,7 +144,7 @@ def test_superior_judge_hard_cap_holds_for_a_shorted_symbol():
     assert shorted_room <= flat_room
 
 
-def test_consult_exit_check_still_treats_an_open_short_as_flat_pending_phase2():
+def test_consult_exit_check_now_proposes_covering_an_open_short():
     from agents.consults import ConservativeConsult
     from core.types import Briefing as B
 
@@ -151,16 +152,17 @@ def test_consult_exit_check_still_treats_an_open_short_as_flat_pending_phase2():
     g = Genome()
     consult = ConservativeConsult(g)
     feat = _features()
-    # Set rsi above this consult's exit_rsi so a *held long* would trigger
-    # its "mean reversion complete" exit intent.
-    feat = Features(**{**feat.__dict__, "rsi": 90.0})
+    # ConservativeConsult's long exit fires when rsi > exit_rsi (default 68).
+    # Its short mirror fires on the opposite extreme: rsi < 100 - exit_rsi
+    # (default 32) -- set well below that.
+    feat = Features(**{**feat.__dict__, "rsi": 10.0})
     briefing = B(ts="t0", regime="bull", regime_score=0.5, breadth=0.8,
                  features={"XUSDT": feat}, equity=10_000.0, cash_pct=0.9,
                  open_positions={"XUSDT": w})
     proposal = consult.consider(briefing)
-    # Deliberately still open: `held = is_long(b.open_positions.get(sym,
-    # 0.0))` is a long-only "sell to exit" heuristic. Closing a short needs a
-    # "cover" intent shape that doesn't exist yet (AGENTS.md item 5 Phase 2
-    # routing), so this consult still can't propose closing a short -- that
-    # is scoped, not a regression of this fix.
-    assert proposal.intents == ()
+    # Fixed (AGENTS.md item 5 Phase 2): the consult now proposes a "cover",
+    # not a "sell" (which `PaperBroker.sell()` would reject for a short
+    # anyway), when its mirrored short-exit condition triggers.
+    assert len(proposal.intents) == 1
+    assert proposal.intents[0].side == "cover"
+    assert proposal.intents[0].symbol == "XUSDT"

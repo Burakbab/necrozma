@@ -386,6 +386,53 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-14 (3-hourly check, ~12:48-13:05 UTC): shipped the "cover"
+  intent shape for AGENTS.md item 5 Phase 2 — a consult can now propose
+  closing an open short, and it routes correctly through both judges;
+  found and fixed a third landmine in `SuperiorJudge.review` along the
+  way.** No live trading this cycle (tick 31 already handled at 00:20 UTC,
+  confirmed via `live_state.json`'s `updated` timestamp before starting).
+  See `runs/2026-09-14-1305-cover-intent-wiring.md` and item 5 below for the
+  full design. Summary: (1) each of the three consults' long-only exit
+  checks (`agents/consults.py`) now has a mirrored branch for an open short,
+  reusing the same genes symmetrically (e.g. an RSI-too-high long exit
+  mirrors to an RSI-too-low short exit), emitting `side="cover"` instead of
+  `side="sell"`; (2) `RiskJudge.rule`'s exits-first loop (`agents/judges.py`)
+  now buckets "cover" intents separately from "sell" and gates them on
+  `is_short` instead of `is_long`, via a small shared `_exit()` closure;
+  (3) **landmine found while wiring this up, not anticipated going in**:
+  `SuperiorJudge.review`'s "exits are never blocked, ever" only ever
+  collected `side == "sell"` orders into `kept` — a "cover" order coming out
+  of `RiskJudge.rule` satisfied neither that filter nor the `buys` one, so it
+  would have been silently dropped from the returned `Verdict.orders`
+  entirely (not vetoed, just gone) the moment a short was ever open — the
+  same class of bug as the two sign landmines found earlier this week in
+  `agents/judges.py`'s read sites and `agents/trader.py`/`loop/engine.py`'s
+  forced-exit path. Fixed. New `tests/test_cover_intent_wiring.py` (9 tests,
+  including a dedicated regression test for the `SuperiorJudge.review`
+  landmine), plus `tests/test_short_position_sign_landmine.py`'s
+  now-stale "still treats an open short as flat" test updated to assert the
+  new fixed behavior instead. **No behavior change for any existing
+  (long-only) live caller**: `.short()` still has zero callers in the live
+  trading/evolution path, so every new `is_short`/"cover" branch is
+  unreachable in production today. Edited the real files directly, then
+  `python3 tools/edit_bundle_module.py sync` to regenerate
+  `evotrader_bundle.py` (tests import via the bundle's meta-path finder, not
+  the real files — `sync --check`/`verify` both clean after). Verified:
+  `python3 -m pytest -q` 415/415 (406 baseline + 9 new); `live_state.json`
+  untouched (md5 identical before/after); constitution verified
+  `726dfa4bac85891a` unchanged (neither `core/portfolio.py` nor
+  `constitution/__init__.py` touched); no dashboard rebuild needed (no state
+  change). Genome still v3 (1d) live, untouched. **Still open**: whether/how
+  a consult should be allowed to *open* a short remains the explicitly
+  unscoped owner decision ("Owner decisions pending" above) — `.short()`
+  still has zero live callers, so nothing can produce a short for this
+  session's "cover" intent to ever close in production. Also flagged for
+  later: `loop/engine.py`'s `consult_correlation` diagnostic treats any
+  non-"buy" intent as direction -1.0, arguably backwards for "cover" (a
+  bullish, position-closing action) — not fixed, it's a read-only research
+  tool with no live callers of `.short()` to ever feed it a real "cover" row.
+
 - **Run 2026-09-14 (3-hourly check, ~06:47-07:21 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 15420 → 15630, boldness/stagnation counter
@@ -3500,6 +3547,26 @@ every `evolve` call.
    trailing-stop/take-profit/circuit-breaker), not the consults' own exit
    proposals, which is still the concretely-scoped next step for whoever
    continues Phase 2 wiring.
+
+   **Shipped 2026-09-14 (3-hourly check, ~12:48-13:05 UTC): the discretionary
+   consult-level "cover" intent above now exists and routes correctly** —
+   see "Current state" above and
+   `runs/2026-09-14-1305-cover-intent-wiring.md`. Each consult's long-only
+   exit check now has a mirrored branch for an open short (reusing the same
+   genes symmetrically, no new genes added), emitting `side="cover"`;
+   `RiskJudge.rule`'s exits-first loop buckets and gates "cover" separately
+   from "sell" (`is_short` vs. `is_long`). Also found and fixed a third
+   landmine in the same family, in `SuperiorJudge.review` this time: "exits
+   are never blocked, ever" only ever collected `side == "sell"` orders, so
+   a "cover" order would have been silently dropped (not vetoed, just gone)
+   the moment a short was ever open. 9 new tests
+   (`tests/test_cover_intent_wiring.py`), full suite 415/415. No behavior
+   change for any existing caller: `.short()` still has zero live callers,
+   so every new branch is unreachable in production today. **Still open**:
+   whether/how a consult should be allowed to *open* a short at all remains
+   the explicitly unscoped owner decision below — until that exists,
+   `.short()` has no live caller to ever produce a short for this session's
+   "cover" intent to close.
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
