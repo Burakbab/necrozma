@@ -433,6 +433,39 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   bullish, position-closing action) — not fixed, it's a read-only research
   tool with no live callers of `.short()` to ever feed it a real "cover" row.
 
+- **Run 2026-09-14 (3-hourly check, ~09:47-10:12 UTC evolve batch, write-up
+  delayed to ~15:45 UTC by a mid-cycle container restart): 15 more real
+  `evolve` generations against the live v3 (1d) champion, no promotion —
+  cumulative candidates tried against v3 rose 15630 → 15838, boldness/
+  stagnation counter 1123 → 1137.** No live trading this cycle (tick 31
+  already handled at 00:20 UTC, confirmed before starting). Freshness checks
+  before running: `review-hard-calls` still 0 pending, items 2/5/6 still not
+  a scheduled session's call, item 4 still blocked on a real hard-call flag
+  (none pending), items 3/7/8/9/10 resolved/feature-complete — so the cycle
+  ran the standing evolve batch via `tools/background_runner.py` (`start` +
+  backgrounded `wait`), exit code 0, no truncation. Champion's fold-aggregate
+  fitness held flat at 0.973 across all 15 generations. Raw best-of-generation
+  fold-fitness beat the champion's own 0.973 in **15/15 generations** (range
+  1.113-2.225). See `runs/2026-09-14-1545-evolve-batch-v3.md`. **Container
+  restart mid-cycle**: the sandbox running this session was restarted while
+  waiting on the evolve batch and a follow-up `pytest` verification run; the
+  evolve batch had already finished and written to `live_state.json` before
+  the restart, so no work was lost, but the commit/write-up landed ~5.5 hours
+  later than the batch itself. In that gap another session landed `2296c4a`
+  (the cover-intent-wiring entry immediately above), touching disjoint files
+  from this session's `live_state.json`/`index.html` changes — resolved with
+  `git stash` → `git pull --ff-only` → `git stash pop`, clean merge, no
+  conflicts, `live_state.json` confirmed byte-identical across the two base
+  commits before merging. Verified before commit: `python3 -m pytest -q`
+  406/406 both before (baseline) and immediately after `evolve`, then
+  415/415 after merging in the concurrent commit's 9 new tests; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/
+  `sync --check` both clean; dashboard rebuilt (`index.html`) against the
+  final merged tree. Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-14 (3-hourly check, ~06:47-07:21 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 15420 → 15630, boldness/stagnation counter
