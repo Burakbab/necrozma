@@ -386,6 +386,33 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-14 (3-hourly check, ~21:47-22:34 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 16256 → 16466, boldness/stagnation counter
+  1167 → 1182.** No live trading this cycle (tick 31 already handled at 00:20
+  UTC, `live_state.json` `updated` `2026-09-14T19:32:09+00:00` from the prior
+  ~18:47-19:34 UTC evolve batch, confirmed before starting; also
+  independently confirmed clean by the 20:30 UTC daily evaluation, see
+  `runs/2026-09-14-2030-daily-evaluation.md`; current time ~21:47 UTC, well
+  before the next daily bar close at 2026-09-15T00:00 UTC). Freshness checks
+  before running: `review-hard-calls` still 0 pending, items 2/5/6 still not
+  a scheduled session's call (item 5 Phase 2's remaining next step — whether
+  a consult may *open* a short — is still the unscoped owner decision), item
+  4 still blocked on a real hard-call flag (none pending), items 3/7/8/9/10
+  resolved/feature-complete — so the cycle ran the standing evolve batch via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code 0,
+  no truncation. Champion's fold-aggregate fitness held flat at 0.973 across
+  all 15 generations. Raw best-of-generation fold-fitness beat the
+  champion's own 0.973 in **15/15 generations** (range 1.161-2.123). See
+  `runs/2026-09-14-2234-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 415/415 both before and after `evolve` (no flake this
+  cycle); direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/
+  `sync --check` both clean; dashboard rebuilt (`index.html`). Genome still
+  v3 (1d) live, untouched.
+
 - **Run 2026-09-14 (3-hourly check, ~18:47-19:34 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 16048 → 16256, boldness/stagnation counter
@@ -4013,6 +4040,29 @@ every `evolve` call.
     live on the public dashboard again at the start of this cycle, not just
     a historical 9-minute blip. `python3 -m pytest -q` 391/391 (390 baseline
     + 1 new test). No trading, no genome, no constitution change.
+
+11. **Flagged 2026-09-14 (3-hourly check, ~21:47-22:34 UTC): this file has
+    regrown past its 256KB single-read limit again — measured 282KB just
+    now, up from the ~189KB it was cut to on 2026-09-10 (see the "Archived
+    2026-09-10" entry above) and the ~242KB the 2026-09-04 archival pass
+    predicted it would keep hitting "if this file keeps growing at a
+    similar rate."** The "Current state" log currently runs unbroken from
+    2026-09-02 ~21:47 UTC (the last chronological archival's cutoff) through
+    today — about 12 days of 3-hourly entries never rotated out. Not
+    attempted this cycle: a chronological archival pass (moving the oldest
+    slice to a new `AGENTS_ARCHIVE_...` file, verbatim, matching the
+    2026-09-04/2026-09-10 pattern) needs a careful read of the exact section
+    boundaries first — the tail of "Current state" turns out to interleave
+    with older reference material (e.g. the researcher-memory/boldness
+    discussion and a 2026-08-18 entry both sit *after* the 2026-09-02 cutoff
+    marker in file order, not before it), so a rushed cut risked archiving
+    or duplicating the wrong span. Concretely scoped next step: a session
+    with room to spend most of its slot on this should re-derive the exact
+    boundary (probably keeping roughly the last 5-7 days of dated entries,
+    archiving the rest into a new dated file) the same careful way the two
+    prior archival sessions did, verify nothing is reworded or lost, and
+    confirm `python3 -m pytest -q` stays green throughout (no code changes
+    expected, text-only).
 
 ---
 
