@@ -386,6 +386,42 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-14 (3-hourly check, ~01:19-01:23 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 15003 → 15212, boldness/stagnation counter
+  1077 → 1092.** No live trading this cycle (tick 31 already handled at 00:20
+  UTC, `live_state.json` `updated` `2026-09-14T00:22:35+00:00` from the daily
+  trading run, confirmed before starting). Freshness checks before running:
+  `review-hard-calls` still 0 pending (1 reviewed so far, unchanged),
+  `holdout-pressure` at 336 draws going in, items 2/5/6 still not a scheduled
+  session's call (item 5's own next step — routing a "cover" intent from the
+  consults — checked and confirmed still not actionable: `.short()` still has
+  zero callers in the live path, so nothing can produce a short position for a
+  cover intent to close, and whether consults should be allowed to propose
+  shorts at all is still an explicitly unscoped owner decision), item 4 still
+  blocked on a real hard-call flag (none pending), items 3/7/8/9/10
+  resolved/feature-complete — so the cycle ran the standing evolve batch via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), ~24-minute
+  real run, exit code 0, no truncation. Champion's fold-aggregate fitness held
+  flat at 0.973 across all 15 generations. Raw best-of-generation fold-fitness
+  beat the champion's own 0.973 in **15/15 generations** (range 1.259-1.991).
+  **Notable contrast with recent lively batches**: `holdout-pressure` draw
+  count stayed flat at 336 → 336 — zero new gate-clearing candidates this
+  batch despite the 15/15 raw-beat ratio, unlike the last several batches
+  which added 6-26 new holdout losses on a similar-looking ratio. Flagging
+  that "beats raw champion fitness" and "clears the full multiple-testing
+  gate `holdout-pressure` counts" are different bars that don't always move
+  together — not enough data yet to draw a general rule, just recording the
+  divergence in case a future session wants to correlate the two numbers
+  across more batches. See `runs/2026-09-14-0123-evolve-batch-v3.md`.
+  Verified before commit: `python3 -m pytest -q` 406/406 both before
+  (baseline) and after `evolve`; direct top-level key diff of
+  `live_state.json` showed only `lineage`/`researcher_memory`/`updated`
+  changed (genome, broker, journal, hard_call_reviews byte-identical);
+  constitution verified `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-13 (3-hourly check, ~21:47-21:58 UTC): found and fixed a
   second short-position sign landmine, in `agents/trader.py`/`loop/engine.py`
   this time — a different file pair from the `agents/judges.py` one fixed
