@@ -386,6 +386,31 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-14 (3-hourly check, ~18:47-19:34 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 16048 → 16256, boldness/stagnation counter
+  1152 → 1167.** No live trading this cycle (tick 31 already handled at 00:20
+  UTC, `live_state.json` `updated` `2026-09-14T16:13:26+00:00` from the prior
+  ~15:47-16:22 UTC evolve batch, confirmed before starting; current time
+  ~18:47 UTC, well before the next daily bar close at 2026-09-15T00:00 UTC).
+  Freshness checks before running: `review-hard-calls` still 0 pending, items
+  2/5/6 still not a scheduled session's call (item 5 Phase 2's remaining next
+  step — whether a consult may *open* a short — is still the unscoped owner
+  decision), item 4 still blocked on a real hard-call flag (none pending),
+  items 3/7/8/9/10 resolved/feature-complete — so the cycle ran the standing
+  evolve batch via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness held
+  flat at 0.973 across all 15 generations. Raw best-of-generation fold-fitness
+  beat the champion's own 0.973 in **13/15 generations** (generations 7 and 8
+  came in just under, 0.972/0.963; range otherwise 0.983-2.484). See
+  `runs/2026-09-14-1934-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 415/415 both before and after `evolve` (no flake this cycle);
+  direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified `726dfa4bac85891a`
+  unchanged; `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  dashboard rebuilt (`index.html`). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-14 (3-hourly check, ~15:47-16:22 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 15838 → 16048, boldness/stagnation counter
