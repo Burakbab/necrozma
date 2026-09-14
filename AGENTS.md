@@ -386,6 +386,42 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-14 (3-hourly check, ~15:47-16:22 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 15838 → 16048, boldness/stagnation counter
+  1137 → 1152.** No live trading this cycle (tick 31 already handled at 00:20
+  UTC, `live_state.json` `updated` `2026-09-14T10:12:46+00:00` from the prior
+  ~09:47-10:12 UTC evolve batch, confirmed before starting). Freshness checks
+  before running: `review-hard-calls` still 0 pending, items 2/5/6 still not
+  a scheduled session's call (item 5 Phase 2's remaining next step — whether
+  a consult may *open* a short — is still the unscoped owner decision), item
+  4 still blocked on a real hard-call flag (none pending), items 3/7/8/9/10
+  resolved/feature-complete — so the cycle ran the standing evolve batch via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code 0,
+  no truncation. Champion's fold-aggregate fitness held flat at 0.973 across
+  all 15 generations. Raw best-of-generation fold-fitness beat the champion's
+  own 0.973 in **15/15 generations** (range 1.165-2.077). See
+  `runs/2026-09-14-1622-evolve-batch-v3.md`. **Network-flake test
+  investigation, not evolve-batch-caused**: two full `python3 -m pytest -q`
+  runs after the evolve batch each showed 1 failure out of 415 (414/415),
+  but a *different* test each time, both in
+  `tests/test_run_from_files_matches_bundle.py`, both tracing to the same
+  root cause — a live HTTP fetch inside the test to
+  `data-api.binance.vision` for a fake symbol `ZZTESTAUSDT` returning `HTTP
+  Error 400` through this container's outbound proxy. A targeted re-run of
+  just that file passed clean 13/13, confirming a transient network/proxy
+  flake rather than a real regression (pre-evolve baseline this session ran
+  was clean 415/415, and `live_state.json`'s diff shows nothing this test's
+  logic depends on changed). Not fixed or investigated further — flagging in
+  case it recurs enough for a future session to consider retrying that
+  outbound call or mocking the test symbol's fetch. Verified before commit:
+  direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/
+  `sync --check` both clean; dashboard rebuilt (`index.html`). Genome still
+  v3 (1d) live, untouched.
+
 - **Run 2026-09-14 (3-hourly check, ~12:48-13:05 UTC): shipped the "cover"
   intent shape for AGENTS.md item 5 Phase 2 — a consult can now propose
   closing an open short, and it routes correctly through both judges;
