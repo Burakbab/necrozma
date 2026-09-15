@@ -386,6 +386,28 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-15 (3-hourly check, ~03:46-03:51 UTC): reviewed tick 32's
+  flagged hard call — verdict `approve`.** See
+  `runs/2026-09-15-0351-hard-call-review-tick32.md`. Second live tick ever
+  to trip `flag_hard_call` (first was tick 16, 2026-08-30): a lone-voice
+  DOTUSDT buy (agreement 0.33, 0.90 conviction, 14.3% of equity).
+  Reconstructed `RiskJudge.rule`'s scoring by hand against v3's evolved
+  genes and matched the real order to the cent: UNIUSDT actually scored
+  highest (0.95×`lone_voice_scale` 1.4791=1.405) but was already held at
+  25.92% of equity, over `max_position_pct` (25%) — correctly vetoed "no
+  room" before DOTUSDT (score 1.337) was reached; DOTUSDT then consumed
+  100% of the bar's deployable cash ($1711.9210 recomputed vs. $1711.92
+  actual), crowding out every other candidate including some
+  higher-scored than it (e.g. ICPUSDT 1.319) purely on cash, not
+  processing order. Same shape as tick 16: the evolved genome's own risk
+  logic working as designed, nothing to correct. `review-hard-calls` now
+  0 pending, 2 reviewed. No live trading this cycle (tick 32 already
+  handled at 00:20 UTC, confirmed before starting). Text-plus-state-only —
+  `python3 -m pytest -q` 415/415 both before and after, only
+  `live_state.json` (`updated` + one new `hard_call_reviews` entry) and
+  the rebuilt `index.html` changed; `genome`/`broker`/`journal`
+  byte-identical, constitution unchanged. Genome still v3 (1d) live.
+
 - **Run 2026-09-15 (3-hourly check, ~00:48-01:xx UTC): resolved item 11 —
   chronological archival pass, `AGENTS.md` back to ~224KB/3320 lines from
   ~277KB/4147 (was over the 256KB single-read limit, this session's own
@@ -2702,6 +2724,28 @@ every `evolve` call.
    as the LLM consultant" idea from the top of this item, now with somewhere
    concrete to write the verdict), and record the verdict. That first real
    review is the point of this infrastructure, not more code around it.
+
+   **First real review recorded 2026-08-30 (3-hourly check, ~00:46 UTC):
+   tick 16's lone-voice LINKUSDT buy, verdict `approve`.** See "Current
+   state" above (2026-08-30 entry) and
+   `runs/2026-08-30-0046-hard-call-review-tick16.md`. Hand-reconstructed
+   `RiskJudge.rule`'s scoring against the real evolved genes and matched
+   the order to the cent — the evolved genome's own risk logic operating
+   exactly as designed, nothing to correct.
+
+   **Second real review recorded 2026-09-15 (3-hourly check, ~03:46-03:51
+   UTC): tick 32's lone-voice DOTUSDT buy, verdict `approve`.** See
+   "Current state" above and
+   `runs/2026-09-15-0351-hard-call-review-tick32.md`. Same
+   hand-reconstruction method, again matched to the cent — this time the
+   bar's top-scored candidate (UNIUSDT) was excluded by its own
+   already-near-cap position size before DOTUSDT was reached, and DOTUSDT
+   then consumed 100% of deployable cash, crowding out several
+   higher-scored-than-it candidates purely on cash. Two reviews in, both
+   `approve`, both explained fully by the evolved genome's mechanics
+   (`lone_voice_scale` > `two_agree_bonus`, cash floor) rather than any
+   bug — this infrastructure is now doing exactly the job item 4 wanted it
+   for.
 
 5. **Short selling** with modelled borrow cost — currently long-only, which is why
    a bear market can only be survived, not traded.
