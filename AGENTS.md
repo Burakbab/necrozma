@@ -410,7 +410,14 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
   --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
   (1d) live, untouched. `AGENTS.md` ~238KB, still under the 256KB
-  single-read limit — no archival pass needed this cycle.
+  single-read limit — no archival pass needed this cycle. **New finding
+  this cycle, not fixed**: `git push` printed GitHub's large-file warning
+  for `live_state.json` (57.2MB, growing ~4.8MB/day, driven by
+  `researcher_memory.tested` storing full unhashed genome patches with no
+  cap) — on track to hit GitHub's hard 100MB push limit around
+  2026-09-24/25. See new Next-steps item 12 below and
+  `runs/2026-09-15-2220-evolve-batch-v3.md` for the full root-cause trail
+  and a scoped fix direction.
 
 - **Run 2026-09-15 (3-hourly check, ~18:51-19:22 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
@@ -3446,6 +3453,74 @@ every `evolve` call.
     lines, back under the 256KB limit. `python3 -m pytest -q` 415/415 both
     before and after (text-only change, no code touched). No protected file
     touched, `live_state.json` untouched.
+
+12. **Flagged 2026-09-15 (3-hourly check, ~21:47-22:20 UTC): `live_state.json`
+    is on a growth trajectory that hits GitHub's hard 100MB per-file push
+    limit around 2026-09-24/25 — about 9 days out at the time of writing.**
+    See `runs/2026-09-15-2220-evolve-batch-v3.md`'s "New finding" section for
+    the full trail. This cycle's `git push` printed GitHub's large-file
+    warning (`GH001`, currently 57.2MB, past the 50MB recommended-max
+    threshold) for the first time logged anywhere in this file. Sampled the
+    file's size at 6 points across recent history via `git cat-file -s
+    <commit>:live_state.json` (plain `git log --stat` on this file is too
+    slow to use interactively — the diffs are enormous): 38.0MB
+    (2026-09-11) → 44.0MB (09-12) → 49.4MB (09-13) → 53.6MB (09-15 00:23) →
+    56.0MB (09-15 16:18) → 57.2MB (09-15 22:20), ~4.8MB/day average over the
+    last 4 days.
+
+    **Root cause, precisely identified**: `researcher_memory` is 29.1MB of
+    the current 57.2MB file (`lineage` is a comparatively small 5.7MB — it's
+    already capped at 200 entries by `core.live._trim_lineage`, working as
+    designed and not part of this problem). Inside `researcher_memory`, the
+    `tested` field is a list of 17,710 entries — one per candidate mutation
+    ever tried against the live (unbeaten since promotion) v3 champion — and
+    each entry is the candidate's *full* genome patch, not a hash:
+    `agents/researcher.py`'s `Researcher.key(m)` returns `tuple((k, str(v))
+    for k, v in sorted(m.patch.items()))`, every gene key/value pair in the
+    mutation (some blind perturbations touch ~38 genes at once). This list
+    has **no cap or trim anywhere** — confirmed by grep, nothing bounds it —
+    and only resets when the champion is beaten, which hasn't happened since
+    the v2→v3 promotion; every batch this week has held `aggregate_fitness`
+    flat at 1.537, so the list has grown every single generation with
+    nothing to stop it, exactly matching the observed growth rate.
+
+    **Not fixed this cycle, deliberately** — this is real design work, not a
+    quick edit, and this session judged it too large a blast radius to rush:
+    the obvious fix direction (store a stable hash of the sorted patch
+    instead of the patch itself, both in `Researcher.key()`'s in-memory
+    identity and in the persisted `researcher_memory["tested"]` list) is a
+    cross-cutting identity read/written in at least 7 places across
+    `evotrader_bundle.py` (multiple CLI command sites serialize/deserialize
+    it) plus `agents/researcher.py:307` and `loop/evolve.py`'s
+    `EvolutionRun`, and needs an explicit decision on backward compatibility
+    with the 17,710 full-patch entries already committed live today —
+    migrate them to hashes once (rewriting recent history's dedup identity),
+    or let old- and new-format entries co-exist during some transition.
+    Getting this wrong risks silently breaking the deduplication memory the
+    2026-08-15 fix (see "Two flaws found by watching it run" above) was
+    built to protect — re-testing the same near-miss candidates over and
+    over — which would be a quiet regression, not a loud one. Many other
+    scheduled sessions read and write this same file continuously; this one
+    chose to document precisely rather than risk a rushed cross-cutting
+    change.
+
+    **Concretely scoped next step for whoever picks this up**: design the
+    hash-based `tested` identity (a stable hash of `Researcher.key()`'s
+    existing sorted-tuple representation is the obvious candidate — e.g.
+    `hashlib.sha256(repr(...).encode()).hexdigest()[:16]`, short enough to
+    shrink `tested` by roughly two orders of magnitude), decide the
+    migration story for the already-persisted full-patch entries (simplest:
+    a one-time one-way conversion of the existing list to hashes on next
+    load, since the full patches were never used for anything but
+    membership testing), update every read/write site listed above plus the
+    bundle (`tools/edit_bundle_module.py sync`), and add a regression test
+    asserting `researcher_memory["tested"]` shrinks by roughly the expected
+    factor on a save/load round-trip against a synthetic large `tested` set.
+    Verify the live account's actual `researcher_memory.tested` round-trips
+    correctly (same membership, `evolve`'s dedup behavior unchanged) before
+    calling this closed — not just that the file gets smaller. This is
+    urgent on a roughly one-week clock, not indefinitely deferrable like
+    most of the other open items above.
 
 ---
 
