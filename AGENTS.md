@@ -386,6 +386,31 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-15 (3-hourly check, ~15:46-16:14 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 17088 → 17294, boldness/stagnation counter
+  1227 → 1242.** No live trading this cycle (tick 32 already handled at
+  00:20 UTC, `live_state.json` `updated` `2026-09-15T13:17:32+00:00` from
+  the prior ~12:47-13:21 UTC evolve batch, confirmed before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call
+  (item 5 Phase 2's remaining next step — whether a consult may *open* a
+  short — is still the unscoped owner decision), items 3/7/8/9/10/11
+  resolved/feature-complete — so the cycle ran the standing evolve batch via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code 0,
+  no truncation. Champion's fold-aggregate fitness held flat at 1.537 across
+  all 15 generations. Raw best-of-generation fold-fitness beat the
+  champion's own 1.537 in **8/15 generations** (53%, two exact ties at
+  1.537, range otherwise 1.185-2.609). See
+  `runs/2026-09-15-1617-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 415/415 both before and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched.
+
 - **Run 2026-09-15 (3-hourly check, ~12:47-13:21 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 16882 → 17088, boldness/stagnation counter
