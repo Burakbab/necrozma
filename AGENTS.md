@@ -386,6 +386,32 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-15 (3-hourly check, ~21:47-22:20 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 17502 → 17710, boldness/stagnation counter
+  1257 → 1272.** No live trading this cycle (tick 32 already handled at
+  00:20 UTC, `live_state.json` `updated` `2026-09-15T19:27:21+00:00` from
+  the prior ~18:51-19:22 UTC evolve batch, confirmed before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call
+  (item 5 Phase 2's remaining next step — whether a consult may *open* a
+  short — is still the unscoped owner decision), items 3/7/8/9/10/11
+  resolved/feature-complete — so the cycle ran the standing evolve batch via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code 0,
+  no truncation. Champion's fold-aggregate fitness held flat at 1.537 across
+  all 15 generations. Raw best-of-generation fold-fitness beat the
+  champion's own 1.537 in **7/15 generations** (47%, one exact tie at
+  generation 9, range otherwise 0.882-1.807). See
+  `runs/2026-09-15-2220-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 415/415 both before and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched. `AGENTS.md` ~238KB, still under the 256KB
+  single-read limit — no archival pass needed this cycle.
+
 - **Run 2026-09-15 (3-hourly check, ~18:51-19:22 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 17294 → 17502, boldness/stagnation counter
