@@ -20,6 +20,7 @@ broker, or the fitness function.
 """
 from __future__ import annotations
 
+import hashlib
 import random
 from collections import defaultdict
 from typing import Any
@@ -304,9 +305,50 @@ class Researcher:
         return out
 
     @staticmethod
-    def key(m: Mutation) -> tuple:
-        """Identity of a proposal — the patch itself, not its prose."""
-        return tuple((k, str(v)) for k, v in sorted(m.patch.items(), key=lambda kv: kv[0]))
+    def key(m: Mutation) -> str:
+        """Identity of a proposal — a stable hash of the patch itself, not its
+        prose, not the patch verbatim.
+
+        Used both in-memory (the `exclude` set a live `EvolutionRun` builds up
+        generation over generation, see `loop.evolve.EvolutionRun.tested`) and
+        persisted (`live_state.json`'s `researcher_memory["tested"]`). Hashing
+        instead of keeping the raw patch is what keeps that persisted list
+        bounded: before this, one entry per candidate ever tried against an
+        unbeaten champion was the *full* gene patch (up to ~38 key/value pairs
+        for a blind perturbation), with no cap and no reset short of a real
+        promotion — 17,710 such entries had grown `live_state.json` to 57.2MB
+        and counting, on track to hit GitHub's 100MB push limit within about a
+        week (AGENTS.md item 12). A 16-hex-char sha256 digest is ~800 bytes
+        smaller per entry and just as good for membership testing, which is
+        the only thing this identity was ever used for."""
+        return Researcher.patch_key(
+            tuple((k, str(v)) for k, v in sorted(m.patch.items(), key=lambda kv: kv[0])))
+
+    @staticmethod
+    def patch_key(sorted_patch_items: tuple) -> str:
+        """Hash a `((gene_path, str(value)), ...)` tuple, already sorted by
+        gene path, into the same stable identity `key()` produces. Split out
+        so the one-time migration below can rehash an old full-patch
+        `tested` entry without going through a `Mutation` object."""
+        return hashlib.sha256(repr(sorted_patch_items).encode()).hexdigest()[:16]
+
+    @staticmethod
+    def migrate_tested_entry(entry: Any) -> str:
+        """Normalize one `researcher_memory["tested"]` entry to the current
+        hash-based identity.
+
+        Entries persisted before this migration are the full patch — a list
+        of `[gene_path, str(value)]` pairs, JSON's rendering of `key()`'s old
+        tuple-of-tuples return value. Entries persisted after it are already
+        the hash string `key()`/`patch_key()` now return. This lets a mixed
+        list (some old, some new — exactly what today's live
+        `researcher_memory` is) round-trip through one read: every entry
+        normalizes to the same hash a fresh `key()` call on the same patch
+        would produce, so dedup/exclude behavior is unchanged, and the very
+        next `evolve` write persists only hashes."""
+        if isinstance(entry, str):
+            return entry
+        return Researcher.patch_key(tuple(tuple(pair) for pair in entry))
 
     def propose(self, g: Genome, diagnostics: dict[str, Any], n_blind: int = 14,
                 exclude: set | None = None, boldness: float = 0.0) -> list[Mutation]:

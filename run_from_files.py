@@ -389,6 +389,7 @@ def _cmd_evolve_dry_run(acct) -> None:
     win or lose. See the module docstring for the exact safety argument."""
     from core import market
     from loop.evolve import EvolutionRun
+    from agents.researcher import Researcher
 
     n = 3
     if len(sys.argv) > 2 and not sys.argv[2].startswith("--"):
@@ -413,7 +414,7 @@ def _cmd_evolve_dry_run(acct) -> None:
     # rising across invocations, not reset to n=1 every time).
     mem = acct.researcher_memory or {}
     if mem.get("champion_version") == g0.version:
-        init_tested = {tuple(tuple(pair) for pair in item) for item in mem.get("tested", [])}
+        init_tested = {Researcher.migrate_tested_entry(item) for item in mem.get("tested", [])}
         init_stagnation = int(mem.get("stagnation", 0))
     else:
         init_tested, init_stagnation = set(), 0
@@ -463,6 +464,7 @@ def _cmd_evolve(acct, state_path) -> None:
     docstring for why."""
     from core import market
     from loop.evolve import EvolutionRun
+    from agents.researcher import Researcher
 
     n = 3
     if len(sys.argv) > 2 and not sys.argv[2].startswith("--"):
@@ -479,7 +481,7 @@ def _cmd_evolve(acct, state_path) -> None:
 
     mem = acct.researcher_memory or {}
     if mem.get("champion_version") == g0.version:
-        init_tested = {tuple(tuple(pair) for pair in item) for item in mem.get("tested", [])}
+        init_tested = {Researcher.migrate_tested_entry(item) for item in mem.get("tested", [])}
         init_stagnation = int(mem.get("stagnation", 0))
     else:
         init_tested, init_stagnation = set(), 0
@@ -493,7 +495,7 @@ def _cmd_evolve(acct, state_path) -> None:
     acct.lineage.extend(res.get("generations", []))
     acct.researcher_memory = {
         "champion_version": run.tested_version,
-        "tested": [[list(pair) for pair in k] for k in run.tested],
+        "tested": list(run.tested),
         "stagnation": run.stagnation,
         "holdout_draws": run.holdout_draws,
     }

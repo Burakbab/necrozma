@@ -386,6 +386,45 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-16 (3-hourly check, ~00:48-01:04 UTC): closed item 12 —
+  shipped the hash-based `researcher_memory["tested"]` identity and applied
+  it to the real account.** No live trading this cycle (tick 33 already
+  handled at 00:20 UTC, confirmed via `live_state.json`'s `updated` before
+  starting). Also fixed in passing: the container's local `main` branch
+  pointer was stale (~50 commits behind `origin/main`'s real tip, from
+  before an upstream history rewrite) — working tree was clean and detached
+  HEAD already sat on the real tip, so `git reset --hard origin/main`
+  re-pointed the stale branch ref with no content change, no work at risk.
+  See item 12 above and `runs/2026-09-16-0104-item12-tested-memory-hash-fix.md`
+  for the full change. Summary: `Researcher.key()` (`agents/researcher.py`)
+  now hashes the sorted patch (sha256, 16 hex chars) instead of persisting
+  it verbatim; `Researcher.migrate_tested_entry()` normalizes old-format
+  (full-patch) and new-format (hash) `tested` entries to the same identity
+  on read, so a mixed list — exactly what the live account had — round-trips
+  with unchanged membership. Every reconstruction site updated
+  (`evotrader_bundle.py`'s `evolve`/`disagreement-sweep`,
+  `run_from_files.py`'s `_cmd_evolve`/`_cmd_evolve_dry_run`); count-only
+  sites (`holdout-pressure`, `exit-gene-test`, etc.) needed no change.
+  `tools/edit_bundle_module.py sync` regenerated the bundle's embedded
+  `agents.researcher`; `verify`/`sync --check` both clean. New
+  `tests/test_researcher_memory_hash.py` (7 tests: hash stability, dict-order
+  independence, migration-matches-fresh-key correctness, mixed-list dedup,
+  and a synthetic-scale size check) — full suite 422/422 (415 baseline + 7
+  new), run both before and after the live migration below. New
+  `tools/migrate_tested_memory.py` applied the fix to the real
+  `live_state.json`: `researcher_memory["tested"]` 17,710 entries before and
+  after (membership unchanged — the script itself refuses to save if the
+  count moves), JSON size of that field 29.1MB → 354KB (82.3x smaller),
+  **`live_state.json` 57.2MB → 7.2MB overall**. Direct top-level key diff
+  confirmed only `researcher_memory`/`updated` changed — `genome`, `broker`,
+  `journal`, `lineage`, `hard_call_reviews` byte-identical. Post-migration
+  sanity: `evotrader_bundle.py summary`/`holdout-pressure` both run clean
+  against the shrunk file, constitution verified `726dfa4bac85891a`
+  unchanged, dashboard rebuilt (diff is only the timestamp and a randomized
+  SVG element id). Genome still v3 (1d) live, untouched. Item 12's original
+  9-day clock to GitHub's 100MB push limit is resolved: future growth is now
+  bounded by candidate *count*, not patch size.
+
 - **Run 2026-09-15 (3-hourly check, ~21:47-22:20 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 17502 → 17710, boldness/stagnation counter
@@ -3454,7 +3493,24 @@ every `evolve` call.
     before and after (text-only change, no code touched). No protected file
     touched, `live_state.json` untouched.
 
-12. **Flagged 2026-09-15 (3-hourly check, ~21:47-22:20 UTC): `live_state.json`
+12. **RESOLVED 2026-09-16 (3-hourly check, ~00:48-01:04 UTC): hash-based
+    `researcher_memory["tested"]` identity shipped and applied to the real
+    account.** `agents/researcher.py`'s `Researcher.key()` now returns a
+    16-hex-char sha256 hash of the sorted patch instead of the patch itself;
+    `Researcher.migrate_tested_entry()` normalizes a mixed old/new `tested`
+    list to that identity on read. Updated every reconstruction site
+    (`evotrader_bundle.py`'s `evolve`/`disagreement-sweep`,
+    `run_from_files.py`'s `_cmd_evolve`/`_cmd_evolve_dry_run`) — the
+    count-only sites needed no change. New `tests/test_researcher_memory_hash.py`
+    (7 tests, full suite 422/422). Ran the new `tools/migrate_tested_memory.py`
+    against the real `live_state.json`: `researcher_memory["tested"]`
+    17,710 entries before and after (membership unchanged, byte-for-byte
+    diff confirmed only `researcher_memory`/`updated` changed), file
+    **57.2MB → 7.2MB**. See `runs/2026-09-16-0104-item12-tested-memory-hash-fix.md`
+    for the full trail. Future growth is now bounded by candidate *count*,
+    not patch size — no longer on a collision course with GitHub's push
+    limit. Original flag (2026-09-15, kept below for the root-cause trail):
+    `live_state.json`
     is on a growth trajectory that hits GitHub's hard 100MB per-file push
     limit around 2026-09-24/25 — about 9 days out at the time of writing.**
     See `runs/2026-09-15-2220-evolve-batch-v3.md`'s "New finding" section for
