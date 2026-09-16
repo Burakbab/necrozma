@@ -386,6 +386,38 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-16 (3-hourly check, ~18:47-19:31 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 18747 → 18953, stagnation counter
+  1347 → 1363.** No live trading this cycle (tick 33 already handled at
+  00:20 UTC, `live_state.json` `updated` `2026-09-16T16:10:11+00:00` from
+  the prior ~15:48-16:12 UTC evolve batch, confirmed before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call,
+  item 7 explicitly optional/last, item 4 blocked on a real hard-call flag
+  (none pending), items 0/3/8/9/10/11/12 resolved/closed — so the cycle ran
+  the standing evolve batch via `tools/background_runner.py` (`start` +
+  backgrounded `wait`), exit code 0, no truncation. Champion's
+  fold-aggregate fitness held flat at 1.635 across all 15 generations (965
+  trades, 39% win, 1% stops, 4 halts, unchanged throughout). Raw
+  best-of-generation fold-fitness beat the champion's own 1.635 in **6/15
+  generations** (40%, range 1.230-2.658). See
+  `runs/2026-09-16-1931-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 422/422 both before and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched. Also fixed in passing: container started in
+  detached HEAD with local `main` stale/diverged from `origin/main` (`git
+  pull` reported a "forced update" then "refusing to merge unrelated
+  histories") — working tree was clean and `git diff main origin/main`
+  showed the divergence was only `runs/*` additions and generated files,
+  nothing local-only at risk, so `git checkout main && git reset --hard
+  origin/main` re-pointed the local branch, no content lost. Future
+  sessions: prefer `python3 tools/git_sync.py` per Run protocol step 2.
+
 - **Run 2026-09-16 (3-hourly check, ~15:48-16:12 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 18541 → 18747, stagnation counter
