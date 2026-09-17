@@ -386,6 +386,40 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-17 (3-hourly check, ~09:46-10:13 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 19782 → 19988, stagnation counter
+  1422 → 1437.** No live trading this cycle (tick 34 already handled at
+  00:20 UTC, and the 09:00 UTC daily discussion was read-only and touched
+  nothing — confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-17-0020-daily-trading.md`/
+  `runs/2026-09-17-0900-daily-discussion.md` before starting). Freshness
+  checks before running: `review-hard-calls` still 0 pending (2 reviewed,
+  unchanged), items 2/5/6 still not a scheduled session's call, item 7
+  feature-complete, item 4 blocked on a real hard-call flag (none pending)
+  — so, with nothing else queued, used the slot for one more real
+  15-generation batch (offline/shadow development against the live
+  champion) via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness
+  held flat at 1.463 across all 15 generations (927 trades, 37% win, 1%
+  stops, 4 halts, unchanged throughout). See
+  `runs/2026-09-17-1013-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 422/422 both before (baseline) and after `evolve`;
+  direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; `holdout-pressure` re-checked (read-only, no state
+  change) — margin still ~7.0-7.02, consistent with the already-tracked
+  "Owner decisions pending" drawdown-gate question, nothing new; dashboard
+  rebuilt (`index.html`). Genome still v3 (1d) live, untouched. **Git
+  note**: container started in detached HEAD with local `main` 50 commits
+  behind `origin/main` (fetch reported "forced update" — the recurring
+  shallow-clone staleness this file already documents, not a real
+  rewrite); working tree was clean, so `git checkout main && git pull
+  --rebase origin main` brought local `main` to `origin/main`'s tip
+  cleanly, no content lost, no manual reset needed this cycle.
+
 - **Run 2026-09-17 (3-hourly check, ~06:46-07:19 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 19575 → 19782, stagnation counter
