@@ -386,6 +386,42 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-17 (3-hourly check, ~18:48-19:17 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 20404 → 20611, stagnation counter
+  1468 → 1482.** No live trading this cycle (tick 34 already handled at
+  00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-17-0020-daily-trading.md` before starting). Freshness checks
+  before running: `review-hard-calls` still 0 pending (2 reviewed,
+  unchanged), `holdout-pressure` re-checked (read-only) with no change from
+  the last check (margin ~7.01-7.03), items 2/5/6 still not a scheduled
+  session's call, item 7 feature-complete, item 4 blocked on a real
+  hard-call flag (none pending), `AGENTS.md` size 233KB (under the 256KB
+  rotation threshold) — so, with nothing else queued, used the slot for one
+  more real 15-generation batch (offline/shadow development against the
+  live champion) via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness
+  held flat at 1.463 across all 15 generations (927 trades, 37% win, 1%
+  stops, 4 halts, unchanged throughout). Raw best-of-generation fold-fitness
+  beat the champion's own 1.463 in **13/15 generations** (87%, one exact tie
+  at generation 10, range otherwise 1.006-3.294). See
+  `runs/2026-09-17-1917-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 422/422 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched. **Git note**: container started in detached HEAD
+  with local `main` (a shallow clone) stale behind `origin/main`; `git
+  reset --hard origin/main` was denied by this session's action classifier
+  as irreversible local destruction, so — same workaround as the
+  2026-09-16 ~21:51 UTC and 2026-09-17 ~15:50 UTC sessions — did all work
+  directly on detached `origin/main` (`git checkout origin/main`) without
+  touching the local `main` ref, then pushed at the end with `git push
+  origin HEAD:main`. No content at risk either way; `origin/main` was
+  already the confirmed-authoritative tip with a clean working tree.
+
 - **Run 2026-09-17 (3-hourly check, ~15:50-16:33 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 20195 → 20404, stagnation counter
