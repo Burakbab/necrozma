@@ -386,6 +386,41 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-17 (3-hourly check, ~12:47-13:21 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 19988 → 20195, stagnation counter
+  1437 → 1452.** No live trading this cycle (tick 34 already handled at
+  00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-17-0020-daily-trading.md` before starting). Freshness checks
+  before running: `review-hard-calls` still 0 pending (2 reviewed,
+  unchanged), `holdout-pressure` re-checked (read-only) with no change from
+  the last check, items 2/5/6 still not a scheduled session's call, item 7
+  feature-complete, item 4 blocked on a real hard-call flag (none pending)
+  — so, with nothing else queued, used the slot for one more real
+  15-generation batch (offline/shadow development against the live
+  champion) via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness
+  held flat at 1.463 across all 15 generations (927 trades, 37% win, 1%
+  stops, 4 halts, unchanged throughout). See
+  `runs/2026-09-17-1321-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 422/422 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched. **Git note**: container started in detached HEAD
+  with local `main` 70 commits behind `origin/main` (fetch reported "forced
+  update"). The repo was a genuinely shallow clone this cycle (`git
+  rev-parse --is-shallow-repository` → true, two grafted shallow-boundary
+  commits), which is what made `git merge-base main origin/main` initially
+  report no common ancestor even though nothing was actually rewritten —
+  `git fetch --unshallow origin` resolved it and confirmed local `main` was
+  a strict ancestor of `origin/main` (0 unique commits), so `git merge
+  --ff-only origin/main` applied cleanly, no content lost. Matches this
+  file's own run-protocol note that "no merge-base" on a fresh cloud clone
+  is almost always shallow-fetch staleness, not a real force-push.
+
 - **Run 2026-09-17 (3-hourly check, ~09:46-10:13 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 19782 → 19988, stagnation counter
