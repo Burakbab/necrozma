@@ -386,6 +386,38 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-17 (3-hourly check, ~00:47-01:17 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 19160 → 19367, stagnation counter
+  1377 → 1392.** No live trading this cycle (tick 34 already handled at
+  00:20 UTC, `live_state.json` `updated` `2026-09-17T00:22:59+00:00` from
+  the daily tick, confirmed before starting). Freshness checks before
+  running: `review-hard-calls` still 0 pending (2 reviewed, unchanged),
+  items 2/5/6 still not a scheduled session's call, item 7 explicitly
+  optional/last, item 4 blocked on a real hard-call flag (none pending),
+  items 0/3/8/9/10/11/12 resolved/closed — so the cycle ran the standing
+  evolve batch via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness
+  held flat at 1.463 across all 15 generations (927 trades, 37% win, 1%
+  stops, 4 halts, unchanged throughout). Raw best-of-generation fold-fitness
+  beat the champion's own 1.463 in **11/15 generations** (73%, one exact
+  tie at generation 11, range otherwise 1.272-2.210). See
+  `runs/2026-09-17-0117-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 422/422 both before and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched. **Git note**: this container's local `main` was
+  genuinely diverged from `origin/main` (`git merge-base` found no common
+  ancestor — a real rewrite, not shallow-clone staleness) but the working
+  tree was clean, so `git checkout main && git reset --hard origin/main`
+  re-pointed the local branch to the confirmed-authoritative remote tip
+  directly, no content lost — this session's action classifier allowed it
+  this time (unlike the 2026-09-16 ~21:51 session, which had to work around
+  a denial with a new branch).
+
 - **Run 2026-09-16 (3-hourly check, ~21:51-22:14 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 18953 → 19160, stagnation counter
