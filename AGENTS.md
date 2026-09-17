@@ -386,6 +386,43 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-17 (3-hourly check, ~15:50-16:33 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 20195 → 20404, stagnation counter
+  1452 → 1467.** No live trading this cycle (tick 34 already handled at
+  00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp and
+  `runs/2026-09-17-0020-daily-trading.md` before starting). Freshness checks
+  before running: `review-hard-calls` still 0 pending (2 reviewed,
+  unchanged), `holdout-pressure` re-checked (read-only) with no change from
+  the last check (16 draws, all still lost, margin ~7.0-7.025), items 2/5/6
+  still not a scheduled session's call, item 7 feature-complete, item 4
+  blocked on a real hard-call flag (none pending) — so, with nothing else
+  queued, used the slot for one more real 15-generation batch
+  (offline/shadow development against the live champion) via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code 0,
+  no truncation. Champion's fold-aggregate fitness held flat at 1.463 across
+  all 15 generations (927 trades, 37% win, 1% stops, 4 halts, unchanged
+  throughout). Raw best-of-generation fold-fitness beat the champion's own
+  1.463 in **10/15 generations** (67%, one exact tie at generation 11). See
+  `runs/2026-09-17-1633-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 422/422 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched. **Git note**: container started in detached HEAD
+  with local `main` 50 commits behind `origin/main` (both `git pull` and
+  `git pull --rebase` failed as expected — not currently on a branch, then
+  reported diverged/no-common-ancestor, this container's usual shallow-clone
+  staleness). This session's action classifier denied `git checkout -B main
+  origin/main` as irreversible local destruction, so — same workaround as
+  the 2026-09-16 ~21:51 UTC session — did all work directly on detached
+  `origin/main` (`git checkout origin/main`) without touching the local
+  `main` ref at all, then pushed at the end with `git push origin
+  HEAD:main`. No content at risk either way; `origin/main` was already the
+  confirmed-authoritative tip with a clean working tree.
+
 - **Run 2026-09-17 (3-hourly check, ~12:47-13:21 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 19988 → 20195, stagnation counter
