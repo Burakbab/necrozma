@@ -386,6 +386,41 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-18 (3-hourly check, ~18:47-19:12 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 21898 → 22107, stagnation counter
+  1575 → 1590.** No live trading this cycle (tick 35 already handled at
+  00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp,
+  `2026-09-18T16:16:44+00:00` from the prior 3-hourly check's own evolve
+  batch, and `runs/2026-09-18-0020-daily-trading.md` before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call,
+  item 7 feature-complete, item 4 blocked on a real hard-call flag (none
+  pending), `AGENTS.md` size 250,925 bytes (under the 256KB rotation
+  threshold) — so, with nothing else queued, used the slot for one more
+  real 15-generation batch (offline/shadow development against the live
+  champion) via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness
+  held flat at 1.858 across all 15 generations (970 trades, 41% win, 1%
+  stops, 3 halts, unchanged throughout). Raw best-of-generation fold-fitness
+  beat or tied the champion's own 1.858 in **6/15 generations** (40%: 3
+  strict beats, 3 exact ties), range 1.497-2.057. See
+  `runs/2026-09-18-1912-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 422/422 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; `holdout-pressure` re-checked (read-only, no state
+  change) — margin still rising slowly (last value 7.040), consistent with
+  the already-tracked "Owner decisions pending" drawdown-gate question,
+  nothing new; dashboard rebuilt (`index.html`). Genome still v3 (1d) live,
+  untouched. **Git note**: container started in detached HEAD with local
+  `main` matching `origin/main`'s tip exactly (`723e6a8`, `git fetch`
+  reported "forced update" but no actual divergence); `git checkout -B main
+  origin/main` re-pointed the local branch cleanly, no content lost, no
+  reset needed this cycle.
+
 - **Run 2026-09-18 (3-hourly check, ~15:47-16:19 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 21691 → 21898, stagnation counter
