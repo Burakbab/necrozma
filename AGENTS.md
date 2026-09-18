@@ -386,6 +386,48 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-18 (3-hourly check, ~12:47-13:15 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 21483 → 21691, stagnation counter
+  1545 → 1561.** No live trading this cycle (tick 35 already handled at
+  00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp,
+  `2026-09-18T10:18:54+00:00` from the prior 3-hourly check's own evolve
+  batch, and `runs/2026-09-18-0020-daily-trading.md` before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call,
+  item 7 feature-complete, item 4 blocked on a real hard-call flag (none
+  pending), `AGENTS.md` size 244,990 bytes (under the 256KB rotation
+  threshold) — so, with nothing else queued, used the slot for one more
+  real 15-generation batch (offline/shadow development against the live
+  champion) via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness
+  held flat at 1.858 across all 15 generations (970 trades, 41% win, 1%
+  stops, 3 halts, unchanged throughout). Raw best-of-generation fold-fitness
+  ranged 1.330-2.554, never clearing the promotion bar. See
+  `runs/2026-09-18-1315-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 422/422 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; `holdout-pressure` re-checked (read-only, no state
+  change) — margin still rising slowly (~7.02-7.04), consistent with the
+  already-tracked "Owner decisions pending" drawdown-gate question, nothing
+  new; dashboard rebuilt (`index.html`). Genome still v3 (1d) live,
+  untouched. **Git note**: container started in detached HEAD with local
+  `main` ~50 commits behind `origin/main` (fetch reported "forced update" —
+  the recurring shallow-clone staleness this file already documents, not a
+  real rewrite); working tree was clean, so `git checkout main && git pull
+  --rebase origin main` brought local `main` to `origin/main`'s tip cleanly,
+  no content lost. Also: a verification-step `python3 -m pytest -q > log
+  2>&1 &` wrapped inside a tool-level `run_in_background: true` call hit the
+  exact item 9 anti-pattern (tool reported "completed" almost instantly
+  while the real pytest process kept running detached ~2 more minutes) —
+  caught by polling `kill -0 <pid>` directly rather than trusting the tool's
+  completion signal; worth remembering that item 9's concern applies to any
+  ad hoc `command > log 2>&1 &` inside `run_in_background: true`, not just
+  `evolve`.
+
 - **Run 2026-09-18 (3-hourly check, ~09:48-10:21 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 21276 → 21483, stagnation/boldness
