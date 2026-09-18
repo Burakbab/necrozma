@@ -386,6 +386,42 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-18 (3-hourly check, ~09:48-10:21 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 21276 → 21483, stagnation/boldness
+  counter 1530 → 1545.** No live trading this cycle (tick 35 already handled
+  at 00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp,
+  `2026-09-18T07:19:41+00:00` from the prior 3-hourly check's own evolve
+  batch, and `runs/2026-09-18-0020-daily-trading.md` before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call,
+  item 7 feature-complete, item 4 blocked on a real hard-call flag (none
+  pending) — so, with nothing else queued, used the slot for one more real
+  15-generation batch (offline/shadow development against the live
+  champion) via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation. Champion's fold-aggregate fitness
+  held flat at 1.858 across all 15 generations (970 trades, 41% win, 1%
+  stops, 3 halts, unchanged throughout). Raw best-of-generation fold-fitness
+  beat or tied the champion's own 1.858 in **5/15 generations** (33%: 4
+  strict beats, 1 exact tie). See
+  `runs/2026-09-18-1021-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 422/422 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution verified
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; dashboard rebuilt (`index.html`). Genome still v3
+  (1d) live, untouched. **Git note**: container started in detached HEAD
+  with local `main` at `1c4fbff`, matching `origin/main`'s tip exactly
+  (`git fetch` reported a "forced update" but `git log` on both refs showed
+  identical history at that commit — no actual divergence this cycle); `git
+  checkout main && git reset --hard origin/main` re-pointed the local
+  branch cleanly, no content lost. Also: plain `pip3 install -r
+  requirements.txt -q` timed out twice against `files.pythonhosted.org`;
+  `pip3 install --user -r requirements.txt -q --timeout 60 --retries 5`
+  worked cleanly — a new workaround shape for the same recurring step-1.5
+  flake this file already documents multiple fixes for.
+
 - **Run 2026-09-18 (3-hourly check, ~06:47-07:30 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 21068 → 21276, stagnation/boldness
