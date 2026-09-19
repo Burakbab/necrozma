@@ -386,6 +386,46 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Weekend all-hands 2026-09-19 (~06:15-09:10 UTC): a deeper 60-generation
+  real `evolve` batch, a real concurrent-write collision with a 3-hourly
+  check resolved by reconciling `live_state.json` rather than discarding
+  either side, and a genuinely controlled seed-convergence experiment.**
+  Full reasoning in `runs/2026-09-19-0600-weekend-all-hands.md` and
+  `runs/2026-09-19-0752-evolve-batch-v3-60gen.md`. Headlines: (1) 60-gen
+  batch, no promotion, cumulative candidates 22523 → 23354 (+831),
+  stagnation 1620 → 1680. (2) This session's push collided with the
+  3-hourly check below (`4f48c8d`, pushed first from the same base) —
+  merged via a real two-parent `git merge` (`9e4038c`): `tested` hash sets
+  unioned (23564 total, zero overlap between the two branches' new draws),
+  `stagnation`/`holdout_draws` counters summed across both branches'
+  increments (→ 1696 / 510), `lineage` reconstructed by feeding both
+  branches' genuinely-new entries through the real `core.live._trim_lineage`
+  function, state re-saved via a real `LiveAccount(...).save(...)` call.
+  Verified: pytest 422/422, constitution unchanged, bundle sync clean, every
+  non-lineage/researcher_memory/updated key byte-identical across both
+  branches before merging. **If this happens again, the merge recipe above
+  is mechanical and safe to repeat as long as both sides are pure
+  no-promotion/no-trade evolve diffs** (confirmed by the top-level key diff
+  first) — a promotion or trade on either side would need a different,
+  more careful resolution, not attempted here. (3) The actual deep-focus
+  work: `run_from_files.py evolve-dry-run` already has a `--seed` flag the
+  bundle's own `evolve` lacks (shipped 2026-08-24, never used for an actual
+  experiment); ran three 15-generation dry-run batches (seeds 101/202/303),
+  same calendar day so the 4-year evaluation window is held fixed, isolating
+  seed as the only varying factor for the first time — every prior "lively
+  batch" observation conflated seed and calendar-day drift together. Result:
+  best-of-generation fold-fitness means across the three seeds span only
+  0.044 (1.588-1.632), an order of magnitude tighter than the 0.679 spread
+  `fold-date-sensitivity` found across a 7-day calendar window on
+  2026-09-13. **This answers the half of that question fold-date-sensitivity
+  couldn't**: a "livelier than usual" batch is explained by which day it is,
+  not which seed it drew — seed variance is not a competing explanation.
+  Future sessions: keep checking `fold-date-sensitivity` first on an unusual
+  batch (2026-09-13's guidance, unchanged); this result just confirms seed
+  isn't worth checking as an alternative cause. No code, gene, or champion
+  changed; `live_state.json` confirmed untouched by all three dry-runs.
+  Genome still v3 (1d) live.
+
 - **Run 2026-09-19 (3-hourly check, ~06:47-07:16 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 22523 → 22733, stagnation counter
