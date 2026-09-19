@@ -386,6 +386,38 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-19 (3-hourly check, ~09:46-10:19 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 23354 → 23773, stagnation/boldness
+  counter 1695 → 1710.** No live trading this cycle (tick 36 already
+  handled at 00:20 UTC — confirmed via `live_state.json`'s `updated`
+  timestamp, `2026-09-19T07:51:59+00:00`, from the weekend all-hands 60-gen
+  batch, and `runs/2026-09-19-0020-daily-trading.md` before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call,
+  item 4 blocked on a real hard-call flag (none pending), items 7-12
+  resolved/feature-complete, `AGENTS.md` size 228,135 bytes (well under the
+  256KB rotation threshold) — so, with nothing else queued, used the slot
+  for one more real 15-generation batch (offline/shadow development
+  against the live champion) via `tools/background_runner.py` (`start` +
+  backgrounded `wait`), exit code 0, no truncation, ~26.5 minutes.
+  Champion's fold-aggregate fitness held flat at 1.465 across all 15
+  generations (943 trades, 38% win, 1% stops, 4 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged 1.373-2.007, beating
+  the champion's own 1.465 in most generations but never by enough to
+  clear the promotion-margin bar. See
+  `runs/2026-09-19-1019-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 422/422 both before (baseline) and after
+  `evolve`; direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker,
+  journal, hard_call_reviews byte-identical); constitution manifest
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; `holdout-pressure` re-checked (read-only, no state
+  change) — margin still rising slowly (7.063, was 7.051), nothing new;
+  dashboard rebuilt correctly with `EVO_STATE` set (`index.html` shows
+  23773 challenger ideas tried). Genome still v3 (1d) live, untouched. No
+  git sync issues this cycle (container already at `origin/main`'s tip).
+
 - **Weekend all-hands 2026-09-19 (~06:15-09:10 UTC): a deeper 60-generation
   real `evolve` batch, a real concurrent-write collision with a 3-hourly
   check resolved by reconciling `live_state.json` rather than discarding
