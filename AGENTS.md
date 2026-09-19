@@ -386,6 +386,45 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-19 (3-hourly check, ~00:46-01:20 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 22107 → 22316, stagnation counter
+  1591 → 1606.** No live trading this cycle (tick 36 already handled at
+  00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp,
+  `2026-09-19T00:21:33+00:00`, and `runs/2026-09-19-0020-daily-trading.md`
+  before starting; `tick % 7 = 36 % 7 = 1` so no `evolve` fired as part of
+  that tick either). Freshness checks before running: `review-hard-calls`
+  still 0 pending (2 reviewed, unchanged), items 2/5/6 still not a
+  scheduled session's call, item 4 blocked on a real hard-call flag (none
+  pending), items 0/8/9/10/11/12 resolved/closed, `AGENTS.md` size 218,000
+  bytes (well under the 256KB rotation threshold) — so, with nothing else
+  queued, used the slot for one more real 15-generation batch
+  (offline/shadow development against the live champion) via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code
+  0, no truncation. Champion's fold-aggregate fitness held flat at 1.465
+  across all 15 generations (943 trades, 38% win, 1% stops, 4 halts,
+  unchanged throughout). Best-of-generation fold-fitness beat the
+  champion's own 1.465 in most generations by a comfortable margin (range
+  1.291-2.060) but never by enough to clear the promotion-margin bar. See
+  `runs/2026-09-19-0115-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 422/422 both before (baseline) and after
+  `evolve`; direct top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution manifest md5
+  `1446fa6ee357d02ebaabeb24867a8154` unchanged; `tools/edit_bundle_module.py
+  verify`/`sync --check` both clean; `holdout-pressure` re-checked
+  (read-only, no state change) — margin still rising slowly (last value
+  7.043, was 7.040), nothing new. **Dashboard gotcha hit this cycle:**
+  running `python3 evotrader_dashboard.py` without setting `EVO_STATE`
+  first silently rendered an empty-account page (defaults, no live data)
+  instead of erroring — caught by inspecting the diff before commit, not
+  by any tool failure. Always use the documented
+  `EVO_STATE="$(pwd)/live_state.json" python3 evotrader_dashboard.py` form
+  (AGENTS.md's own "Rebuild the dashboard" step already says this; this
+  cycle just forgot to follow it on the first attempt). Re-ran correctly,
+  `index.html` now shows the real account (5 generation(s) run, 22316
+  challenger ideas tried). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-18 (3-hourly check, ~18:47-19:12 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 21898 → 22107, stagnation counter
