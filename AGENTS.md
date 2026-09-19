@@ -386,6 +386,41 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-19 (3-hourly check, ~03:45-04:14 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 22316 → 22523, stagnation counter
+  1606 → 1620.** No live trading this cycle (tick 36 already handled at
+  00:20 UTC — confirmed via `live_state.json`'s `updated` timestamp,
+  `2026-09-19T01:13:01+00:00`, from the prior 3-hourly check's own evolve
+  batch, and `runs/2026-09-19-0020-daily-trading.md` before starting).
+  Freshness checks before running: `review-hard-calls` still 0 pending (2
+  reviewed, unchanged), items 2/5/6 still not a scheduled session's call,
+  item 4 blocked on a real hard-call flag (none pending), items
+  0/8/9/10/11/12 resolved/closed, `AGENTS.md` size 220,698 bytes (well under
+  the 256KB rotation threshold) — so, with nothing else queued, used the
+  slot for one more real 15-generation batch (offline/shadow development
+  against the live champion) via `tools/background_runner.py` (`start` +
+  backgrounded `wait`), exit code 0, no truncation. Champion's fold-aggregate
+  fitness held flat at 1.465 across all 15 generations (943 trades, 38% win,
+  1% stops, 4 halts, unchanged throughout). Best-of-generation fold-fitness
+  ranged 1.293-1.941, beating the champion's own 1.465 in most generations
+  but never by enough to clear the promotion-margin bar. See
+  `runs/2026-09-19-0414-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 422/422 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution manifest
+  `726dfa4bac85891a` unchanged; `tools/edit_bundle_module.py verify`/`sync
+  --check` both clean; `holdout-pressure` re-checked (read-only, no state
+  change) — margin still rising slowly (7.048, was 7.043), nothing new;
+  dashboard rebuilt correctly with `EVO_STATE` set (`index.html` shows 22523
+  challenger ideas tried). **`background_runner.py wait --pid <pid>` hit
+  again this cycle:** the item-9-documented unsupported-flag usage error
+  (exits 0 almost instantly without actually waiting) recurred — caught by
+  `kill -0 <pid>` showing the process still alive, then re-run with only
+  `--status`/`--timeout`, which waited correctly for the full ~22.7 minutes.
+  Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-19 (3-hourly check, ~00:46-01:20 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 22107 → 22316, stagnation counter
