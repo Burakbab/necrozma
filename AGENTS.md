@@ -409,6 +409,11 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   intended source or name a free historical-data mirror instead (analogous
   to `data-api.binance.vision`) before the first isolated fetcher slice is
   worth writing.
+- **Item 13 (new 2026-09-20) — is `HOLDOUT_SIGMA`'s never-resetting
+  cumulative multiple-testing correction still well-calibrated at 500+
+  draws against one undefeated champion?** See item 13 under "Next steps"
+  below for the full writeup; not decided here, just cross-referenced so it
+  isn't only findable inside a "Current state" log entry.
 
 ---
 
@@ -3631,6 +3636,41 @@ every `evolve` call.
     calling this closed — not just that the file gets smaller. This is
     urgent on a roughly one-week clock, not indefinitely deferrable like
     most of the other open items above.
+
+13. **Flagged 2026-09-20 (weekend all-hands, ~06:05-07:30 UTC, restated
+    plainly at the 09:00 UTC daily discussion): is `HOLDOUT_SIGMA`'s
+    never-resetting cumulative multiple-testing correction still
+    well-calibrated at 500+ draws against one undefeated champion, or does
+    it need a decay/reset design?** `HOLDOUT_SIGMA` was set once, on
+    2026-08-21, calibrated against the sealed-holdout noise measured at that
+    time. The multiple-testing correction it feeds into is cumulative and
+    never resets on a promotion — every candidate ever tried against the
+    current champion counts toward the bar, forever, for as long as that
+    champion stays undefeated. Two independent `boldness-scan` runs this
+    weekend (`runs/2026-09-20-0600-weekend-all-hands.md`,
+    `runs/2026-09-20-0737-boldness-scan-first-result.md`) confirmed this is
+    now the dominant force keeping v3 in place, not weak search or boldness
+    saturating: at 523 cumulative draws `required_margin()` sits at 7.076, a
+    challenger needs roughly **9x** the best raw holdout edge any of 27 real
+    fold-aggregate winners has produced so far, and the margin's size
+    depends only on cumulative draw count, not on candidate quality —
+    nothing about the search process improving would change this. Left to
+    run indefinitely, the bar keeps rising and any future champion faces
+    this same, worse problem after enough evolve cycles.
+
+    **This is not a bug and not a scheduled session's call to make alone.**
+    Whether the never-resetting cumulative design is the intended,
+    permanently-conservative behavior (accept it, keep disclosing the
+    drawdown-gate situation as already agreed 2026-09-08 under the
+    "Owner decisions pending" v3-drawdown item), or whether it warrants a
+    design pass on a decay/reset mechanism (e.g. resetting the draw count on
+    some cadence, or scoping it to a rolling window instead of the
+    champion's entire undefeated lifetime) is a real risk-appetite call
+    about how conservative the promotion bar should be allowed to become
+    over time. Do not decide this via more diagnostics — the numbers are
+    already in; this needs the owner's read on risk appetite, not more
+    evidence-gathering. Once decided, record the decision and outcome here
+    the same way items 2/5/6 above are recorded.
 
 ---
 
