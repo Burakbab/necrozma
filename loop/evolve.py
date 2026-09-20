@@ -807,6 +807,164 @@ def raw_holdout_beats(holdout_draws: list[dict]) -> dict[str, Any]:
     }
 
 
+def boldness_scan(champion: Genome, evaluator: "Evaluator", generations: int = 15,
+                   n_blind: int = 14, boldness_cap: float | None = 20.0,
+                   seed: int | None = 7, initial_tested: set | None = None,
+                   initial_stagnation: int = 0,
+                   initial_holdout_draws: int = 0) -> dict[str, Any]:
+    """Controlled A/B replay of `EvolutionRun.generation()`'s own pipeline,
+    isolating one variable: whether `Researcher.perturb`'s `boldness` argument
+    is left to grow unbounded with stagnation (as `EvolutionRun.generation()`
+    always does, ``boldness=float(self.stagnation)``) or capped at
+    `boldness_cap`.
+
+    `agents.researcher.Researcher.perturb`'s own docstring already works out
+    the saturation arithmetic: `jump_p` (chance a mutated gene gets a fresh
+    uniform redraw across its whole range, vs. a smaller multiplicative
+    jitter) saturates at its 0.75 ceiling by boldness ~4.6, and `genes_per`
+    (how many of `GENE_SPACE`'s genes a single proposal touches at once)
+    saturates at every gene in `GENE_SPACE` by boldness ~2*(len(GENE_SPACE) -
+    n_genes) -- 82 at the default `n_genes=2`. Past both thresholds, growing
+    `boldness` further changes nothing about what `perturb` actually does: a
+    stagnation counter that reaches the hundreds or thousands (the live
+    champion's real `researcher_memory["stagnation"]` has been in this range
+    for a long stretch -- see AGENTS.md "Current state") has had every one of
+    its non-exploitative proposals be a full-genome, mostly-uniform-random
+    redraw for as long as it's been climbing past 82, without that number
+    itself ever being tied to anything a decision was made from -- a
+    hypothesis, not yet a measurement. This function is the measurement: run
+    the identical seeded search twice from the identical starting point
+    (same champion, same `researcher_memory`), once with boldness left
+    unbounded (mirrors real production exactly) and once with it capped, and
+    compare how often each arm's best-of-generation candidate clears the
+    fold-aggregate `accepts()` gate and the sealed holdout -- the two gates a
+    real promotion actually needs.
+
+    A fresh `Researcher(seed)` is constructed for each arm (not the champion's
+    real, already-mutated-state RNG) so both arms draw from the identical
+    random stream at the point they diverge -- the only difference between
+    them is the `boldness` value fed into `propose` each generation, not
+    which mutations get sampled from an already-consumed RNG. The two arms'
+    RNG consumption will drift apart across a generation once `genes_per`
+    differs (a capped, narrower proposal draws fewer random numbers per gene
+    than an uncapped, full-genome one) -- expected and not a flaw, since that
+    drift is itself part of what having a different boldness actually does to
+    the search, not incidental noise to control away.
+
+    Never calls `Genome.save()`/`.promote()`/`EvolutionRun._record()` in
+    either arm -- same read-only contract as `disagreement_scan`. A "shadow
+    promotion" (clearing both gates) only ever updates the in-memory `champ`
+    variable inside `_run`, exactly like `disagreement_scan`'s own `champion
+    = child` line.
+
+    `boldness_cap=None` makes the "capped" arm behave identically to the
+    "uncapped" one (same seed, same everything) -- a built-in self-check that
+    the two `_run` calls are otherwise apples-to-apples, not a real
+    experimental setting.
+    """
+    def _run(cap: float | None) -> dict[str, Any]:
+        researcher = Researcher(seed)
+        champ = champion
+        tested: set = set(initial_tested or ())
+        tested_version = champ.version
+        stagnation = int(initial_stagnation)
+        holdout_draws = int(initial_holdout_draws)
+        best_fold_fitness_per_gen: list[float | None] = []
+        effective_boldness_per_gen: list[float] = []
+        fold_gate_clears = 0
+        holdout_gate_clears = 0
+        shadow_promotions = 0
+
+        for _ in range(generations):
+            diag_run = run_backtest(champ, evaluator.data, 0.0, evaluator.search_end,
+                                    log_detail=True)
+            diag = diagnose(diag_run)
+            champ_eval = evaluator.evaluate(champ)
+            champ_fit = champ_eval["aggregate_fitness"]
+
+            if tested_version != champ.version:
+                tested = set()
+                tested_version = champ.version
+                stagnation = 0
+
+            effective_boldness = float(stagnation) if cap is None else min(float(stagnation), cap)
+            effective_boldness_per_gen.append(effective_boldness)
+            mutations = researcher.propose(champ, diag, n_blind=n_blind, exclude=tested,
+                                            boldness=effective_boldness)
+            for m in mutations:
+                tested.add(researcher.key(m))
+            if not mutations:
+                stagnation += 1
+                best_fold_fitness_per_gen.append(None)
+                continue
+            n_tested = len(tested)
+
+            results = []
+            for m in mutations:
+                child = champ.child(list(m.patch.items()), note=m.hypothesis)
+                ev = evaluator.evaluate(child)
+                results.append((ev["aggregate_fitness"], m, child, ev))
+            results.sort(key=lambda x: (-np.inf if not np.isfinite(x[0]) else -x[0]))
+            best_fit = results[0][0]
+            best_fold_fitness_per_gen.append(None if not np.isfinite(best_fit) else float(best_fit))
+
+            champ_gate_stats = None
+            promoted_this_gen = False
+            for fit, m, child, ev in results[:3]:
+                if not np.isfinite(fit):
+                    continue
+                if champ_gate_stats is None:
+                    champ_gate_stats = dd_corrected_stats(evaluator, champ, champ_eval["stats"])
+                chal_gate_stats = dd_corrected_stats(evaluator, child, ev["stats"])
+                ok, _why = accepts(champ_gate_stats, chal_gate_stats, n_candidates=n_tested,
+                                   complexity_delta=max(0, m.complexity_delta),
+                                   champion_score=champ_fit, challenger_score=fit)
+                if not ok:
+                    continue
+                fold_gate_clears += 1
+
+                ho_champ = evaluator.holdout_check(champ)
+                ho_chal = evaluator.holdout_check(child)
+                holdout_draws += 1
+                if ho_chal.get("error") or ho_champ.get("error"):
+                    continue
+                ho_ok, _ho_why = holdout_accepts(ho_champ.get("fitness", float("-inf")),
+                                                 ho_chal.get("fitness", float("-inf")),
+                                                 n_draws=holdout_draws)
+                if not ho_ok:
+                    continue
+                holdout_gate_clears += 1
+                shadow_promotions += 1
+                champ = child   # in-memory only -- never .promote()'d, never saved
+                promoted_this_gen = True
+                break
+
+            if not promoted_this_gen:
+                stagnation += 1
+
+        return {
+            "final_champion_version": champ.version,
+            "best_fold_fitness_per_gen": best_fold_fitness_per_gen,
+            "effective_boldness_per_gen": effective_boldness_per_gen,
+            "fold_gate_clears": fold_gate_clears,
+            "holdout_gate_clears": holdout_gate_clears,
+            "shadow_promotions": shadow_promotions,
+            "final_stagnation": stagnation,
+            "final_holdout_draws": holdout_draws,
+        }
+
+    return {
+        "boldness_cap": boldness_cap,
+        "generations": generations,
+        "n_blind": n_blind,
+        "seed": seed,
+        "champion_version": champion.version,
+        "initial_stagnation": initial_stagnation,
+        "uncapped": _run(None),
+        "capped": _run(boldness_cap),
+    }
+
+
 def disagreement_scan(champion: Genome, evaluator: "Evaluator", researcher: "Researcher",
                        generations: int = 15, n_blind: int = 14,
                        initial_tested: set | None = None,
