@@ -419,6 +419,49 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-20 (3-hourly check, ~09:45-10:17 UTC): cross-referenced the
+  HOLDOUT_SIGMA cumulative-margin question as a proper numbered item, then
+  15 more real `evolve` generations against the live v3 (1d) champion, no
+  promotion — cumulative candidates tried against v3 rose 25025 → 25233,
+  stagnation/boldness counter 1801 → 1816.** No live trading this cycle
+  (tick 37 already handled at the dedicated 00:20 UTC daily slot — confirmed
+  via `live_state.json`'s `updated` timestamp at session start,
+  `2026-09-20T04:08:55+00:00`, and `runs/2026-09-20-0020-daily-trading.md`;
+  `37 % 7 = 2` so no `evolve` fired as part of that tick either).
+  Documentation first: both the weekend all-hands session and the 09:00 UTC
+  daily discussion had flagged `HOLDOUT_SIGMA`'s never-resetting cumulative
+  multiple-testing correction as an owner's-call question that only existed
+  inside "Current state" log entries — added as item 13 under "Next steps"
+  (restating the 9x-margin finding, not deciding it) and cross-referenced
+  from "Owner decisions pending"; pushed as its own commit (`700b74c`)
+  before starting any evolve work. Freshness checks: `review-hard-calls`
+  still 0 pending (2 reviewed, unchanged), items 0/1/3/7/8/9/10/12
+  resolved/closed/feature-complete, items 2/5/6 still not a scheduled
+  session's call, item 11 (AGENTS.md rotation) not due yet (254,246 bytes
+  after the item-13 commit, under the 256KB threshold but close — worth
+  watching) — so, with nothing else queued, used the rest of the slot for
+  one more real 15-generation batch (offline/shadow development against the
+  live champion) via `tools/background_runner.py` (`start` + backgrounded
+  `wait`), exit code 0, no truncation, ~32 minutes. Champion's
+  fold-aggregate fitness held flat at 1.728 across all 15 generations (960
+  trades, 40% win, 1% stops, 3 halts, unchanged throughout). Best-of-generation
+  fold-fitness ranged 1.248-2.398 (several generations' best exceeded the
+  champion's raw 1.728 fold-fitness but none cleared the actual
+  promotion-margin bar). See `runs/2026-09-20-1017-evolve-batch-v3.md`.
+  Verified before commit: `python3 -m pytest -q` 426/426 both before
+  (baseline) and after `evolve`; direct top-level key diff of
+  `live_state.json` showed only `lineage`/`researcher_memory`/`updated`
+  changed (genome, broker, journal, hard_call_reviews byte-identical);
+  constitution manifest `726dfa4bac85891a` unchanged;
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin still
+  7.076 at draw 523, unchanged, nothing new; dashboard rebuilt correctly
+  with `EVO_STATE` set (`index.html` shows 25233 challenger ideas tried).
+  Genome still v3 (1d) live, untouched. Container started in detached HEAD
+  again (24 commits reachable only from HEAD, all already ancestors of
+  `origin/main`'s tip) — `git checkout main && git merge --ff-only
+  origin/main` fast-forwarded cleanly, nothing lost.
+
 - **Run 2026-09-20 (3-hourly check, ~06:46-07:37 UTC): a second, independent
   `boldness-scan` run (20 generations/arm vs. the weekend all-hands session's
   15) confirms the same no-clear-advantage pattern.** This session started
