@@ -314,14 +314,20 @@ same real champion + `researcher_memory`, one with boldness left unbounded
 often each arm's best candidate clears the fold-aggregate gate and the
 sealed holdout. Read-only, same contract as `disagreement-sweep` (never
 saves, never promotes for real). Same cost class as a real `evolve` batch,
-times two (one full shadow search per arm). First result (2026-09-20): see
-"Current state" -- capping showed no clear advantage in a single
-15-generation/one-seed sample, and the actual bottleneck this run surfaced
-is the sealed-holdout margin itself (7.076 at 523 cumulative draws), not
-the boldness mechanism -- a real 4.199-fold-fitness / holdout-beating
-candidate still failed by a wide margin. `--generations`, `--cap`, `--seed`,
-`--n-blind`, `--fresh` (blank-slate `researcher_memory` instead of the
-live one) all match `disagreement-sweep`'s own flag conventions.
+times two (one full shadow search per arm). `--generations` (default 20),
+`--cap`, `--seed`, `--n-blind`, `--fresh` (blank-slate `researcher_memory`
+instead of the live one) all match `disagreement-sweep`'s own flag
+conventions. Run twice so far, both seeded from the same real
+`researcher_memory` (tested=25025/stagnation=1801/holdout_draws=522) but at
+different generation counts and by two independent sessions that collided on
+the same idea within the same hour: a 15-generation run found capping showed
+no clear fold-gate advantage (3/15 vs 2/15, capped ahead) and, more
+importantly, that the actual bottleneck is the sealed-holdout margin itself
+(7.076 at 523 cumulative draws) rather than the boldness mechanism -- a real
+4.199-fold-fitness / holdout-beating candidate still failed by a wide margin;
+a 20-generation run found the same pattern at a different length (3/20
+uncapped vs 4/20 capped, 0/20 vs 0/20 on the sealed holdout). See "Current
+state" for both results in full.
 
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
@@ -407,6 +413,35 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 ---
 
 ## Current state
+
+- **Run 2026-09-20 (3-hourly check, ~06:46-07:37 UTC): a second, independent
+  `boldness-scan` run (20 generations/arm vs. the weekend all-hands session's
+  15) confirms the same no-clear-advantage pattern.** This session started
+  from the same commit (`b40f716`) that shipped the diagnostic and,
+  independently, also found it un-run and undocumented in this file's
+  Commands list — both this session and the weekend all-hands entry below
+  reached for the same idea within the same hour and collided on push
+  (resolved by keeping both real results rather than discarding either).
+  Freshness checks first: `review-hard-calls` still 0 pending, items
+  0/1/3/7/8/9/10/12 resolved/closed/feature-complete, items 2/5/6 not a
+  scheduled session's call, item 11 (AGENTS.md rotation) not due (244,177
+  bytes). Ran `boldness-scan` with all defaults (20 generations/arm, cap=20,
+  seed=7, n_blind=14, seeded from the same live `researcher_memory`:
+  tested=25025, stagnation=1801, holdout_draws=522). Result: **UNCAPPED**
+  (mirrors production, effective boldness 1801→1820) cleared the
+  fold-aggregate gate in 3/20 generations, best-of-generation fold-fitness
+  range 1.436-4.199 (one outlier generation at 4.199, rest clustered
+  1.4-2.2); **CAPPED at 20** cleared the fold-aggregate gate in 4/20
+  generations, range 1.338-2.349. Both arms: 0/20 sealed-holdout gate clears
+  (no shadow promotions), final stagnation counter 1821, final in-memory
+  champion unchanged at v3. Same qualitative read as the weekend all-hands
+  15-generation run below (capping shows no clear advantage on one seed) at
+  a different generation count — two independent draws now point the same
+  way, though still not a seed sweep (see the weekend session's own
+  follow-up note on that). Verified: `git status`/`git diff --stat
+  live_state.json` both clean (read-only contract held); `python3 -m
+  pytest -q` 426/426 after the run. See
+  `runs/2026-09-20-0737-boldness-scan-first-result.md`.
 
 - **Weekend all-hands 2026-09-20 (~06:05-07:30 UTC): shipped `boldness-scan`,
   a new read-only diagnostic, then used it to find that the real bottleneck
