@@ -120,6 +120,7 @@ python3 evotrader_bundle.py fold-dd-blindspot     # does the fold-merged maxDD g
 python3 evotrader_bundle.py succession-audit      # would each past real champion pass today's dd-corrected drawdown gate if reinstated?
 python3 evotrader_bundle.py promotion-excess-check  # did either real promotion depend on raw fitness vs. excess-return disagreeing?
 python3 evotrader_bundle.py live-benchmark        # the live account's own real return vs. equal-weight buy-and-hold, same real window
+python3 evotrader_bundle.py boldness-scan         # does capping the stagnation-driven boldness change fold/holdout gate-clear odds?
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -301,6 +302,27 @@ class as `fold-scheme`/`rolling-folds` (one backtest per window per scheme).
 First result (2026-08-20): the **mean term** varies more than the penalty term
 across schemes, for both v3 and v1 — see "Current state".
 
+`boldness-scan` (added 2026-09-20, weekend all-hands) tests whether
+`agents.researcher.Researcher.perturb`'s `boldness` argument -- fed directly
+from the champion's stagnation counter, unbounded, and already saturated
+(every gene mutated at once, mostly-uniform-random) by boldness ~82 per
+`perturb`'s own docstring -- still does anything useful once stagnation is
+in the hundreds or thousands (the live champion's is 1801). Runs
+`loop.evolve.boldness_scan`: two identically-seeded shadow searches from the
+same real champion + `researcher_memory`, one with boldness left unbounded
+(mirrors production) and one capped at `--cap` (default 20), reporting how
+often each arm's best candidate clears the fold-aggregate gate and the
+sealed holdout. Read-only, same contract as `disagreement-sweep` (never
+saves, never promotes for real). Same cost class as a real `evolve` batch,
+times two (one full shadow search per arm). First result (2026-09-20): see
+"Current state" -- capping showed no clear advantage in a single
+15-generation/one-seed sample, and the actual bottleneck this run surfaced
+is the sealed-holdout margin itself (7.076 at 523 cumulative draws), not
+the boldness mechanism -- a real 4.199-fold-fitness / holdout-beating
+candidate still failed by a wide margin. `--generations`, `--cap`, `--seed`,
+`--n-blind`, `--fresh` (blank-slate `researcher_memory` instead of the
+live one) all match `disagreement-sweep`'s own flag conventions.
+
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
 
@@ -385,6 +407,53 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 ---
 
 ## Current state
+
+- **Weekend all-hands 2026-09-20 (~06:05-07:30 UTC): shipped `boldness-scan`,
+  a new read-only diagnostic, then used it to find that the real bottleneck
+  behind 1801 stagnant generations is the sealed-holdout margin, not the
+  boldness/search mechanism this session set out to blame.** Full reasoning
+  in `runs/2026-09-20-0600-weekend-all-hands.md`. `agents.researcher.
+  Researcher.perturb`'s own docstring already notes `boldness` (fed straight
+  from the stagnation counter, unbounded) saturates by ~82 — past that every
+  blind proposal is a full-genome, mostly-uniform-random redraw — but nobody
+  had measured whether that costs anything real. New `loop.evolve.
+  boldness_scan` (tested, `tests/test_boldness_scan.py`, 4 tests, full suite
+  426/426) runs two identically-seeded shadow searches from the real
+  champion + `researcher_memory`, one with boldness unbounded (mirrors
+  production) and one capped, comparing fold/holdout gate-clear rates.
+  Shipped and pushed as its own commit before running it. Real run
+  (`--generations 15 --cap 20 --seed 7`, seeded from real `researcher_memory`
+  tested=25025/stagnation=1801/holdout_draws=522): capped cleared the
+  fold-gate slightly more often (3/15 vs 2/15) but neither promoted — one
+  seed, too small to call a real effect. The informative part: reproduced
+  generation 5 of the uncapped arm directly against the real `EvolutionRun`
+  (caught and fixed a bug in the first reproduction attempt — forgetting
+  `initial_champion_version` spuriously resets `tested`/`stagnation` to
+  zero) and found its top candidate (fold-fitness 4.199 vs champion's 1.728,
+  a full-genome redraw at boldness 1805) genuinely beat the champion's raw
+  sealed-holdout fitness (3.070 vs 2.309, +0.761) and *still* failed:
+  `required_margin` at 523 cumulative holdout draws is 7.076 — nowhere close
+  to what 0.761 clears. Cross-checked against real (non-shadow) lineage via
+  `holdout-pressure`: 27 real fold-aggregate winners have reached the
+  holdout against v3 and lost every time (margin 7.043→7.075 across draws
+  493-522), one of them an even bigger fold-fitness outlier (4.940, draw
+  502) than this session's shadow find — so this pattern is real and already
+  happening in production, not a shadow-only artifact. **Conclusion, stated
+  as a number for the first time rather than "margin still rising slowly,
+  nothing new"**: at 523 draws a challenger needs roughly 9x the raw
+  holdout edge this session's best real example produced before v3 can be
+  replaced through the normal search path — this is `MULTIPLE_TESTING_SIGMA`
+  / `HOLDOUT_SIGMA`'s cumulative-draws design working as intended (see "Two
+  flaws" below), not a bug, and not something capping boldness would fix
+  (the margin's size doesn't depend on where the candidate that reaches it
+  came from). Two follow-ups deliberately left open, not attempted this
+  session: (1) whether capping boldness changes the fold-gate-clear rate in
+  a statistically real way needs many more generations or seeds than one
+  15-gen run; (2) whether `HOLDOUT_SIGMA` is still well-calibrated at 500+
+  cumulative draws is a constitution-adjacent policy question, the owner's
+  call, same category as item 2's `MULTIPLE_TESTING_SIGMA` thread. No code
+  touching the live champion, `live_state.json`, or the constitution
+  changed; genome still v3 (1d) live, untouched throughout.
 
 - **Run 2026-09-20 (3-hourly check, ~03:45-04:11 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
