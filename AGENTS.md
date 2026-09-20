@@ -419,6 +419,41 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-20 (3-hourly check, ~12:47-13:32 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 25233 → 25439, stagnation/boldness
+  counter 1816 → 1831.** No live trading this cycle (tick 37 already
+  handled at the dedicated 00:20 UTC daily slot — confirmed via
+  `live_state.json`'s `updated` timestamp at session start,
+  `2026-09-20T10:14:33+00:00`, from the prior 3-hourly check's own evolve
+  batch, and `runs/2026-09-20-0020-daily-trading.md`). Freshness checks
+  before running: `review-hard-calls` still 0 pending (2 reviewed,
+  unchanged), items 2/5/6 still not a scheduled session's call, item 4
+  blocked on a real hard-call flag (none pending), item 13 (`HOLDOUT_SIGMA`
+  cumulative-margin question) still the owner's call, `AGENTS.md` size
+  ~257KB — close to, but still under, the 256KB (262,144-byte) rotation
+  threshold, worth continued watching but not rotated this cycle — so, with
+  nothing else queued, used the slot for one more real 15-generation batch
+  (offline/shadow development against the live champion) via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code 0,
+  no truncation. Champion's fold-aggregate fitness held flat at 1.728 across
+  all 15 generations (960 trades, 40% win, 1% stops, 3 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged 1.515-2.398, never
+  clearing the promotion-margin bar. See
+  `runs/2026-09-20-1332-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 426/426 both before (baseline) and after `evolve`; direct
+  top-level key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); constitution manifest `726dfa4bac85891a`
+  unchanged; `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin rose
+  slightly (7.078, was 7.076) at draw 524, nothing new; dashboard rebuilt
+  correctly with `EVO_STATE` set (`index.html` shows 25439 challenger ideas
+  tried). Genome still v3 (1d) live, untouched. Container started in
+  detached HEAD again (26 commits behind `origin/main`, no local commits of
+  its own) — `git checkout main && git pull origin main` fast-forwarded
+  cleanly, nothing lost.
+
 - **Run 2026-09-20 (3-hourly check, ~09:45-10:17 UTC): cross-referenced the
   HOLDOUT_SIGMA cumulative-margin question as a proper numbered item, then
   15 more real `evolve` generations against the live v3 (1d) champion, no
