@@ -419,6 +419,34 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-21 (same 3-hourly check, ~01:00-01:30 UTC): 15 more real
+  `evolve` generations against the live v3 (1d) champion, no promotion —
+  cumulative candidates tried against v3 rose 25854 → 26059,
+  stagnation/boldness counter 1860 → 1875.** Ran after the hard-call
+  review below (same session), with nothing else queued (`review-hard-calls`
+  0 pending, 3 reviewed; items 2/5/6/13 still not a scheduled session's
+  call; `AGENTS.md` size 228,180 bytes, well under the 256KB threshold) —
+  used the rest of the slot for one more real 15-generation batch
+  (offline/shadow development against the live champion) via
+  `tools/background_runner.py` (`start` + backgrounded `wait`), exit code
+  0, no truncation, ~30 minutes. Champion's fitness held flat at 1.636
+  across all 15 generations (943 trades, 38% win, 1% stops, 4 halts,
+  unchanged throughout) — this figure (and trade count) differs from the
+  ~1.728/960-trade figure in recent prior entries because the rolling
+  backtest window advanced by tick 38's new daily bar, not because the
+  champion changed; genome and all trading-relevant state are
+  byte-identical before/after. Best-of-generation fitness ranged
+  1.469-2.413, never clearing the promotion-margin bar. See
+  `runs/2026-09-21-0122-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 426/426 after the batch; top-level key diff of
+  `live_state.json` showed only `lineage`/`researcher_memory`/`updated`
+  changed (genome, broker, journal, hard_call_reviews byte-identical);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin rose
+  slightly (7.082, was 7.078) at draw 528, nothing new; dashboard rebuilt
+  correctly with `EVO_STATE` set (`index.html` shows 26059 challenger
+  ideas tried). Genome still v3 (1d) live, untouched.
+
 - **Run 2026-09-21 (3-hourly check, ~00:46-00:55 UTC): the first real
   hard-call review — tick 38's lone-voice ICPUSDT buy — reconstructed by
   hand and approved.** No live trading this cycle (tick 38 already handled
