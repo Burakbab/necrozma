@@ -419,6 +419,45 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-21 (3-hourly check, ~00:46-00:55 UTC): the first real
+  hard-call review — tick 38's lone-voice ICPUSDT buy — reconstructed by
+  hand and approved.** No live trading this cycle (tick 38 already handled
+  at the dedicated 00:20 UTC daily slot — confirmed via `live_state.json`'s
+  `updated` timestamp at session start, `2026-09-21T00:22:31+00:00`, and
+  `runs/2026-09-21-0020-daily-trading.md`; `38 % 7 = 3` so no `evolve`
+  fired as part of that tick either). `review-hard-calls` (no args) showed
+  1 bar pending — the first live tick ever flagged `is_hard_call: true`
+  since that infrastructure shipped 2026-08-17 (item 4's "flag hard calls"
+  half); items 16 and 32's earlier reviews were both prompted by a
+  scheduled session going looking, not a real flag. Reconstructed
+  `RiskJudge.rule`'s scoring by hand against v3's evolved genes
+  (`base_size_pct` 0.2392, `lone_voice_scale` 1.4791, `two_agree_bonus`
+  1.2, `max_position_pct` 0.25, `cash_floor_pct` 0.3503), matched to the
+  exact cent: of 14 buy candidates, ICPUSDT (lone-voice, share 1/3, conv
+  0.858, score 1.2691) was genuinely the top-scored, and its target hit
+  the 25% position cap first, so `full_amount = min(0.25*equity,
+  cash_avail) = cash_avail` exactly = $3012.9506894161623, matching the
+  real order's $3012.95 to the cent and leaving $0.00 deployable — which
+  is why every other candidate that bar, including higher-conviction
+  FETUSDT, was correctly vetoed "no room" (cash-floor exhaustion by the
+  single highest-scored order, not a bug). One observation, not a defect:
+  the underlying signal's slope (+0.34%) was nearly flat next to every
+  other candidate's that bar (+1.55% to +17.18%) — a legitimate
+  confirmed-trend read by `consult_moderate.min_slope`'s own threshold
+  (0, any nonnegative slope qualifies), just weaker on the momentum axis
+  than its lone-voice score alone suggests. Recorded verdict "approve" via
+  `--tick 38 --verdict approve --notes '...'` (full arithmetic in
+  `runs/2026-09-21-0051-first-real-hard-call-review.md`);
+  `review-hard-calls` now reports 0 pending, 3 reviewed (ticks 16, 32, 38).
+  Verified before commit: `python3 -m pytest -q` 426/426; top-level key
+  diff of `live_state.json` showed only `updated`/`hard_call_reviews`
+  changed (genome, broker, journal, researcher_memory, lineage
+  byte-identical); constitution manifest `726dfa4bac85891a` unchanged;
+  dashboard rebuilt correctly with `EVO_STATE` set. Genome still v3 (1d)
+  live, untouched. Container started with `main` checked out but 33
+  commits behind `origin/main` (not detached HEAD this time) — `git pull
+  origin main` fast-forwarded cleanly, nothing lost.
+
 - **Run 2026-09-20 (3-hourly check, ~21:46-22:16 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 25646 → 25854, stagnation/boldness
@@ -2151,7 +2190,9 @@ every `evolve` call.
   scheduled session should read the flagged case, reason about it inline,
   and record a verdict via `--tick`/`--verdict`/`--notes` — that first real
   review is the thing this infrastructure was built for, not more tooling
-  around it.
+  around it. **Fulfilled 2026-09-21 (3-hourly check, ~00:46-00:55 UTC):**
+  tick 38 was the first live tick to actually flag; see the top "Current
+  state" entry above for the full reconstruction and verdict.
 
 0. **Closed 2026-08-30 (weekend all-hands, 06:00 UTC): the fitness-vs-excess-return
    selection-metric question — the thing every entry below this line kept
