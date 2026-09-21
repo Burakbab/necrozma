@@ -419,6 +419,47 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-21 (3-hourly check, ~18:46-19:20 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 27099 → 27307, stagnation/boldness
+  counter 1950 → 1965.** No live trading this cycle (tick 38 already handled
+  at the dedicated 00:20 UTC daily slot — confirmed via `live_state.json`'s
+  `updated` timestamp at session start, `2026-09-21T16:16:53+00:00`, from
+  the prior 3-hourly check's own evolve batch, and
+  `runs/2026-09-21-0020-daily-trading.md`). Freshness checks before
+  running: `review-hard-calls` still 0 pending (3 reviewed, unchanged),
+  items 2/5/6/13 still not a scheduled session's call, item 7 (bundle
+  unflatten) explicitly optional/last, `AGENTS.md` size 240,997 bytes —
+  under the 256KB threshold — so, with nothing else queued, used the slot
+  for one more real 15-generation batch (development against the live
+  champion) via `tools/background_runner.py` (`start` + separate `wait`),
+  exit code 0, no truncation, ~34 minutes. One operational snag this cycle:
+  the first `wait` call was mistakenly given an extra `--log` flag that
+  subcommand doesn't accept, so argparse errored immediately; piping that
+  call through `tail -60` masked the failure by surfacing `tail`'s own exit
+  code (0) instead. Caught by checking `ps` directly (the evolve process
+  was still genuinely running), fixed by re-running `wait` with only the
+  flags it defines — no output or state was lost, the child had been
+  writing straight to `--log` throughout regardless. See
+  `runs/2026-09-21-1920-evolve-batch-v3.md` for the full note; flagging here
+  since this is the same footgun class item 9 named (piping a backgrounded
+  command's own status/wait call through something that can substitute a
+  different exit code), just on the `wait` side rather than `start`.
+  Champion's fold-aggregate fitness held flat at 1.636 across all 15
+  generations (943 trades, 38% win, 1% stops, 4 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged 1.472-2.637, never
+  clearing the promotion-margin bar. Verified before commit: `python3 -m
+  pytest -q` 426/426 both before (baseline) and after `evolve`; top-level
+  key diff of `live_state.json` showed only
+  `lineage`/`researcher_memory`/`updated` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `tools/edit_bundle_module.py
+  verify`/`sync --check` both clean; `holdout-pressure` re-checked
+  (read-only, no state change) — margin rose slightly (7.102, was 7.097) at
+  draw 547, nothing new; dashboard rebuilt correctly with `EVO_STATE` set
+  (`index.html` shows 27307 challenger ideas tried). Genome still v3 (1d)
+  live, untouched. Container started already on `main` at `origin/main`'s
+  tip after a 41-commit fast-forward pull (detached HEAD on arrival), nothing lost.
+
 - **Run 2026-09-21 (3-hourly check, ~15:46-16:20 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 26893 → 27099, stagnation/boldness
