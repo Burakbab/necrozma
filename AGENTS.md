@@ -419,6 +419,39 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-22 (3-hourly check, ~12:47-13:18 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 28137 → 28344, stagnation/boldness
+  counter 2026 → 2041.** No live trading this cycle (tick 39 already handled
+  at the dedicated 00:20 UTC daily slot, no new bar closed since — confirmed
+  via `live_state.json`'s `updated` timestamp at session start,
+  `2026-09-22T07:16:25+00:00`, matching the prior 3-hourly check's own
+  evolve batch, `runs/2026-09-22-0719-evolve-batch-v3.md`). Freshness checks
+  before running: `review-hard-calls` still 0 pending (3 reviewed,
+  unchanged), items 6/13 still owner decisions, item 7 explicitly
+  optional/last, items 2/5/9/10/12 resolved/parked, `AGENTS.md` size 225,584
+  bytes — comfortably under the 256KB threshold after last cycle's archival —
+  so, with nothing else queued, used the slot for one more real
+  15-generation batch via `tools/background_runner.py` (`start` + separate
+  `wait`), exit code 0, no truncation, ~25 minutes. Champion's
+  fold-aggregate fitness held flat at 1.573 across all 15 generations (947
+  trades, 38% win, 1% stops, 4 halts, unchanged throughout). Best-of-generation
+  fold-fitness ranged 1.531-2.012, never clearing the promotion-margin bar.
+  See `runs/2026-09-22-1318-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 426/426 both before (baseline) and after `evolve`;
+  top-level key diff of `live_state.json` (checked directly in Python, not
+  just eyeballed) showed only `updated`/`researcher_memory`/`lineage`
+  changed (genome, broker, journal, hard_call_reviews byte-identical);
+  `lineage` length unchanged at 202 (bounded ring buffer, no new promotion
+  attempt recorded); `tools/edit_bundle_module.py verify`/`sync --check`
+  both clean; `holdout-pressure` re-checked (read-only, no state change) —
+  margin rose slightly (7.111, was 7.109) at draw 556, same slow-rise
+  pattern already tracked under item 13, nothing new; dashboard rebuilt
+  with `EVO_STATE` set (`index.html` shows 28344 challenger ideas tried).
+  Genome still v3 (1d) live, untouched. Container arrived on `main` already
+  at `origin/main`'s tip in a detached HEAD state (identical commit);
+  `git checkout main` resolved it cleanly, no pull needed, nothing lost.
+
 - **Run 2026-09-22 (3-hourly check, ~09:45-09:52 UTC): resolved item 11 —
   archived the next oldest 2-day slice of this log (2026-09-15 ~00:48
   through 2026-09-16 ~21:51 UTC) into `AGENTS_ARCHIVE_2026-09-15_to_2026-09-16.md`,
