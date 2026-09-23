@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 39,
-  "updated": "2026-09-22T22:23:26+00:00",
+  "ticks": 40,
+  "updated": "2026-09-23T00:22:41+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 4845.136282117542,
+    "cash": 6508.594265240671,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -165,19 +165,19 @@
         "qty": 1705.942565127021,
         "avg_cost": 1.0025009999999999,
         "opened_ts": "2026-09-14 00:00:00+00:00",
-        "peak_price": 1.207,
-        "bars_held": 7,
+        "peak_price": 1.219,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "NEARUSDT": {
         "symbol": "NEARUSDT",
-        "qty": 758.9777149300658,
+        "qty": 379.4888574650329,
         "avg_cost": 3.717858,
         "opened_ts": "2026-09-18 00:00:00+00:00",
-        "peak_price": 4.271,
-        "bars_held": 3,
+        "peak_price": 4.426,
+        "bars_held": 4,
         "entry_agents": [
           "consult_risky"
         ]
@@ -187,8 +187,8 @@
         "qty": 100.40204038255801,
         "avg_cost": 8.842419,
         "opened_ts": "2026-09-18 00:00:00+00:00",
-        "peak_price": 8.995,
-        "bars_held": 3,
+        "peak_price": 10.226,
+        "bars_held": 4,
         "entry_agents": [
           "consult_risky"
         ]
@@ -198,8 +198,8 @@
         "qty": 239.94984204156907,
         "avg_cost": 0.17658824999999997,
         "opened_ts": "2026-09-19 00:00:00+00:00",
-        "peak_price": 0.205,
-        "bars_held": 2,
+        "peak_price": 0.2097,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -210,7 +210,7 @@
         "avg_cost": 2.9204594999999998,
         "opened_ts": "2026-09-20 00:00:00+00:00",
         "peak_price": 3.031,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -716,6 +716,16 @@
         "ref_price": 2.919,
         "fee": 3.0129506894161624,
         "reason": "consult_moderate: confirmed trend: ma-spread +11.4%, slope +0.34%, rsi 59 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-09-22 00:00:00+00:00",
+        "symbol": "NEARUSDT",
+        "side": "sell",
+        "qty": 379.4888574650329,
+        "price": 4.387805,
+        "ref_price": 4.39,
+        "fee": 1.6651231062293588,
+        "reason": "consult_conservative: mean reversion complete: rsi 78"
       }
     ],
     "closed": [
@@ -1012,6 +1022,21 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "NEARUSDT",
+        "qty": 379.4888574650329,
+        "entry_price": 3.717858,
+        "exit_price": 4.387805,
+        "entry_ts": "2026-09-18 00:00:00+00:00",
+        "exit_ts": "2026-09-22 00:00:00+00:00",
+        "pnl": 252.57229848589705,
+        "pnl_pct": 0.18019703818704214,
+        "bars_held": 4,
+        "exit_reason": "consult_conservative: mean reversion complete: rsi 78",
+        "entry_agents": [
+          "consult_risky"
+        ]
       }
     ],
     "nav_history": [
@@ -1170,9 +1195,13 @@
       [
         "2026-09-21 00:00:00+00:00",
         14221.973873559411
+      ],
+      [
+        "2026-09-22 00:00:00+00:00",
+        14475.53366042383
       ]
     ],
-    "peak_nav": 14221.973873559411,
+    "peak_nav": 14475.53366042383,
     "halted": false,
     "halt_bars_left": 0,
     "halt_count": 0,
@@ -8845,6 +8874,297 @@
           }
         ],
         "fills": [],
+        "notes": "regime bull (scale 1.00), breadth 96%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-09-23T00:22:41+00:00",
+      "bar": "2026-09-22 00:00:00+00:00",
+      "tick": 40,
+      "nav_before": 14475.53,
+      "nav_after": 14451.04,
+      "cash": 6508.59,
+      "cash_before": 4845.14,
+      "positions": {
+        "DOTUSDT": 2074.43,
+        "NEARUSDT": 1665.96,
+        "UNIUSDT": 1040.37,
+        "FETUSDT": 50.2,
+        "ICPUSDT": 3111.5
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-09-22 00:00:00+00:00",
+        "nav": 14475.53366042383,
+        "regime": "bull",
+        "breadth": 0.9629629629629629,
+        "cash_pct": 0.3347121008301176,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.43,
+              "why": "at/near range high (breakout -0.3%), momentum rank 0.38, slope +4.46%"
+            },
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.47,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.54, slope +5.24%"
+            },
+            {
+              "symbol": "DOGEUSDT",
+              "side": "buy",
+              "conviction": 0.45,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.46, slope +4.25%"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.41,
+              "why": "at/near range high (breakout -1.4%), momentum rank 0.31, slope +3.68%"
+            },
+            {
+              "symbol": "AVAXUSDT",
+              "side": "buy",
+              "conviction": 0.549,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.85, slope +14.87%"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.48,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.58, slope +4.57%"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "buy",
+              "conviction": 0.579,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.96, slope +9.91%"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.569,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.92, slope +13.86%"
+            },
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout +0.0%), momentum rank 1.00, slope +20.76%"
+            },
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.559,
+              "why": "at/near range high (breakout -0.3%), momentum rank 0.88, slope +9.62%"
+            },
+            {
+              "symbol": "FETUSDT",
+              "side": "buy",
+              "conviction": 0.519,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.73, slope +5.65%"
+            },
+            {
+              "symbol": "XLMUSDT",
+              "side": "buy",
+              "conviction": 0.46,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.50, slope +5.23%"
+            },
+            {
+              "symbol": "SHIBUSDT",
+              "side": "buy",
+              "conviction": 0.42,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.35, slope +4.12%"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "buy",
+              "conviction": 0.539,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.81, slope +8.10%"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.499,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.65, slope +7.02%"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.489,
+              "why": "at/near range high (breakout -0.7%), momentum rank 0.62, slope +2.38%"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.44,
+              "why": "at/near range high (breakout -0.3%), momentum rank 0.42, slope +2.49%"
+            },
+            {
+              "symbol": "HBARUSDT",
+              "side": "buy",
+              "conviction": 0.509,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.69, slope +7.25%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.812,
+              "why": "confirmed trend: ma-spread +6.6%, slope +5.24%, rsi 57 in band"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +11.9%, slope +4.57%, rsi 66 in band"
+            },
+            {
+              "symbol": "DOTUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +17.9%, slope +3.87%, rsi 62 in band"
+            },
+            {
+              "symbol": "FETUSDT",
+              "side": "buy",
+              "conviction": 0.869,
+              "why": "confirmed trend: ma-spread +13.1%, slope +5.65%, rsi 61 in band"
+            },
+            {
+              "symbol": "XLMUSDT",
+              "side": "buy",
+              "conviction": 0.8,
+              "why": "confirmed trend: ma-spread +8.0%, slope +5.23%, rsi 56 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.835,
+              "why": "confirmed trend: ma-spread +8.0%, slope +2.38%, rsi 59 in band"
+            },
+            {
+              "symbol": "HBARUSDT",
+              "side": "buy",
+              "conviction": 0.858,
+              "why": "confirmed trend: ma-spread +8.8%, slope +7.25%, rsi 68 in band"
+            }
+          ],
+          "consult_conservative": [
+            {
+              "symbol": "NEARUSDT",
+              "side": "sell",
+              "conviction": 0.7,
+              "why": "mean reversion complete: rsi 78"
+            }
+          ]
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "NEARUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_conservative: mean reversion complete: rsi 78"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "same-bar exit takes precedence"
+          },
+          {
+            "symbol": "DOTUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "FETUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "HBARUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "AVAXUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "LTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ADAUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "NEARUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 379.4888574650329,
+            "price": 4.387805,
+            "reason": "consult_conservative: mean reversion complete: rsi 78"
+          }
+        ],
         "notes": "regime bull (scale 1.00), breadth 96%",
         "hard_call": {
           "is_hard_call": false,
