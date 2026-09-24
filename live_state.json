@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
   "ticks": 41,
-  "updated": "2026-09-24T00:21:48+00:00",
+  "updated": "2026-09-24T00:47:17+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -113432,6 +113432,16 @@
       "notes": "Reconstructed RiskJudge.rule scoring by hand against v3's evolved risk_judge genes (base_size_pct 0.2392, lone_voice_scale 1.4791, two_agree_bonus 1.2, max_position_pct 0.25, cash_floor_pct 0.3503), matched to the exact cent. 14 buy candidates proposed across consult_risky/consult_moderate (consult_conservative proposed none this bar). ICPUSDT was lone-voice (only consult_moderate, share 1/3=0.33, conv 0.858, score 0.858*1.4791=1.2691) and genuinely the top-scored candidate -- higher than every two-consult-agreement symbol (e.g. NEARUSDT 0.8697, UNIUSDT 0.8416) and higher than the next lone-voice candidate, FETUSDT (conv 0.812, score 1.2010). cash_avail = equity*(cash_pct 0.568134 - cash_floor_pct 0.3503) = $3012.9506894161623 to the digit. target_icp = min(base_size_pct*score*regime_scale, max_position_pct) = min(0.3036, 0.25) = 0.25 (position-cap-bound, not cash-bound), so full_amount = min(0.25*equity, cash_avail) = cash_avail exactly = $3012.9506894161623, matching the real order's $3012.95 to the cent and leaving cash_avail_after = $0.00. That is why every other candidate that bar -- including FETUSDT, which scored second-highest and would have cleared on conviction alone -- was correctly vetoed 'no room: size cap or cash floor': cash-floor exhaustion by the single highest-scored order, not a processing-order bug or a ranking anomaly. Size (21.8% of equity) sits within both max_position_pct (25%) and hard_max_position_pct (35%). One nuance worth flagging as an observation (not a defect): consult_moderate's own rationale was 'confirmed trend: ma-spread +11.4%, slope +0.34%, rsi 59 in band' -- the ma-spread extension (11.4%) is unremarkable next to this bar's other confirmed-trend reads, but the slope (+0.34%) is nearly flat, far weaker than every other candidate's slope that bar (range +1.55% to +17.18%). consult_moderate's min_slope gene is 0 (any nonnegative slope qualifies), so this passed as an ordinary confirmed-trend signal on wide-but-not-accelerating MA separation, not a momentum breakout -- a legitimate signal by the evolved gene's own threshold, just a weaker one on the momentum axis than its lone-voice score alone suggests. Same structural pattern as ticks 16 and 32's reviews (lone_voice_scale > two_agree_bonus lets a single confident consultant outscore weaker multi-agree candidates once cash is scarce). Nothing to correct.",
       "reasons": [
         "lone-voice buy on ICPUSDT (agreement 0.33) is the only order the bar produced (0.86 conviction, 21.8% of equity)"
+      ]
+    },
+    {
+      "tick": 41,
+      "bar": "2026-09-23 00:00:00+00:00",
+      "reviewed_at": "2026-09-24T00:47:17+00:00",
+      "verdict": "approve",
+      "notes": "Reconstructed RiskJudge.rule by hand against v3's evolved genes (lone_voice_scale=1.4791, two_agree_bonus=1.2, base_size_pct=0.2392, cash_floor_pct=0.3503, max_position_pct=0.25). UNIUSDT (lone-voice, moderate conv 0.915) scored 0.915*1.4791=1.3534, genuinely the top-scored of 10 buy candidates that bar -- ahead of LTCUSDT's two-agree score (0.6835*1.2=0.8202, diluted by a weak 0.509 risky signal averaged in). Its target hit max_position_pct (0.25) then cash_avail (equity*(cash_pct-cash_floor_pct)=14021.60*0.11388=1596.83), matching the real fill amount $1596.83 to the cent -- deployed 100% of remaining cash and correctly vetoed all 9 other candidates (DOTUSDT, FETUSDT, FILUSDT, ICPUSDT, HBARUSDT, ATOMUSDT, SOLUSDT, INJUSDT, LTCUSDT, in that exact score-descending order matching the journal's veto list) as 'no room'. Cash-floor exhaustion by the single highest-scored order, same mechanism as ticks 16/32/38 -- evolved genome operating as designed, nothing to correct.",
+      "reasons": [
+        "lone-voice buy on UNIUSDT (agreement 0.33) is the only order the bar produced (0.92 conviction, 11.4% of equity)"
       ]
     }
   ]
