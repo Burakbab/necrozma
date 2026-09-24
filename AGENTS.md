@@ -419,6 +419,45 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-24 (3-hourly check, ~06:47-07:13 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 31036 → 31242, stagnation/boldness counter
+  2236 → 2251.** No live trading this cycle (tick 41 already handled at the
+  dedicated 00:20 UTC daily slot, no new bar closed since — confirmed via
+  `live_state.json`'s `updated` timestamp at session start,
+  `2026-09-24T04:12:30+00:00`, matching the prior 3-hourly check's own evolve
+  batch, `runs/2026-09-24-0415-evolve-batch-v3.md`). Freshness checks before
+  running: `review-hard-calls` still 0 pending (4 reviewed, unchanged), items
+  6/13 still owner decisions, `AGENTS.md` size 243,407 bytes — under the
+  256KB threshold — so, with nothing else queued, used the slot for one more
+  real 15-generation batch via `tools/background_runner.py` (`start` +
+  separate `wait`), exit code 0, no truncation, ~25 minutes. Champion's
+  fold-aggregate fitness held flat at 1.341 across all 15 generations (949
+  trades, 38% win, 1% stops, 4 halts, unchanged throughout). Best-of-generation
+  fold-fitness ranged 1.290-2.638, never clearing the promotion-margin bar.
+  See `runs/2026-09-24-0713-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 426/426 both before (baseline) and after `evolve`;
+  top-level key diff of `live_state.json` (checked directly in Python
+  against `git show HEAD:`, not just eyeballed) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin rose
+  slightly (7.174, was 7.167) at draw 622, same slow-rise pattern already
+  tracked under item 13, nothing new; dashboard rebuilt with `EVO_STATE` set
+  (`index.html` shows 31242 challenger ideas tried). Genome still v3 (1d)
+  live, untouched. **Git sync note**: container arrived shallow-cloned in
+  detached HEAD; `git checkout main` created a local tracking branch that
+  reported "up to date with origin/main" from a stale cached ref, but
+  `tools/git_sync.py` (run right after, per protocol) found the real
+  `origin/main` had moved well ahead and fast-forwarded cleanly, nothing
+  local lost — same shallow-clone-staleness pattern this file already
+  documents repeatedly, and the same lesson the prior 3-hourly check's own
+  entry already flagged: don't trust a `git checkout -B main
+  origin/main`-style "up to date" message without an explicit fetch or
+  `git_sync.py` run immediately before it.
+
 - **Run 2026-09-24 (3-hourly check, ~03:46-04:15 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 31022 → 31036, stagnation/boldness counter
