@@ -419,6 +419,55 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-24 (3-hourly check, ~00:46-01:21 UTC): the first real hard-call
+  review since tick 38 — tick 41's lone-voice UNIUSDT buy, approved — then
+  archived AGENTS.md's oldest remaining slice, then 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion.** No live
+  trading this cycle (tick 41 already handled at the dedicated 00:20 UTC
+  daily slot — confirmed via `runs/2026-09-24-0020-daily-trading.md`).
+  `review-hard-calls` showed 1 bar pending: tick 41's lone-voice UNIUSDT buy.
+  Hand-reconstructed `RiskJudge.rule`'s scoring against v3's evolved genes
+  across all 10 buy candidates that bar — UNIUSDT's lone-voice score
+  (0.915*1.4791=1.3534) genuinely topped the ranking, ahead even of
+  LTCUSDT's two-agree score (0.6835*1.2=0.8202, diluted by a weak 0.509
+  risky signal). Its target hit `max_position_pct` then `cash_avail`
+  exactly ($1596.83, matching the real fill to the cent), correctly
+  vetoing all 9 other candidates as "no room" in exact score-descending
+  order matching the journal — same cash-floor-exhaustion mechanism as
+  ticks 16/32/38, evolved genome operating as designed. Verdict `approve`
+  recorded via `--tick 41 --verdict approve`; `review-hard-calls` now 0
+  pending, 4 reviewed. See `runs/2026-09-24-0121-self-improvement.md` for
+  the full scoring table. Also archived: `AGENTS.md` had regrown to
+  256,106 bytes, within ~6KB of the 256KB single-read limit — moved the
+  oldest remaining slice (2026-09-17 ~00:47-22:18 UTC) verbatim to new
+  `AGENTS_ARCHIVE_2026-09-17.md`, cutting the live file to 237,236 bytes;
+  verified via exact line-slice removal and byte-for-byte comparison of
+  the archived body. Both committed and pushed as `50fc2ae` before starting
+  evolve work. Then, with nothing else queued, ran one more real
+  15-generation batch via `tools/background_runner.py` (`start` + separate
+  `wait`), exit code 0, no truncation, ~30 minutes: champion's
+  fold-aggregate fitness held flat at 1.341 across all 15 generations (949
+  trades, 38% win, 1% stops, 4 halts, unchanged throughout); cumulative
+  candidates tried against v3 rose 30623 → 30828, stagnation/boldness
+  counter 2206 → 2221; best-of-generation fold-fitness ranged 1.440-1.980,
+  never clearing the promotion-margin bar. Verified before commit: `python3
+  -m pytest -q` 426/426 both before (baseline, right after the
+  review/archival commit) and after `evolve`; top-level key diff of
+  `live_state.json` showed only `updated`/`researcher_memory`/`lineage`
+  changed (genome, broker, journal, hard_call_reviews byte-identical, plus
+  `hard_call_reviews` itself changed only in the earlier review commit);
+  `lineage` length unchanged at 202 (bounded ring buffer, no new promotion
+  attempt recorded); `tools/edit_bundle_module.py verify`/`sync --check`
+  both clean; `holdout-pressure` re-checked (read-only, no state change) —
+  margin rose slightly (7.163, was 7.159) at draw 610, same slow-rise
+  pattern already tracked under item 13, nothing new; dashboard rebuilt
+  with `EVO_STATE` set (`index.html` shows 30828 challenger ideas tried).
+  Genome still v3 (1d) live, untouched. Container arrived shallow-cloned
+  in detached HEAD, already at `origin/main`'s tip (fetch reported a
+  "forced update" — the recurring shallow-clone staleness, not a real
+  rewrite); `git checkout -B main origin/main` landed cleanly, nothing
+  lost.
+
 - **Run 2026-09-23 (3-hourly check, ~21:46-22:17 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 30414 → 30623, stagnation/boldness counter
