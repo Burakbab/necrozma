@@ -419,6 +419,45 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-24 (3-hourly check, ~03:46-04:15 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 31022 → 31036, stagnation/boldness counter
+  2221 → 2236.** No live trading this cycle (tick 41 already handled at the
+  dedicated 00:20 UTC daily slot, no new bar closed since — confirmed via
+  `live_state.json`'s `updated` timestamp at session start,
+  `2026-09-24T01:18:29+00:00`, matching the prior 3-hourly check's own
+  work, `runs/2026-09-24-0121-self-improvement.md`). Freshness checks before
+  running: `review-hard-calls` still 0 pending (4 reviewed, unchanged), items
+  6/13 still owner decisions, `AGENTS.md` size 240,650 bytes — under the
+  256KB threshold — so, with nothing else queued, used the slot for one more
+  real 15-generation batch via `tools/background_runner.py` (`start` +
+  separate `wait`), exit code 0, no truncation, ~25 minutes. Champion's
+  fold-aggregate fitness held flat at 1.341 across all 15 generations (949
+  trades, 38% win, 1% stops, 4 halts, unchanged throughout). Best-of-generation
+  fold-fitness ranged 1.191-2.373, never clearing the promotion-margin bar.
+  See `runs/2026-09-24-0415-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 426/426 both before (baseline) and after `evolve`;
+  top-level key diff of `live_state.json` showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin rose
+  slightly (7.167, was 7.163) at draw 614, same slow-rise pattern already
+  tracked under item 13, nothing new; dashboard rebuilt with `EVO_STATE` set
+  (`index.html` shows 31036 challenger ideas tried). Genome still v3 (1d)
+  live, untouched. **Git sync note**: `git checkout -B main origin/main` was
+  run before an explicit `git fetch`, so it reset onto a stale cached
+  `origin/main` ref (~2026-09-18-era) and briefly reported "leaving 50
+  commits behind" the detached HEAD's real tip — looked like a rewind at
+  first, but a follow-up `git fetch origin main` immediately showed the
+  usual shallow-clone-staleness pattern (`origin/main` forced-updating
+  forward to `7a02cd5`), and `tools/git_sync.py` fast-forwarded cleanly,
+  nothing lost. Lesson for future sessions: fetch explicitly right before
+  any `git checkout -B main origin/main`-style recipe, not just before
+  `git_sync.py` itself, or a stale cached ref can produce a misleading
+  "behind" warning that reads like a real rewrite.
+
 - **Run 2026-09-24 (3-hourly check, ~00:46-01:21 UTC): the first real hard-call
   review since tick 38 — tick 41's lone-voice UNIUSDT buy, approved — then
   archived AGENTS.md's oldest remaining slice, then 15 more real `evolve`
