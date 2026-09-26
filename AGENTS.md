@@ -121,6 +121,7 @@ python3 evotrader_bundle.py succession-audit      # would each past real champio
 python3 evotrader_bundle.py promotion-excess-check  # did either real promotion depend on raw fitness vs. excess-return disagreeing?
 python3 evotrader_bundle.py live-benchmark        # the live account's own real return vs. equal-weight buy-and-hold, same real window
 python3 evotrader_bundle.py boldness-scan         # does capping the stagnation-driven boldness change fold/holdout gate-clear odds?
+python3 evotrader_bundle.py short-headroom        # how much real upside is on the table from shorting, before wiring any short-opening signal?
 ```
 
 `anatomy`, `consults`, `costs`, `regime` and `hard-calls` are diagnostics:
@@ -329,6 +330,40 @@ a 20-generation run found the same pattern at a different length (3/20
 uncapped vs 4/20 capped, 0/20 vs 0/20 on the sealed holdout). See "Current
 state" for both results in full.
 
+`short-headroom` (added 2026-09-26, weekend all-hands) answers the question a
+real short-opening proposal would need first, per item 5's still-open
+"whether/how the Researcher should be allowed to propose short positions":
+is there real theoretical upside on the table at all? New
+`loop.engine.benchmark_sell_short` (`tests/test_short_headroom_benchmark.py`,
+8 tests, full suite 434/434) is a static, un-managed, equal-weight short of
+the champion's own universe over the same `regime`/fold/holdout windows,
+using real `PaperBroker.short()`/`.mark()`/`.cover()` mechanics (the
+genome's own `fee_bps`/`slippage_bps`, plus a stated-assumption
+`--borrow-bps-per-bar`, default 3.0 -- a modelled constant in the same
+family as fee/slippage, NOT a measured real crypto borrow rate) instead of
+`benchmark_buy_hold`'s zero-cost raw math, so the gap between a zero-cost
+run and a real-cost run isolates cost drag directly. Read-only and
+genome-independent in the same sense `regime` is (reuses its exact windows
+and universe/interval/cash, no council, no mutation, no `live_state.json`
+touch) -- never more than a reason to consider designing the real,
+owner-gated wiring, never itself that design. First result (2026-09-26):
+3 of the champion's 4 real windows (folds 1/2, holdout) are bull markets
+where a naked equal-weight short would have been catastrophic (-85% to
+-158%, i.e. a leverage-free short can still lose far more than the starting
+capital when the underlying rallies hard enough, since the loss is
+unbounded on the upside) -- only fold 3 (buy&hold -39.1%) is a window where
+shorting would have helped, capturing +69% of the theoretical edge
+(+26.8% real vs the -39.1%/+39.1% zero-cost headroom) after realistic
+costs. Reading: the theoretical edge is real but concentrated in one out of
+four real windows, and a *static* short is reckless the rest of the time --
+this sharpens rather than resolves the still-open Phase 2 question, and
+argues that any real design would need a regime-conditional entry signal
+(not a permanent short overlay) before it could be worth the five-file
+integration surface the 2026-08-30 design pass scoped. Does not decide
+whether to build that signal; see AGENTS.md item 5 for the full history and
+what would still need owner sign-off (a short-exposure cap, and whether
+`MAX_DD_HARD_FAIL` needs a short-specific instrument, per that design pass).
+
 If a run reports **CONSTITUTION MODIFIED**, stop. Do not re-seal it. Investigate
 and check `AMENDMENTS.md` first.
 
@@ -418,6 +453,35 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 ---
 
 ## Current state
+
+- **Run 2026-09-26 (weekend all-hands, ~06:00-07:15 UTC): shipped
+  `short-headroom`, a new read-only diagnostic answering item 5's
+  "is there real upside on the table from shorting at all" question, and
+  ran it against the live v3 champion for the first time.** New
+  `loop.engine.benchmark_sell_short` (real `PaperBroker.short()`/`.mark()`/
+  `.cover()` mechanics, not raw zero-cost math) plus a new CLI command,
+  `evotrader_bundle.py short-headroom`, that reports it next to
+  `benchmark_buy_hold` over the champion's exact `regime`-style fold/holdout
+  windows. 8 new tests (`tests/test_short_headroom_benchmark.py`), full
+  suite 426 → 434 passed, both before and after the change. First real
+  result: a static, unmanaged, equal-weight short of the champion's own
+  27-symbol universe would have been catastrophic in 3 of 4 real windows
+  (fold 1 -85.3%/-99.4%, fold 2 -136.9%/-157.9%, holdout -61.1%/-67.9%,
+  short-0bp/short-with-modelled-borrow respectively — all bull windows) and
+  only helped in fold 3, the one real bear window (buy&hold -39.1%, short
+  captured +69% of that theoretical edge after realistic costs, +26.8% real
+  return). See "Owner decisions pending" item 5 and the `### Commands`
+  section above for the full write-up and what this does/doesn't decide
+  (nothing — no genome, council, mutation-range, or `live_state.json`
+  change; this is evidence for a future owner-gated design pass, same
+  "measure before building" discipline as item 3's correlation-penalty
+  saga). Verified: `tools/edit_bundle_module.py sync`/`verify` both clean
+  (bundle regenerated from the real `loop/engine.py` edit, not hand-touched),
+  `evotrader.manifest` unchanged (`726dfa4bac85891a` — `core/portfolio.py`,
+  the actually-protected file, was never touched; only `loop/engine.py` and
+  `evotrader_bundle.py`'s own CLI dispatch section, neither checksummed),
+  `live_state.json` untouched throughout. See
+  `runs/2026-09-26-0600-weekend-all-hands.md`.
 
 - **Run 2026-09-26 (3-hourly check, ~03:46-04:22 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
@@ -2706,6 +2770,24 @@ every `evolve` call.
    the explicitly unscoped owner decision below — until that exists,
    `.short()` has no live caller to ever produce a short for this session's
    "cover" intent to close.
+
+   **Measured 2026-09-26 (weekend all-hands): before designing that
+   open-a-short signal, checked whether there's real theoretical upside to
+   capture at all — see "Current state" above and
+   `runs/2026-09-26-0600-weekend-all-hands.md`.** New `short-headroom`
+   diagnostic (`loop.engine.benchmark_sell_short`, real broker mechanics,
+   read-only) found the champion's real fold/holdout windows are bull
+   markets 3 times out of 4 — a naked, static, always-on equal-weight short
+   would have lost -85% to -158% in those three, and only helped in the one
+   real bear window (fold 3: captured +69% of the theoretical -39.1% edge
+   after realistic costs). **This rules out "just add a permanent short
+   overlay"** — the real design question (still unscoped, still needs owner
+   sign-off on the short-exposure cap and drawdown-gate questions the
+   2026-08-30 design pass raised) is specifically a *regime-conditional*
+   entry signal, not a standing position. Not attempted here: designing or
+   building that signal, or scoping the RiskJudge sizing/SuperiorJudge
+   cap-check symmetric-with-buy path a real short-open would need (per the
+   2026-09-13 sign-landmine audit above, no such path exists yet at all).
 
 6. **Equities/FX** behind the same `MarketData` interface.
 

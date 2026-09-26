@@ -148,6 +148,106 @@ def benchmark_buy_hold(replay: Replay, symbols: list[str], start: int, end: int,
     }
 
 
+def benchmark_sell_short(replay: Replay, symbols: list[str], start: int, end: int,
+                         cash: float, fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                         borrow_bps_per_bar: float = 0.0,
+                         bars_per_year: float = 365.25) -> dict[str, Any]:
+    """Equal-weight short-the-index over the same window `benchmark_buy_hold`
+    marks, using real `PaperBroker.short()`/`.mark()`/`.cover()` mechanics
+    (fees, slippage, modelled borrow) instead of `benchmark_buy_hold`'s raw
+    zero-cost math.
+
+    Built to answer AGENTS.md item 5's open question -- "how much upside is
+    theoretically on the table from shorting, before even asking whether our
+    signals are good enough to capture it": at zero cost, this returns
+    exactly the negative of the TRUE fill-to-fill long return over the same
+    window (`-(replay.close_at(s, end-1) / replay.next_open(s, start) - 1)`,
+    equal-weight-averaged across `symbols`) -- so the gap between that
+    zero-cost number and a real (fee/slippage/borrow-charged) run of this
+    same function is the cost drag, isolated and directly measurable.
+
+    This is *not* bit-identical to `-benchmark_buy_hold(...)['total_return']`
+    at zero cost, only very close to it over any real multi-bar window:
+    `benchmark_buy_hold` values its own starting position at the CLOSE of
+    the first tradeable bar (`start + 1`) rather than at the fill price used
+    to size it (`replay.next_open(s, start)`), a one-bar reference-point
+    quirk in that already-established, already-relied-upon function. The gap
+    this introduces is bounded by one bar's own intrabar move and vanishes
+    as a fraction of total return as the window grows -- negligible over the
+    many-bar fold/holdout windows this is meant to run against, visible only
+    in a short synthetic window with an exaggerated per-bar move (see
+    `tests/test_short_headroom_benchmark.py`, which checks against the true
+    fill-to-fill price ratio directly rather than against
+    `benchmark_buy_hold`'s output for exactly this reason).
+
+    No genome, no council, no leverage (short notional is capped by `cash`,
+    the same no-leverage buying-power proxy `PaperBroker.buy()` uses) -- one
+    broker, one static equal-weight basket, opened once and covered once,
+    same discipline as `benchmark_buy_hold`. The circuit breaker is
+    effectively disabled (`dd_halt=10.0`, i.e. requires a >1000% drawdown to
+    trip) since a static, un-managed short book has no exit discipline of
+    its own to freeze -- the point here is to see the raw, un-stopped path,
+    not one softened by a safety mechanism this benchmark isn't claiming to
+    have.
+
+    `total_return`/`end_nav` are computed from the broker's actual final
+    cash after covering (fully realized, including the exit leg's fee and
+    slippage) rather than from `nav_history`'s last mark-to-market point
+    (which is struck one bar before the cover fill and so would omit the
+    exit leg's cost) -- `max_dd`/`sharpe` still come from the marked path,
+    which only omits that same one bar's cost and is a negligible
+    approximation for a path statistic over dozens-to-hundreds of bars.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    per = cash / len(usable)
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    ts0 = str(replay.index[start])
+    for s in usable:
+        px = replay.next_open(s, start)
+        broker.short(ts0, s, per, px, reason="short-headroom benchmark")
+    for i in range(start + 1, end):
+        prices = {}
+        for s in usable:
+            px = replay.close_at(s, i)
+            if px:
+                prices[s] = px
+        broker.mark(str(replay.index[i]), prices, dd_halt=10.0, cooldown=1)
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        px = replay.close_at(s, end - 1)
+        if px:
+            broker.cover(close_ts, s, 1.0, px, reason="short-headroom benchmark close")
+    # A naked, unmanaged, un-stopped short (the circuit breaker is disabled
+    # above) can genuinely blow through -100% -- `PaperBroker.stats()`'s
+    # `cagr` term takes a fractional power of `nav[-1] / nav[0]`, which is
+    # negative in that case, and numpy warns (RuntimeWarning: invalid value
+    # ... nan) rather than raise. `core/portfolio.py` is one of the two
+    # constitution-checksummed files (see `constitution._PROTECTED`), so
+    # that warning isn't this function's to fix -- but `cagr` also isn't a
+    # field this function reports (see the return dict below), so the
+    # warning is pure noise for this diagnostic's own output and is
+    # suppressed narrowly, right here, rather than left to print past every
+    # window of every real run.
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash  # all positions closed -- true, cost-inclusive final value
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.
