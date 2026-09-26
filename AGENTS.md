@@ -480,8 +480,40 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   `evotrader.manifest` unchanged (`726dfa4bac85891a` — `core/portfolio.py`,
   the actually-protected file, was never touched; only `loop/engine.py` and
   `evotrader_bundle.py`'s own CLI dispatch section, neither checksummed),
-  `live_state.json` untouched throughout. See
-  `runs/2026-09-26-0600-weekend-all-hands.md`.
+  `live_state.json` untouched throughout. Second, after committing/pushing
+  the diagnostic: with nothing else queued and more time budget than a
+  3-hourly check, ran one real 30-generation `evolve` batch against the
+  live v3 champion (bigger than a weekday session's usual 15, to use the
+  extra slot depth-first rather than as two separate smaller runs) via
+  `tools/background_runner.py`, exit code 0, no truncation, ~30 minutes.
+  No promotion — champion's fold-aggregate fitness held flat at 1.751
+  across all 30 generations (959 trades, 38% win, 1% stops, 4 halts,
+  unchanged throughout); cumulative candidates tried against v3 rose
+  33963 → 34379 (per `researcher_memory.tested`), stagnation/boldness
+  counter 2449 → 2479; best-of-generation fold-fitness ranged 1.511-2.265,
+  never clearing the promotion-margin bar (several generations' best did
+  beat the champion's own raw 1.751, which is why `holdout-pressure`'s
+  cumulative draw count still advanced 648 → 651 — clearing that easier,
+  raw-comparison bar is enough to trigger a holdout check, clearing the
+  much higher multiple-testing-adjusted margin is not the same thing and
+  is what "no proposal cleared the bar" in the per-generation log means). Verified before commit: `python3
+  -m pytest -q` 434/434 both before (right after the diagnostic commit) and
+  after `evolve`; top-level key diff of `live_state.json` (checked directly
+  in Python against `git show HEAD:live_state.json`, not just eyeballed)
+  showed only `updated`/`researcher_memory`/`lineage` changed (genome,
+  broker, journal, hard_call_reviews byte-identical); `lineage` length
+  unchanged at 202 (bounded ring buffer, no new promotion attempt
+  recorded); `tools/edit_bundle_module.py verify`/`sync --check` both
+  clean; `holdout-pressure` re-checked (read-only, no state change) —
+  margin rose slightly (7.199, was 7.197) at draw 651 (three more
+  fold-aggregate-clearing candidates from this batch each lost their own
+  sealed-holdout draw), same slow-rise pattern already tracked under item
+  13, nothing new; `review-hard-calls`
+  still 0 pending (4 reviewed, unchanged); dashboard rebuilt with
+  `EVO_STATE` set (`index.html` shows 34379 challenger ideas tried).
+  Genome still v3 (1d) live, untouched. See
+  `runs/2026-09-26-0600-weekend-all-hands.md` for the full write-up of both
+  pieces of this session.
 
 - **Run 2026-09-26 (3-hourly check, ~03:46-04:22 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
