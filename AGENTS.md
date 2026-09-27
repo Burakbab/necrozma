@@ -454,6 +454,44 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-27 (3-hourly check, ~06:47-07:15 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 35830 → 36035 (per
+  `researcher_memory.tested`), stagnation/boldness counter 2584 → 2599.** No
+  live trading this cycle (tick 44 already handled at the dedicated 00:20
+  UTC daily slot, and the prior 3-hourly check's own evolve batch already
+  ran at ~03:46-04:14 UTC — confirmed via `live_state.json`'s `updated`
+  timestamp at session start, `2026-09-27T04:11:51+00:00`, matching
+  `runs/2026-09-27-0414-evolve-batch-v3.md`; the intervening weekend
+  all-hands session, `runs/2026-09-27-0600-weekend-all-hands.md`, shipped
+  the `regime-conditional-short` diagnostic and measured it against the
+  live champion but never touched `live_state.json`). Freshness checks
+  before running: `review-hard-calls` still 0 pending (4 reviewed,
+  unchanged), items 6/13 still owner decisions, `AGENTS.md` size 215,718
+  bytes — comfortably under the 256KB threshold — so, with nothing else
+  queued, used the slot for one more real 15-generation batch via
+  `tools/background_runner.py` (`start` + separate `wait`), exit code 0, no
+  truncation, ~21.3 minutes. Champion's fold-aggregate fitness held flat at
+  1.850 across all 15 generations (962 trades, 38% win, 1% stops, 4 halts,
+  unchanged throughout). Best-of-generation fold-fitness ranged 1.332-2.378,
+  never clearing the promotion-margin bar. See
+  `runs/2026-09-27-0715-evolve-batch-v3.md`. Verified before commit: `python3
+  -m pytest -q` 441/441 both before (baseline) and after `evolve`; top-level
+  key diff of `live_state.json` (checked directly in Python against `git
+  show HEAD:live_state.json`, not just eyeballed) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin rose
+  slightly (7.208, was 7.206) at draw 662, same slow-rise pattern already
+  tracked under item 13, nothing new; dashboard rebuilt with `EVO_STATE` set
+  (`index.html` shows 36035 challenger ideas tried). Genome still v3 (1d)
+  live, untouched. Container arrived on `main`, one commit behind
+  `origin/main` in detached HEAD (the weekend all-hands session's own
+  commit); `git checkout main` plus `tools/git_sync.py` fast-forwarded
+  cleanly, nothing lost.
+
 - **Run 2026-09-27 (weekend all-hands, ~06:00-07:15 UTC): shipped
   `benchmark_regime_conditional_short` and tested the first real
   regime-conditional short design against the live v3 champion — and it
