@@ -454,6 +454,36 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-09-27 (weekend all-hands, ~07:20-07:50 UTC): a second real
+  30-generation `evolve` batch against the live v3 champion, run
+  concurrently with the 3-hourly check's own 15-generation batch below —
+  lost the push race, no state persisted, no harm.** Both batches started
+  from the same base (`abbf182`, tested=35830) at roughly the same time;
+  the 3-hourly check's commit (`0ddb6b3`, tested 35830→36035) reached
+  `origin/main` first. `git push` for this session's own batch
+  (tested 35830→36248 in isolation) was rejected as non-fast-forward;
+  `git pull --rebase` produced real content conflicts in `live_state.json`
+  itself (not the usual shallow-clone staleness `tools/git_sync.py`
+  handles — this was two independently-advanced copies of the same live
+  JSON state, which can't be textually merged), so per the run protocol's
+  own "never force-push, never discard uncommitted work without checking"
+  discipline: aborted the rebase, confirmed the only at-risk content was
+  this session's own now-superseded evolve-batch commit (no source code,
+  only `live_state.json`/`index.html`/doc updates describing a state that
+  had already lost the race), and `git reset --hard origin/main` to adopt
+  the already-canonical, already-verified state instead of hand-splicing
+  two divergent `researcher_memory.tested` lists. Nothing lost: this
+  session's batch found no promotion either (same as the one that won the
+  race), so the only cost was ~65 minutes of redundant compute, not lost
+  search progress or lost account state. Flagging here since this is the
+  first time two sessions have raced on a real `live_state.json` write
+  (not just git history) closely enough to actually collide — future
+  sessions hitting the same rejected-push-with-real-JSON-conflicts pattern
+  (as opposed to the shallow-clone-staleness pattern `git_sync.py` already
+  handles) should recognize it as "someone else advanced the same file
+  concurrently, adopt their state rather than hand-merge JSON" rather than
+  assuming something is broken.
+
 - **Run 2026-09-27 (3-hourly check, ~06:47-07:15 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 35830 → 36035 (per

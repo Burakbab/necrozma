@@ -1,7 +1,10 @@
-# Weekend all-hands, 2026-09-27 (~06:00-07:20 UTC)
+# Weekend all-hands, 2026-09-27 (~06:00-07:50 UTC)
 
-One piece of work this session: testing the first real regime-conditional
-short design against the live v3 champion, and an AGENTS.md size rotation.
+One landed piece of work this session: testing the first real
+regime-conditional short design against the live v3 champion, plus an
+AGENTS.md size rotation. A second piece — one more real `evolve` batch —
+also ran but lost a push race to a concurrent 3-hourly check session; see
+"Collision" at the end for what happened and why nothing was lost.
 
 ## Why this, not another `evolve` batch
 
@@ -200,3 +203,44 @@ picked up again, but this session judged the three-way comparison already
 run (permanent / bear-gated / crisis-gated) as a complete, well-verified
 piece of evidence on its own, not something to keep tuning speculatively
 in the same sitting.
+
+## Collision: a second `evolve` batch lost a push race
+
+With the diagnostic committed and nothing else queued, used the rest of
+the session's time budget for one more real 30-generation `evolve` batch
+against the live v3 champion (same "go deep" choice yesterday's weekend
+session made) — via `tools/background_runner.py`, exit code 0, no
+truncation (one operational note: this run took ~65 minutes rather than
+the usual ~30, so the first `wait --timeout 3600` call hit its own timeout
+before the child exited; checked `ps` and the log's own generation counter
+directly, confirmed the child was still healthy at generation 25/30, and
+re-issued `wait` with a longer timeout rather than assuming a stall).
+Fold-aggregate fitness held flat throughout (1.751 then 1.850, matching
+the rolling walk-forward window's normal day-to-day drift), cumulative
+candidates tried against v3 rose 35830 → 36248, no promotion.
+
+`git push` was rejected: a concurrent 3-hourly check session had run its
+own 15-generation batch from the same starting state (`abbf182`,
+tested=35830) and pushed first (`0ddb6b3`, tested 35830→36035). `git pull
+--rebase` produced real content conflicts directly inside `live_state.json`
+itself — not the shallow-clone staleness `tools/git_sync.py` is built to
+detect and fast-forward through, but two genuinely independent JSON
+deltas built from the same base, which git can't textually merge and
+which shouldn't be hand-spliced (mixing two independently-grown
+`researcher_memory.tested` lists risks corrupting the very dedup identity
+the 2026-08-15 fix built that structure to protect).
+
+Resolution: `git rebase --abort`, confirmed the only content at risk was
+this session's own now-superseded commit (`live_state.json`/`index.html`/
+doc updates describing a batch that had already lost the race — no source
+code), then `git reset --hard origin/main` to adopt the already-canonical,
+already-verified state rather than attempt a manual JSON merge. Nothing
+was actually lost: this session's batch also found no promotion, so the
+only cost was the redundant compute (~65 minutes), not search progress or
+account state — the account is exactly as far along either way, just via
+the other session's specific candidates rather than this session's. See
+`AGENTS.md`'s "Current state" for the disclosure entry. Flagged there as a
+process note for future sessions: a rejected push with real `live_state.json`
+merge conflicts (as opposed to a rejected push that turns out to be
+shallow-clone staleness) means another session advanced the same file
+concurrently — adopt their state, don't hand-merge the JSON.
