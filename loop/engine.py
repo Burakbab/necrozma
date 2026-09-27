@@ -248,6 +248,98 @@ def benchmark_sell_short(replay: Replay, symbols: list[str], start: int, end: in
     }
 
 
+def benchmark_regime_conditional_short(replay: Replay, genome: Genome, symbols: list[str],
+                                       start: int, end: int, cash: float,
+                                       fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                                       borrow_bps_per_bar: float = 0.0,
+                                       bars_per_year: float = 365.25,
+                                       short_regimes: tuple[str, ...] = ("bear", "crisis")
+                                       ) -> dict[str, Any]:
+    """Sibling to `benchmark_sell_short`, built to answer the question that
+    function's own first result (AGENTS.md item 5, 2026-09-26) sharpened
+    rather than settled: a *permanent* equal-weight short lost badly in 3 of
+    the champion's 4 real windows (all bull) and only helped in the one real
+    bear window -- so is there real edge in a short that is only open when a
+    REAL regime signal says to be, rather than always on?
+
+    Uses `agents.analyst.Analyst._regime` -- the exact, causal, per-bar
+    classifier `RiskJudge.rule`'s own `regime_scale` gene already gates
+    *long* entries by, computed only from data each `ReplayWindow` can see
+    (`Analyst.brief` is called once per bar the same way `Council.tick` does)
+    -- never a hindsight fold label. The equal-weight basket opens a fresh
+    short (sized off the broker's own current cash, split evenly, no
+    leverage -- same no-leverage proxy `short()` itself enforces) the first
+    bar the regime reads one of `short_regimes`, and covers in full the
+    first bar it doesn't; `equity`/`cash`/`weights` passed into `brief()`
+    only feed `Briefing.cash_pct`/`open_positions`, which `_regime` never
+    reads, so they have no bearing on the regime call itself.
+
+    Same fill convention as `run_backtest`/`Council.tick`: a decision made
+    from bar i's own close-of-bar data fills at bar i+1's open
+    (`replay.next_open`), never bar i's own close. Read-only, genome-
+    unmutated, no `RiskJudge`/`SuperiorJudge` involvement, no
+    `live_state.json` touch -- same discipline as `benchmark_sell_short`,
+    just conditioned on a real signal instead of running the whole window.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    analyst = Analyst(genome)
+    is_short = False
+    bars_short = 0
+    flips = 0
+    for i, window in replay.walk(start, end):
+        prices = {s: replay.close_at(s, i) for s in usable}
+        prices = {s: p for s, p in prices.items() if p is not None}
+        if prices:
+            broker.mark(str(window.ts), prices, dd_halt=10.0, cooldown=1)
+        briefing = analyst.brief(window, equity=broker.cash, cash=broker.cash, weights={})
+        want_short = briefing.regime in short_regimes
+        if is_short:
+            bars_short += 1
+        if want_short != is_short:
+            flips += 1
+            fills = {s: replay.next_open(s, i) for s in usable}
+            fills = {s: p for s, p in fills.items() if p is not None}
+            ts = str(window.ts)
+            if is_short:
+                for s in usable:
+                    pos = broker.positions.get(s)
+                    if pos and pos.is_open and s in fills:
+                        broker.cover(ts, s, 1.0, fills[s], reason="regime flip: cover")
+            else:
+                per = broker.cash / len(usable) if usable else 0.0
+                for s in usable:
+                    if s in fills:
+                        broker.short(ts, s, per, fills[s], reason="regime flip: open")
+            is_short = want_short
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        pos = broker.positions.get(s)
+        if pos and pos.is_open:
+            px = replay.close_at(s, end - 1)
+            if px:
+                broker.cover(close_ts, s, 1.0, px, reason="regime-conditional benchmark close")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+        "bars_short": bars_short, "bars_total": max(0, end - start), "flips": flips,
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.
