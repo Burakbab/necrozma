@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 45,
-  "updated": "2026-09-28T22:15:29+00:00",
+  "ticks": 46,
+  "updated": "2026-09-29T00:21:36+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 5207.97323387498,
+    "cash": 5036.814543728079,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,18 +166,18 @@
         "avg_cost": 1.0542488686300184,
         "opened_ts": "2026-09-14 00:00:00+00:00",
         "peak_price": 1.268,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "UNIUSDT": {
         "symbol": "UNIUSDT",
-        "qty": 272.3458717091017,
-        "avg_cost": 9.117190796395322,
+        "qty": 291.84856261593103,
+        "avg_cost": 9.093814897186556,
         "opened_ts": "2026-09-18 00:00:00+00:00",
         "peak_price": 10.226,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -189,7 +189,7 @@
         "avg_cost": 2.9204594999999998,
         "opened_ts": "2026-09-20 00:00:00+00:00",
         "peak_price": 3.198,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -200,7 +200,7 @@
         "avg_cost": 7.7838899999999995,
         "opened_ts": "2026-09-26 00:00:00+00:00",
         "peak_price": 7.795,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -786,6 +786,16 @@
         "ref_price": 7.78,
         "fee": 0.9139712853506042,
         "reason": "consult_moderate: confirmed trend: ma-spread +35.3%, slope +10.00%, rsi 63 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-09-28 00:00:00+00:00",
+        "symbol": "UNIUSDT",
+        "side": "buy",
+        "qty": 19.50269090682937,
+        "price": 8.767381499999999,
+        "ref_price": 8.763,
+        "fee": 0.1711586901469009,
+        "reason": "consult_moderate: confirmed trend: ma-spread +54.5%, slope +5.47%, rsi 67 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1339,6 +1349,10 @@
       [
         "2026-09-27 00:00:00+00:00",
         14868.657026992638
+      ],
+      [
+        "2026-09-28 00:00:00+00:00",
+        14378.57420419092
       ]
     ],
     "peak_nav": 14868.657026992638,
@@ -10504,6 +10518,194 @@
           }
         ],
         "fills": [],
+        "notes": "regime bull (scale 1.00), breadth 96%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-09-29T00:21:36+00:00",
+      "bar": "2026-09-28 00:00:00+00:00",
+      "tick": 46,
+      "nav_before": 14378.57,
+      "nav_after": 14342.1,
+      "cash": 5036.81,
+      "cash_before": 5207.97,
+      "positions": {
+        "DOTUSDT": 2659.91,
+        "UNIUSDT": 2557.47,
+        "ICPUSDT": 3208.38,
+        "INJUSDT": 879.52
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-09-28 00:00:00+00:00",
+        "nav": 14378.57420419092,
+        "regime": "bull",
+        "breadth": 0.9629629629629629,
+        "cash_pct": 0.3622037317411495,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.499,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.65, slope +7.14%"
+            },
+            {
+              "symbol": "XLMUSDT",
+              "side": "buy",
+              "conviction": 0.509,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.69, slope +5.15%"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.43,
+              "why": "at/near range high (breakout -2.0%), momentum rank 0.38, slope +4.86%"
+            },
+            {
+              "symbol": "HBARUSDT",
+              "side": "buy",
+              "conviction": 0.579,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.96, slope +9.65%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.8,
+              "why": "confirmed trend: ma-spread +18.2%, slope +4.37%, rsi 59 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +16.8%, slope +7.14%, rsi 66 in band"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "buy",
+              "conviction": 0.892,
+              "why": "confirmed trend: ma-spread +52.7%, slope +2.37%, rsi 64 in band"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.915,
+              "why": "confirmed trend: ma-spread +54.5%, slope +5.47%, rsi 67 in band"
+            },
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.812,
+              "why": "confirmed trend: ma-spread +37.1%, slope +7.06%, rsi 63 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +19.4%, slope +5.14%, rsi 60 in band"
+            },
+            {
+              "symbol": "XLMUSDT",
+              "side": "buy",
+              "conviction": 0.858,
+              "why": "confirmed trend: ma-spread +15.1%, slope +5.15%, rsi 64 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +26.3%, slope +7.86%, rsi 64 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "amount": 171.16,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +54.5%, slope +5.47%, rsi 67 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "FILUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "SOLUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "HBARUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "XLMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ICPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 19.50269090682937,
+            "price": 8.767381499999999,
+            "reason": "consult_moderate: confirmed trend: ma-spread +54.5%, slope +5.47%, rsi 67 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
         "notes": "regime bull (scale 1.00), breadth 96%",
         "hard_call": {
           "is_hard_call": false,
