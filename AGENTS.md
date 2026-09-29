@@ -471,7 +471,8 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   truncation, ~15 minutes. Champion's fold-aggregate fitness held flat at
   1.053 across all 15 generations (975 trades, 37% win, 1% stops, 4 halts,
   unchanged throughout). Best-of-generation fold-fitness ranged 1.233-2.356,
-  never clearing the promotion-margin bar. Verified before commit: `python3
+  never clearing the promotion-margin bar. See
+  `runs/2026-09-29-1315-evolve-batch-v3.md`. Verified before commit: `python3
   -m pytest -q` 441/441 both before (baseline) and after `evolve`; top-level
   key diff of `live_state.json` (checked directly in Python against a
   pre-batch snapshot, not just eyeballed) showed only
