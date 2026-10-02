@@ -454,6 +454,43 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-02 (3-hourly check, ~21:47-22:08 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 45191 → 45399 (per
+  `researcher_memory.tested`), stagnation/boldness counter 3262 → 3276.**
+  No live trading this cycle (tick 49 already handled at the dedicated
+  00:20 UTC daily slot, and the 20:30 UTC daily evaluation already
+  confirmed the mechanism was clean for the day — confirmed via
+  `live_state.json`'s `updated` timestamp at session start,
+  `2026-10-02T19:14:12+00:00`, matching `runs/2026-10-02-1914-evolve-batch-v3.md`).
+  Freshness checks before running: `review-hard-calls` still 0 pending (4
+  reviewed, unchanged), items 6/13 still owner decisions, `AGENTS.md` size
+  254,483 bytes — under the 256KB threshold (~7.7KB margin), not rotated
+  this cycle — so, with nothing else queued, used the slot for one more
+  real 15-generation batch via `tools/background_runner.py` (`start` +
+  separate `wait`), run concurrently with the baseline `pytest` pass, exit
+  code 0, no truncation, ~18.8 minutes. Champion's fold-aggregate fitness
+  held flat at 1.767 across all 15 generations (944 trades, 37% win, 1%
+  stops, 4 halts, unchanged throughout). Best-of-generation fold-fitness
+  ranged roughly 1.269-2.097, never clearing the promotion-margin bar. See
+  `runs/2026-10-02-2208-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 441/441 both before (baseline) and after `evolve`;
+  top-level key diff of `live_state.json` (checked directly in Python
+  against `git show HEAD:live_state.json`, not just eyeballed) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin
+  unchanged at 7.460, draw still 1050 (this batch's candidates never
+  cleared the fold-aggregate gate, so no new holdout draws), same
+  slow-rise pattern already tracked under item 13, nothing new; dashboard
+  rebuilt with `EVO_STATE` set (`index.html` shows 45399 challenger ideas
+  tried). Genome still v3 (1d) live, untouched. Container arrived on
+  `main`, up to date with `origin/main` after a clean fast-forward sync
+  via `tools/git_sync.py`, no divergence, no shallow-clone staleness this
+  cycle.
+
 - **Run 2026-10-02 (3-hourly check, ~18:47-19:14 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 44984 → 45191 (per
