@@ -340,6 +340,124 @@ def benchmark_regime_conditional_short(replay: Replay, genome: Genome, symbols: 
     }
 
 
+def benchmark_trend_break_short(replay: Replay, symbols: list[str], start: int, end: int,
+                                cash: float, fast: int = 10, slow: int = 50,
+                                short_enter: float = -0.05, short_exit: float = -0.02,
+                                fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                                borrow_bps_per_bar: float = 0.0,
+                                bars_per_year: float = 365.25) -> dict[str, Any]:
+    """Sibling to `benchmark_sell_short`/`benchmark_regime_conditional_short`,
+    built to answer a question that function's own 2026-09-27 result raised
+    rather than closed: its failure traced to `agents.analyst.Analyst._regime`
+    being a single, BASKET-WIDE, anchor-only on/off switch, tuned to gate
+    *long* entries defensively (an easily-tripped OR of two conditions), not
+    built or validated as a short-timing signal. This tries the opposite
+    shape: a PER-SYMBOL, price-only trend-breakdown signal -- the same
+    `trend` feature (`fast`/`slow` SMA ratio) `agents.analyst.Analyst.brief`
+    already computes per symbol, read directly here instead of through any
+    genome -- timed independently per symbol instead of basket-wide, with
+    hysteresis (`short_enter`/`short_exit` are two different thresholds, not
+    one) to damp the whipsaw a single threshold would cause.
+
+    Deliberately genome-independent: fixed `fast`/`slow`/`short_enter`/
+    `short_exit` defaults, no `Genome` argument, no `Analyst` call. This
+    asks whether a price-only, per-symbol trend-break is a usable
+    short-timing signal at all -- a fact about the market data itself --
+    before any question of tuning it against one genome's own fold/holdout
+    split. A symbol opens a fresh short (sized off the broker's own current
+    cash divided by symbol count, no leverage -- same no-leverage proxy
+    `short()` enforces) the first bar its own `SMA(fast)/SMA(slow) - 1`
+    trend reads below `short_enter`, and covers the first bar that same
+    trend recovers above `short_exit` (> `short_enter`, so a symbol has to
+    recover further than it dropped before being covered).
+
+    Same fill convention as `run_backtest`/`Council.tick`/
+    `benchmark_regime_conditional_short`: a decision made from bar i's own
+    close-of-bar data fills at bar i+1's open (`replay.next_open`), never
+    bar i's own close -- `ReplayWindow.closes` physically cannot see past
+    bar i, so there is no lookahead in the trend reading either. Read-only,
+    no council, no `RiskJudge`/`SuperiorJudge` involvement, no
+    `live_state.json` touch -- same discipline as every other benchmark in
+    this module.
+
+    Unlike `benchmark_regime_conditional_short` (one basket-wide position,
+    so its own "bars short" can never exceed the window's bar count), this
+    function opens and closes each symbol independently, so several symbols
+    can be short on the same bar at once. The returned `symbol_bars_short`
+    is therefore a sum over (symbol, bar) pairs, not a bar count -- it CAN
+    exceed `bars_total` with more than one symbol, and `avg_concurrent_short`
+    (`symbol_bars_short / bars_total`, the average number of symbols held
+    short at once) is the more readable number for a multi-symbol universe.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    need = slow + 5
+    is_short = {s: False for s in usable}
+    flips = 0
+    symbol_bars_short = 0
+    for i, window in replay.walk(start, end):
+        prices = {s: replay.close_at(s, i) for s in usable}
+        prices = {s: p for s, p in prices.items() if p is not None}
+        if prices:
+            broker.mark(str(window.ts), prices, dd_halt=10.0, cooldown=1)
+        symbol_bars_short += sum(1 for v in is_short.values() if v)
+        ts = str(window.ts)
+        for s in usable:
+            c = window.closes(s, need + 10)
+            c = c[~np.isnan(c)]
+            if len(c) < need:
+                continue
+            ma_f = float(np.mean(c[-fast:]))
+            ma_s = float(np.mean(c[-slow:]))
+            if ma_s <= 0:
+                continue
+            trend = ma_f / ma_s - 1
+            fill = replay.next_open(s, i)
+            if fill is None:
+                continue
+            if not is_short[s] and trend < short_enter:
+                per = broker.cash / len(usable)
+                f = broker.short(ts, s, per, fill, reason="trend-break: open")
+                if f:
+                    is_short[s] = True
+                    flips += 1
+            elif is_short[s] and trend > short_exit:
+                pos = broker.positions.get(s)
+                if pos and pos.is_open:
+                    broker.cover(ts, s, 1.0, fill, reason="trend-break: cover")
+                is_short[s] = False
+                flips += 1
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        pos = broker.positions.get(s)
+        if pos and pos.is_open:
+            px = replay.close_at(s, end - 1)
+            if px:
+                broker.cover(close_ts, s, 1.0, px, reason="trend-break benchmark close")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash
+    bars_total = max(0, end - start)
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+        "symbol_bars_short": symbol_bars_short, "bars_total": bars_total,
+        "avg_concurrent_short": (symbol_bars_short / bars_total) if bars_total > 0 else 0.0,
+        "flips": flips,
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.
