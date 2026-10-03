@@ -454,6 +454,44 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-03 (weekend all-hands, ~06:00-07:08 UTC): two new
+  short-selling diagnostics (per-symbol trend-break signal, and a
+  combined trend-break+regime signal that backfired), plus a bigger
+  40-generation `evolve` batch against the live v3 champion, no
+  promotion.** See item 5 above for the full diagnostic results (now
+  recorded there in detail) and `runs/2026-10-03-0600-weekend-all-hands.md`
+  for the complete session writeup. Headline: `loop.engine.
+  benchmark_trend_break_short` (per-symbol, price-only trend timing) beats
+  both the permanent short and the existing regime-conditional signal on
+  risk shape — far milder bull-market losses, captures 99% of the
+  theoretical bear-window edge vs. the regime signal's best 8% — but is
+  still net-negative in 3 of 4 real windows. `loop.engine.
+  benchmark_combined_short` (requiring both signals to agree) was measured
+  as the natural next question and the hypothesis that it would combine
+  both signals' strengths was wrong: it cut bull-market losses but nearly
+  erased the one real bear-window payoff (99% → 1% captured), because
+  covering on either signal's disagreement inherits the regime
+  classifier's documented whipsaw on the exit side. 16 new tests across
+  both (`tests/test_trend_break_short.py`, `tests/test_combined_short.py`),
+  full suite 441 → 457, all green before and after. The `evolve 40` batch
+  (run via `tools/background_runner.py`, concurrently with this session's
+  own diagnostic work, ~61 minutes) found no promotion — fold-aggregate
+  fitness held flat at 1.831 across all 40 generations, cumulative
+  candidates tried against v3 rose 45812 → 46356, stagnation/boldness
+  3307 → 3347. `holdout-pressure` margin/draw count **unchanged**
+  (7.461 / draw 1051) — none of this batch's candidates cleared even the
+  fold-aggregate gate, consistent with item 13's finding that the
+  cumulative multiple-testing margin, not search quality, is now the
+  binding constraint. Verified: `python3 -m pytest -q` 457/457 both before
+  and after the evolve batch; top-level `live_state.json` key diff showed
+  only `updated`/`researcher_memory`/`lineage` changed; `lineage` length
+  unchanged at 202; `tools/edit_bundle_module.py sync --check`/`verify`
+  both clean throughout; constitution checksum unchanged
+  (`726dfa4bac85891a`); dashboard rebuilt (`index.html` shows 46356
+  challenger ideas tried). Genome still v3 (1d) live, untouched. Items 6/13
+  still open owner decisions, nothing new to raise. Container synced
+  cleanly from `main` via `tools/git_sync.py`, no divergence.
+
 - **Run 2026-10-03 (3-hourly check, ~03:47-04:17 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 45606 → 45812 (per
