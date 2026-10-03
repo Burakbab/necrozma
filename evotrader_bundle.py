@@ -33,6 +33,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py short-headroom --regime-conditional  # same, but short only while the real causal Analyst regime signal reads bear/crisis
     python evotrader_bundle.py short-headroom --regime-conditional --short-regimes crisis  # same, narrowed to the stricter 'crisis' leg only
     python evotrader_bundle.py short-headroom --trend-break  # same, but short per-symbol on a price-only fast/slow trend breakdown instead of the basket-wide regime switch
+    python evotrader_bundle.py short-headroom --combined  # same, but require BOTH the trend-break and regime signals to agree before opening a short
 """
 import sys, types, json, os, math
 
