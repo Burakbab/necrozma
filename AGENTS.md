@@ -2972,6 +2972,76 @@ every `evolve` call.
    read-only, genome-unmutated, no `RiskJudge`/`SuperiorJudge` code path
    touched, `live_state.json` untouched throughout.
 
+   **Measured 2026-10-03 (weekend all-hands): tried the purpose-built
+   signal the 2026-09-27 result called for — per-symbol price-only trend
+   breakdown instead of the basket-wide regime switch — and it's a real
+   improvement in shape but still net-losing overall.** New
+   `loop.engine.benchmark_trend_break_short` (9 new tests,
+   `tests/test_trend_break_short.py`, full suite 441 → 450) opens/covers
+   each symbol independently off its own `SMA(fast)/SMA(slow) - 1` trend
+   (enter below -5%, cover above -2%, hysteresis so a partial recovery
+   doesn't immediately re-trigger), fixed thresholds, no genome/Analyst/
+   RiskJudge involvement — wired into `short-headroom --trend-break` next
+   to the existing permanent-short and regime-conditional tables. Real
+   4-year data result: fold 1 (bull, buy&hold +92.0%) real-cost return
+   **-37.1%** (avg 10.65/27 symbols short at once) — a real loss, but far
+   milder than the permanent short's -110.7% in the same window; fold 2
+   (bull, +140.3%) **-46.5%** (avg 8.44 short) vs permanent's -181.0%;
+   holdout (bull, +54.2%) **-19.3%** (avg 9.76 short) vs permanent's
+   -57.2%. Fold 3 (the one real bear window, buy&hold -31.8%) is the
+   standout: **+31.6%** real-cost return, capturing essentially all
+   (+99%) of the zero-cost theoretical edge despite 245 flips — far beyond
+   the regime-conditional signal's best showing (+8% at the strict
+   `crisis`-only setting, or a loss at the noisier `bear` setting).
+   **Reading: per-symbol price-only trend timing is a sharp improvement in
+   RISK SHAPE over both a permanent short (catastrophic bull-market
+   losses) and the existing regime switch (either loses on the window it's
+   meant to catch, or is too rare to matter) — it survives bull markets far
+   better and captures the bear window almost completely — but it is still
+   net-negative in 3 of the champion's 4 real windows**, because any
+   individual symbol can have a sharp enough pullback inside a broader
+   bull run to trigger a false short that then eats losses when the
+   uptrend resumes (this is exactly the false-positive mechanism bull
+   markets create for a trend-following entry, mirrored to the short
+   side). This does not settle the open "whether/how to let the
+   Researcher propose shorts" question either way: it shows a
+   purpose-built per-symbol signal clearly beats the alternatives tried so
+   far, but "beats the alternatives" and "profitable enough to deploy" are
+   different bars, and this one still fails the second in the dataset's
+   dominant (bullish) regime.
+
+   **Measured the same session, 2026-10-03: tried combining both signals
+   (require BOTH trend-break AND regime bear/crisis to open, cover the
+   moment EITHER disagrees) — and it backfires on the one window that
+   actually matters.** New `loop.engine.benchmark_combined_short` (7 new
+   tests, `tests/test_combined_short.py`, full suite 450 → 457), wired into
+   `short-headroom --combined`. The hypothesis going in (recorded above,
+   now corrected) was that combining the two signals would keep
+   trend-break's bear-window capture while adding the regime filter's
+   bull-market quiet periods. Real result: bull-window losses DID shrink
+   (fold 1 -37.1% → -17.1%, holdout -19.3% → -10.6%; fold 2 was a tie,
+   -46.5% → -49.1%) — but fold 3, the one real bear window, went from
+   trend-break's +31.6% (99% of the zero-cost edge captured) to
+   **+0.3% (1% captured)** — the combination very nearly erased the only
+   real payoff either signal has ever produced in a genuine bear market.
+   Root cause, checked directly: flips rose 245 → 293 and avg concurrent
+   short fell 14.02 → 12.46 in that window — covering the instant EITHER
+   signal disagrees means the regime classifier's already-documented
+   whipsaw (the same "easily-tripped OR... reads as bear during ordinary
+   pullbacks inside a still-intact trend" from the 2026-09-27 result) now
+   also forces premature covers out of a position trend-break alone would
+   have correctly held through. **Reading: "AND to open, OR-sensitive to
+   cover" does not cleanly combine the two signals' strengths — it
+   inherits the regime signal's exit-timing weakness on the cover side
+   while only partially gaining its bull-market quiet periods on the entry
+   side.** A real design would need an asymmetric rule (e.g. gate opening
+   on both signals but let trend-break alone govern covering) — untested,
+   this session deliberately stopped at reporting the counterintuitive
+   result rather than immediately trying a third variant to fix it, same
+   "measure and report honestly, don't chase the fix in the same sitting"
+   discipline the rest of this item has used. Read-only throughout, no
+   `live_state.json` touch.
+
 6. **Equities/FX** behind the same `MarketData` interface.
 
    **Design pass done 2026-09-02 (3-hourly check, ~15:46-16:05 UTC), no code

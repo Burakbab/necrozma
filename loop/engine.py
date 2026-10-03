@@ -458,6 +458,109 @@ def benchmark_trend_break_short(replay: Replay, symbols: list[str], start: int, 
     }
 
 
+def benchmark_combined_short(replay: Replay, genome: Genome, symbols: list[str],
+                             start: int, end: int, cash: float,
+                             fast: int = 10, slow: int = 50,
+                             short_enter: float = -0.05, short_exit: float = -0.02,
+                             short_regimes: tuple[str, ...] = ("bear", "crisis"),
+                             fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                             borrow_bps_per_bar: float = 0.0,
+                             bars_per_year: float = 365.25) -> dict[str, Any]:
+    """Combines the two short-timing signals measured separately so far
+    (AGENTS.md item 5): `benchmark_trend_break_short`'s per-symbol,
+    price-only trend breakdown (good bear-window capture, but loses money
+    in 3 of the champion's 4 real windows because any one symbol can have a
+    sharp pullback inside a broader bull market) and
+    `benchmark_regime_conditional_short`'s basket-wide `Analyst._regime`
+    reading (quiet -- correctly flat -- in bull markets at its strict
+    `crisis` setting, but too rare there to capture much of a real bear
+    window). A symbol opens a short only when BOTH signals agree this bar
+    -- its own trend is below `short_enter` AND the basket regime (from the
+    real, causal `Analyst._regime`, same classifier `RiskJudge.rule`'s
+    `regime_scale` gene already gates long entries by) is one of
+    `short_regimes` -- and covers the first bar EITHER signal disagrees
+    (trend recovers above `short_exit`, or the regime leaves
+    `short_regimes`), the more cautious of the two cover rules.
+
+    Still read-only, no `RiskJudge`/`SuperiorJudge` code path, no
+    `live_state.json` touch -- a reason to consider designing a real
+    short-opening signal, never itself that design. Untested combination,
+    not a proposal: this is the next logical measurement the separate
+    trend-break and regime-conditional results both pointed at, not a
+    conclusion that combining them is the right design.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    analyst = Analyst(genome)
+    need = slow + 5
+    is_short = {s: False for s in usable}
+    flips = 0
+    symbol_bars_short = 0
+    for i, window in replay.walk(start, end):
+        prices = {s: replay.close_at(s, i) for s in usable}
+        prices = {s: p for s, p in prices.items() if p is not None}
+        if prices:
+            broker.mark(str(window.ts), prices, dd_halt=10.0, cooldown=1)
+        symbol_bars_short += sum(1 for v in is_short.values() if v)
+        briefing = analyst.brief(window, equity=broker.cash, cash=broker.cash, weights={})
+        regime_ok = briefing.regime in short_regimes
+        ts = str(window.ts)
+        for s in usable:
+            c = window.closes(s, need + 10)
+            c = c[~np.isnan(c)]
+            if len(c) < need:
+                continue
+            ma_f = float(np.mean(c[-fast:]))
+            ma_s = float(np.mean(c[-slow:]))
+            if ma_s <= 0:
+                continue
+            trend = ma_f / ma_s - 1
+            fill = replay.next_open(s, i)
+            if fill is None:
+                continue
+            if not is_short[s] and regime_ok and trend < short_enter:
+                per = broker.cash / len(usable)
+                f = broker.short(ts, s, per, fill, reason="combined-short: open")
+                if f:
+                    is_short[s] = True
+                    flips += 1
+            elif is_short[s] and (not regime_ok or trend > short_exit):
+                pos = broker.positions.get(s)
+                if pos and pos.is_open:
+                    broker.cover(ts, s, 1.0, fill, reason="combined-short: cover")
+                is_short[s] = False
+                flips += 1
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        pos = broker.positions.get(s)
+        if pos and pos.is_open:
+            px = replay.close_at(s, end - 1)
+            if px:
+                broker.cover(close_ts, s, 1.0, px, reason="combined-short benchmark close")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash
+    bars_total = max(0, end - start)
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+        "symbol_bars_short": symbol_bars_short, "bars_total": bars_total,
+        "avg_concurrent_short": (symbol_bars_short / bars_total) if bars_total > 0 else 0.0,
+        "flips": flips,
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.
