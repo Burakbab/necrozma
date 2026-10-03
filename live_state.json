@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 49,
-  "updated": "2026-10-02T22:08:46+00:00",
+  "ticks": 50,
+  "updated": "2026-10-03T00:21:55+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -166,7 +166,7 @@
         "avg_cost": 9.025365733672968,
         "opened_ts": "2026-09-18 00:00:00+00:00",
         "peak_price": 10.226,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -178,7 +178,7 @@
         "avg_cost": 2.9204594999999998,
         "opened_ts": "2026-09-20 00:00:00+00:00",
         "peak_price": 3.44,
-        "bars_held": 11,
+        "bars_held": 12,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -189,7 +189,7 @@
         "avg_cost": 7.7838899999999995,
         "opened_ts": "2026-09-26 00:00:00+00:00",
         "peak_price": 7.795,
-        "bars_held": 5,
+        "bars_held": 6,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -200,7 +200,7 @@
         "avg_cost": 1.05362655,
         "opened_ts": "2026-09-29 00:00:00+00:00",
         "peak_price": 1.0531,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -211,7 +211,7 @@
         "avg_cost": 10.919457,
         "opened_ts": "2026-09-30 00:00:00+00:00",
         "peak_price": 10.99,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1431,6 +1431,10 @@
       [
         "2026-10-01 00:00:00+00:00",
         14560.303915441677
+      ],
+      [
+        "2026-10-02 00:00:00+00:00",
+        14570.28472256653
       ]
     ],
     "peak_nav": 14868.657026992638,
@@ -11378,6 +11382,186 @@
           }
         ],
         "notes": "regime bull (scale 1.00), breadth 96%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-03T00:21:55+00:00",
+      "bar": "2026-10-02 00:00:00+00:00",
+      "tick": 50,
+      "nav_before": 14570.28,
+      "nav_after": 14633.95,
+      "cash": 5115.81,
+      "cash_before": 5115.81,
+      "positions": {
+        "UNIUSDT": 3734.82,
+        "ICPUSDT": 3415.54,
+        "INJUSDT": 882.1,
+        "FILUSDT": 1429.45,
+        "AVAXUSDT": 56.22
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-02 00:00:00+00:00",
+        "nav": 14570.28472256653,
+        "regime": "bull",
+        "breadth": 0.9259259259259259,
+        "cash_pct": 0.3511128700702987,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.569,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.92, slope +5.28%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.8,
+              "why": "confirmed trend: ma-spread +14.8%, slope +0.41%, rsi 62 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +17.4%, slope +2.78%, rsi 59 in band"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.869,
+              "why": "confirmed trend: ma-spread +25.3%, slope +3.21%, rsi 72 in band"
+            },
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +72.9%, slope +4.22%, rsi 71 in band"
+            },
+            {
+              "symbol": "FETUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +31.2%, slope +4.01%, rsi 62 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +21.4%, slope +5.28%, rsi 66 in band"
+            },
+            {
+              "symbol": "XLMUSDT",
+              "side": "buy",
+              "conviction": 0.812,
+              "why": "confirmed trend: ma-spread +15.2%, slope +1.48%, rsi 60 in band"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "buy",
+              "conviction": 0.904,
+              "why": "confirmed trend: ma-spread +23.9%, slope +1.95%, rsi 62 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.858,
+              "why": "confirmed trend: ma-spread +24.7%, slope +1.20%, rsi 60 in band"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.835,
+              "why": "confirmed trend: ma-spread +18.9%, slope +3.10%, rsi 65 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "amount": 11.84,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +72.9%, slope +4.22%, rsi 71 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "FETUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "LTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "FILUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ICPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "XLMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ADAUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "status": "rejected"
+          }
+        ],
+        "notes": "regime bull (scale 1.00), breadth 93%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
