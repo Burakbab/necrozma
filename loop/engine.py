@@ -561,6 +561,110 @@ def benchmark_combined_short(replay: Replay, genome: Genome, symbols: list[str],
     }
 
 
+def benchmark_asymmetric_short(replay: Replay, genome: Genome, symbols: list[str],
+                               start: int, end: int, cash: float,
+                               fast: int = 10, slow: int = 50,
+                               short_enter: float = -0.05, short_exit: float = -0.02,
+                               short_regimes: tuple[str, ...] = ("bear", "crisis"),
+                               fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                               borrow_bps_per_bar: float = 0.0,
+                               bars_per_year: float = 365.25) -> dict[str, Any]:
+    """`benchmark_combined_short`'s own writeup (AGENTS.md item 5,
+    2026-10-03) found that covering the moment EITHER signal disagrees
+    inherits the regime classifier's documented whipsaw on the exit side --
+    fold 3's capture collapsed from trend-break alone's 99% to 1%, because
+    the regime leaving `short_regimes` forced a premature cover out of a
+    position trend-break alone would have correctly held through. This is
+    the asymmetric variant that writeup flagged as the next thing to try,
+    not built in the same session as the measurement that motivated it:
+    gate OPENING on both signals (the same entry rule
+    `benchmark_combined_short` uses -- a symbol's own trend below
+    `short_enter` AND the basket regime in `short_regimes`), but let
+    trend-break ALONE govern covering (only `trend > short_exit`, the
+    regime's own exit never forces a cover here).
+
+    Everything else -- fill convention, no-leverage sizing, read-only
+    discipline, no `RiskJudge`/`SuperiorJudge` code path, no
+    `live_state.json` touch -- matches `benchmark_combined_short` exactly;
+    this function differs from it only in the cover condition's boolean
+    (`not regime_ok or trend > short_exit` there, `trend > short_exit`
+    alone here). An untested variant when first measured, not a settled
+    design -- it is the natural fix for the problem the AND/OR combination
+    found, but "the natural fix" still needs to be checked against real
+    data before it's anything more than a hypothesis.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    analyst = Analyst(genome)
+    need = slow + 5
+    is_short = {s: False for s in usable}
+    flips = 0
+    symbol_bars_short = 0
+    for i, window in replay.walk(start, end):
+        prices = {s: replay.close_at(s, i) for s in usable}
+        prices = {s: p for s, p in prices.items() if p is not None}
+        if prices:
+            broker.mark(str(window.ts), prices, dd_halt=10.0, cooldown=1)
+        symbol_bars_short += sum(1 for v in is_short.values() if v)
+        briefing = analyst.brief(window, equity=broker.cash, cash=broker.cash, weights={})
+        regime_ok = briefing.regime in short_regimes
+        ts = str(window.ts)
+        for s in usable:
+            c = window.closes(s, need + 10)
+            c = c[~np.isnan(c)]
+            if len(c) < need:
+                continue
+            ma_f = float(np.mean(c[-fast:]))
+            ma_s = float(np.mean(c[-slow:]))
+            if ma_s <= 0:
+                continue
+            trend = ma_f / ma_s - 1
+            fill = replay.next_open(s, i)
+            if fill is None:
+                continue
+            if not is_short[s] and regime_ok and trend < short_enter:
+                per = broker.cash / len(usable)
+                f = broker.short(ts, s, per, fill, reason="asymmetric-short: open")
+                if f:
+                    is_short[s] = True
+                    flips += 1
+            elif is_short[s] and trend > short_exit:
+                pos = broker.positions.get(s)
+                if pos and pos.is_open:
+                    broker.cover(ts, s, 1.0, fill, reason="asymmetric-short: cover")
+                is_short[s] = False
+                flips += 1
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        pos = broker.positions.get(s)
+        if pos and pos.is_open:
+            px = replay.close_at(s, end - 1)
+            if px:
+                broker.cover(close_ts, s, 1.0, px, reason="asymmetric-short benchmark close")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash
+    bars_total = max(0, end - start)
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+        "symbol_bars_short": symbol_bars_short, "bars_total": bars_total,
+        "avg_concurrent_short": (symbol_bars_short / bars_total) if bars_total > 0 else 0.0,
+        "flips": flips,
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.

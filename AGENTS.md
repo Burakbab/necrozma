@@ -3043,6 +3043,57 @@ every `evolve` call.
    discipline the rest of this item has used. Read-only throughout, no
    `live_state.json` touch.
 
+   **Measured 2026-10-04 (weekend all-hands): built and ran the asymmetric
+   variant the 2026-10-03 result flagged — it does fix the bear-window
+   collapse, but at a real bull-market cost that wasn't predicted.** New
+   `loop.engine.benchmark_asymmetric_short` (8 new tests,
+   `tests/test_asymmetric_short.py`, full suite 457 → 465) opens exactly
+   like `benchmark_combined_short` (both trend-break AND regime must agree)
+   but covers on trend-break ALONE — the regime leaving `short_regimes` no
+   longer forces a cover. Wired into `short-headroom --asymmetric`. Real
+   4-year result against the live champion's current windows (fee+slippage
+   +3bps/bar borrow), trend-break / combined / asymmetric side by side:
+
+   | window | trend-break | combined | asymmetric |
+   |---|---|---|---|
+   | fold 1 (bull) | -34.9% | **-14.7%** | -38.6% |
+   | fold 2 (bull) | -45.2% | -48.2% | -48.1% |
+   | fold 3 (bear) | **+32.8% (95% capt.)** | +0.1% (0% capt.) | +23.2% (67% capt.) |
+   | holdout (bull) | -22.8% | -14.6% | **-13.7%** |
+
+   It does recover most of combined's lost bear-window capture (0% → 67%,
+   vs. trend-break alone's 95%) — the fix worked as intended on the
+   problem it targeted. But the predicted bull-market benefit did not
+   follow: in fold 1, asymmetric's loss (-38.6%) is *worse* than both
+   combined (-14.7%) **and** trend-break alone (-34.9%), and fold 2 is a
+   three-way tie. Root cause, checked directly: avg concurrent short
+   (10.20) and flip count (216) in fold 1 are close to trend-break alone's
+   own numbers (10.59 / 216), not combined's lower ones (8.59 / 260) —
+   the AND-gated entry barely filters anything here, because (per the
+   2026-09-27 finding this item already has on record) the regime's `bear`
+   leg is an easily-tripped OR that fires almost as often as individual
+   symbols' own trend-break during real pullbacks, even inside an
+   overall-bull fold. So the entry gate contributes little, and once a
+   position opens, asymmetric holds it exactly as long as trend-break alone
+   would (same cover rule) — inheriting nearly all of trend-break's
+   bull-market duration risk, none of combined's early-exit protection.
+   **Reading: this item has now tried three combination shapes — AND/OR
+   (combined), AND/trend-alone (asymmetric), and the two signals
+   separately — and none dominates: each trades bear-window capture
+   against bull-market loss in a different place, but none is better than
+   trend-break alone in the bear window AND better than combined in the
+   bull windows at the same time.** The asymmetric rule's own holdout result
+   (-13.7%, best of the three) came from the regime gate blocking a few bad
+   entries, not from any cover-side benefit — too thin a result on one
+   window to read as a general win. No further combination shape is queued
+   here; the honest conclusion so far is that the *regime* half of every
+   combination tried is the weak link (its bear leg is noisy, its only real
+   value is the rare entries it blocks), not the combination logic itself —
+   a genuinely new signal to pair with trend-break, not another way of
+   wiring the existing regime classifier to it, is what the next session on
+   this item should consider, if it's picked up again. Read-only throughout,
+   no `RiskJudge`/`SuperiorJudge` code path, no `live_state.json` touch.
+
 6. **Equities/FX** behind the same `MarketData` interface.
 
    **Design pass done 2026-09-02 (3-hourly check, ~15:46-16:05 UTC), no code
