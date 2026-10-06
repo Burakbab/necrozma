@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
   "ticks": 53,
-  "updated": "2026-10-06T00:22:53+00:00",
+  "updated": "2026-10-06T00:49:07+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -136962,6 +136962,16 @@
       "notes": "Reconstructed RiskJudge.rule by hand against v3's evolved genes (lone_voice_scale=1.4791, two_agree_bonus=1.2, base_size_pct=0.2392, cash_floor_pct=0.3503, max_position_pct=0.25). UNIUSDT (lone-voice, moderate conv 0.915) scored 0.915*1.4791=1.3534, genuinely the top-scored of 10 buy candidates that bar -- ahead of LTCUSDT's two-agree score (0.6835*1.2=0.8202, diluted by a weak 0.509 risky signal averaged in). Its target hit max_position_pct (0.25) then cash_avail (equity*(cash_pct-cash_floor_pct)=14021.60*0.11388=1596.83), matching the real fill amount $1596.83 to the cent -- deployed 100% of remaining cash and correctly vetoed all 9 other candidates (DOTUSDT, FETUSDT, FILUSDT, ICPUSDT, HBARUSDT, ATOMUSDT, SOLUSDT, INJUSDT, LTCUSDT, in that exact score-descending order matching the journal's veto list) as 'no room'. Cash-floor exhaustion by the single highest-scored order, same mechanism as ticks 16/32/38 -- evolved genome operating as designed, nothing to correct.",
       "reasons": [
         "lone-voice buy on UNIUSDT (agreement 0.33) is the only order the bar produced (0.92 conviction, 11.4% of equity)"
+      ]
+    },
+    {
+      "tick": 53,
+      "bar": "2026-10-05 00:00:00+00:00",
+      "reviewed_at": "2026-10-06T00:49:07+00:00",
+      "verdict": "approve",
+      "notes": "Hand-reconstructed RiskJudge.rule scoring against the real evolved risk_judge genes (base_size_pct 0.2392, lone_voice_scale 1.4791, two_agree_bonus 1.2, unanimous_bonus 1.6, max_position_pct 0.25, cash_floor_pct 0.3503). 11 buy candidates proposed (consult_risky 7, consult_moderate 9, consult_conservative 0, n_consults=3). Unlike ticks 16/32, AVAXUSDT was not merely the only fillable order -- it was the single HIGHEST-scored candidate this bar: conv 0.927 (consult_moderate only, share 0.33) x lone_voice_scale 1.4791 = 1.3711, beating every two-agree candidate (best was LTCUSDT-adjacent FETUSDT/AAVEUSDT/FILUSDT/ICPUSDT/ADAUSDT at conv x two_agree_bonus 1.2, all <=0.91) and every other lone-voice candidate (LTCUSDT 1.2173, DOTUSDT 1.2010, LINKUSDT 1.1833, NEARUSDT 0.8697, SOLUSDT 0.6656). AVAXUSDT already held a tiny residual position (57.21 of 14817.55 NAV, weight 0.0039), so scale-in was allowed and no slot-count veto applied. Target size 0.2392 x 1.3711 x regime_scale(bull)=1.0 = 32.80% of equity, capped to 24.61% by max_position_pct minus the tiny existing weight; cash_avail = equity x (cash_pct 0.5723 - cash_floor_pct 0.3503) = $3446.23, which bound tighter than the position cap and matches the real order amount ($3446.23) to the cent. That consumed all deployable cash, correctly vetoing every other candidate (LTCUSDT, DOTUSDT, LINKUSDT, FETUSDT, AAVEUSDT, NEARUSDT, FILUSDT, ICPUSDT, ADAUSDT, SOLUSDT) as \"no room: size cap or cash floor\" -- not a ranking artifact, cash-starved after the top-scored buy. Same conclusion as tick 16/32: lone_voice_scale > two_agree_bonus is the evolved genome's real, intended risk preference, operating exactly as designed. Approved.",
+      "reasons": [
+        "lone-voice buy on AVAXUSDT (agreement 0.33) is the only order the bar produced (0.93 conviction, 22.2% of equity)"
       ]
     }
   ]
