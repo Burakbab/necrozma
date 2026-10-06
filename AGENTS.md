@@ -454,6 +454,59 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-06 (3-hourly check, ~00:46-01:18 UTC): tick 53's flagged hard
+  call reviewed (verdict `approve`), then 15 more real `evolve` generations
+  against the live v3 (1d) champion, no promotion — cumulative candidates
+  tried against v3 rose 50763 → 50970 (per `researcher_memory.tested`),
+  stagnation/boldness counter 3667 → 3681.** No live trading this cycle
+  (tick 53 already handled at the dedicated 00:20 UTC daily slot — confirmed
+  via `live_state.json`'s `updated` timestamp at session start,
+  `2026-10-06T00:22:53+00:00`, matching `runs/2026-10-06-0020-daily-trading.md`;
+  `53 % 7 == 4` so no `evolve` ran as part of that tick). `review-hard-calls`
+  flagged tick 53 as pending — a lone-voice AVAXUSDT buy (agreement 0.33,
+  0.93 conviction, 22.2% of equity, the only order the bar produced), the
+  fourth live tick ever to trip `flag_hard_call` (after ticks 16, 32). Hand
+  reconstruction against v3's real evolved `risk_judge` genes found this one
+  differs from ticks 16/32 in a notable way: AVAXUSDT wasn't merely the only
+  fillable order, it was the single **highest-scored** candidate that bar —
+  conv 0.927 × `lone_voice_scale` 1.4791 = 1.3711, beating every two-agree
+  candidate and every other lone-voice candidate among the 11 proposed —
+  and its size landed at the cash-floor limit ($3446.23, matching the real
+  order to the cent), correctly starving the other 10 candidates of room.
+  Recorded `approve` via `review-hard-calls --tick 53 --verdict approve
+  --notes '...'`, same conclusion as ticks 16/32: `lone_voice_scale` >
+  `two_agree_bonus` is the evolved genome's own intended risk preference,
+  operating as designed. Committed and pushed separately (`7b6307b`) before
+  starting evolve work — verified only `hard_call_reviews`/`updated`
+  changed. `review-hard-calls` now reports 0 pending (5 reviewed, up from
+  4). See `runs/2026-10-06-0118-evolve-batch-v3.md` for the full
+  reconstruction.
+
+  Then, with nothing else queued, used the rest of the slot for one more
+  real 15-generation `evolve` batch via `tools/background_runner.py`
+  (`start` + separate `wait`), run concurrently with the baseline `pytest`
+  pass, exit code 0, no truncation, ~31 minutes. `AGENTS.md` size 250,093
+  bytes — comfortably under the 256KB threshold, not rotated this cycle.
+  Champion's fold-aggregate fitness held flat at 1.209 across all 15
+  generations (950 trades, 37% win, 1% stops, 4 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged roughly 1.242-1.883,
+  never clearing the promotion-margin bar. Verified before commit: `python3
+  -m pytest -q` 465/465 both before (baseline, right after the
+  hard-call-review commit) and after `evolve`; top-level key diff of
+  `live_state.json` (checked directly in Python against `git show
+  HEAD:live_state.json`, not just eyeballed) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin rose
+  slightly (7.486, was 7.478) at draw 1102, same slow-rise pattern already
+  tracked under item 13, nothing new; dashboard rebuilt with `EVO_STATE`
+  set (`index.html` shows 50970 challenger ideas tried). Genome still v3
+  (1d) live, untouched. Container synced cleanly from `main` via
+  `tools/git_sync.py` fast-forward, no divergence, no shallow-clone
+  staleness this cycle.
+
 - **Run 2026-10-05 (3-hourly check, ~21:47-22:31 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 50557 → 50763 (per
