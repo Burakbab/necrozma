@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 52,
-  "updated": "2026-10-05T22:26:58+00:00",
+  "ticks": 53,
+  "updated": "2026-10-06T00:22:53+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,30 +154,19 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 5187.155107972983,
+    "cash": 5437.427425781625,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "borrow_bps_per_bar": 0.0,
     "positions": {
-      "ICPUSDT": {
-        "symbol": "ICPUSDT",
-        "qty": 1030.6384110879628,
-        "avg_cost": 2.9204594999999998,
-        "opened_ts": "2026-09-20 00:00:00+00:00",
-        "peak_price": 3.44,
-        "bars_held": 14,
-        "entry_agents": [
-          "consult_moderate"
-        ]
-      },
       "INJUSDT": {
         "symbol": "INJUSDT",
         "qty": 117.30090148566508,
         "avg_cost": 7.7838899999999995,
         "opened_ts": "2026-09-26 00:00:00+00:00",
         "peak_price": 7.795,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -187,19 +176,19 @@
         "qty": 1375.397794677949,
         "avg_cost": 1.05362655,
         "opened_ts": "2026-09-29 00:00:00+00:00",
-        "peak_price": 1.0668,
-        "bars_held": 5,
+        "peak_price": 1.1846,
+        "bars_held": 6,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "AVAXUSDT": {
         "symbol": "AVAXUSDT",
-        "qty": 5.181441588670542,
-        "avg_cost": 10.919457,
+        "qty": 313.3823251559222,
+        "avg_cost": 11.166430408432522,
         "opened_ts": "2026-09-30 00:00:00+00:00",
-        "peak_price": 11.125,
-        "bars_held": 4,
+        "peak_price": 11.165,
+        "bars_held": 5,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -209,8 +198,8 @@
         "qty": 764.4704319923965,
         "avg_cost": 4.8234105,
         "opened_ts": "2026-10-03 00:00:00+00:00",
-        "peak_price": 4.917,
-        "bars_held": 1,
+        "peak_price": 5.294,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -866,6 +855,26 @@
         "ref_price": 4.821,
         "fee": 3.691045754366027,
         "reason": "consult_moderate: confirmed trend: ma-spread +70.8%, slope +2.72%, rsi 72 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-05 00:00:00+00:00",
+        "symbol": "ICPUSDT",
+        "side": "sell",
+        "qty": 1030.6384110879628,
+        "price": 3.5902040000000004,
+        "ref_price": 3.592,
+        "fee": 3.7002021460416494,
+        "reason": "guardian: time stop (15 bars, +22.9%)"
+      },
+      {
+        "ts": "2026-10-05 00:00:00+00:00",
+        "symbol": "AVAXUSDT",
+        "side": "buy",
+        "qty": 308.20088356725165,
+        "price": 11.170582499999998,
+        "ref_price": 11.165,
+        "fee": 3.4462296260869656,
+        "reason": "consult_moderate: confirmed trend: ma-spread +27.8%, slope +2.08%, rsi 68 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1268,6 +1277,21 @@
           "consult_moderate",
           "consult_risky"
         ]
+      },
+      {
+        "symbol": "ICPUSDT",
+        "qty": 1030.6384110879628,
+        "entry_price": 2.9204594999999998,
+        "exit_price": 3.5902040000000004,
+        "entry_ts": "2026-09-20 00:00:00+00:00",
+        "exit_ts": "2026-10-05 00:00:00+00:00",
+        "pnl": 686.5642051688611,
+        "pnl_pct": 0.22932846697583065,
+        "bars_held": 15,
+        "exit_reason": "guardian: time stop (15 bars, +22.9%)",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -1478,9 +1502,13 @@
       [
         "2026-10-04 00:00:00+00:00",
         14825.723854424761
+      ],
+      [
+        "2026-10-05 00:00:00+00:00",
+        15522.202186073722
       ]
     ],
-    "peak_nav": 14868.657026992638,
+    "peak_nav": 15522.202186073722,
     "halted": false,
     "halt_bars_left": 0,
     "halt_count": 0,
@@ -11980,6 +12008,231 @@
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-06T00:22:53+00:00",
+      "bar": "2026-10-05 00:00:00+00:00",
+      "tick": 53,
+      "nav_before": 15522.2,
+      "nav_after": 15532.59,
+      "cash": 5437.43,
+      "cash_before": 5187.16,
+      "positions": {
+        "INJUSDT": 904.16,
+        "FILUSDT": 1617.47,
+        "AVAXUSDT": 3498.91,
+        "NEARUSDT": 4074.63
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-05 00:00:00+00:00",
+        "nav": 15522.202186073722,
+        "regime": "bull",
+        "breadth": 0.9259259259259259,
+        "cash_pct": 0.5723193748783191,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "SOLUSDT",
+              "side": "buy",
+              "conviction": 0.45,
+              "why": "at/near range high (breakout -1.1%), momentum rank 0.46, slope +0.66%"
+            },
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.499,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.65, slope +1.17%"
+            },
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout -1.7%), momentum rank 1.00, slope +2.40%"
+            },
+            {
+              "symbol": "FETUSDT",
+              "side": "buy",
+              "conviction": 0.579,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.96, slope +2.80%"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.559,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.88, slope +6.68%"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.539,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.81, slope +3.19%"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.529,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.77, slope +3.48%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +13.6%, slope +1.17%, rsi 65 in band"
+            },
+            {
+              "symbol": "LINKUSDT",
+              "side": "buy",
+              "conviction": 0.8,
+              "why": "confirmed trend: ma-spread +16.9%, slope +1.95%, rsi 58 in band"
+            },
+            {
+              "symbol": "AVAXUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +27.8%, slope +2.08%, rsi 68 in band"
+            },
+            {
+              "symbol": "LTCUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +22.7%, slope +0.68%, rsi 71 in band"
+            },
+            {
+              "symbol": "DOTUSDT",
+              "side": "buy",
+              "conviction": 0.812,
+              "why": "confirmed trend: ma-spread +17.8%, slope +1.25%, rsi 61 in band"
+            },
+            {
+              "symbol": "FETUSDT",
+              "side": "buy",
+              "conviction": 0.938,
+              "why": "confirmed trend: ma-spread +29.7%, slope +2.80%, rsi 66 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.915,
+              "why": "confirmed trend: ma-spread +24.0%, slope +6.68%, rsi 67 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.892,
+              "why": "confirmed trend: ma-spread +24.9%, slope +3.19%, rsi 66 in band"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +19.9%, slope +3.48%, rsi 69 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [
+          {
+            "symbol": "ICPUSDT",
+            "why": "guardian: time stop (15 bars, +22.9%)"
+          }
+        ],
+        "orders": [
+          {
+            "symbol": "AVAXUSDT",
+            "side": "buy",
+            "amount": 3446.23,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +27.8%, slope +2.08%, rsi 68 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "LTCUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "DOTUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "LINKUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "FETUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "FILUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ICPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ADAUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "SOLUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "AVAXUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 308.20088356725165,
+            "price": 11.170582499999998,
+            "reason": "consult_moderate: confirmed trend: ma-spread +27.8%, slope +2.08%, rsi 68 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime bull (scale 1.00), breadth 93%",
+        "hard_call": {
+          "is_hard_call": true,
+          "reasons": [
+            "lone-voice buy on AVAXUSDT (agreement 0.33) is the only order the bar produced (0.93 conviction, 22.2% of equity)"
+          ]
         }
       }
     }
