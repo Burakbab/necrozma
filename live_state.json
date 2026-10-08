@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 54,
-  "updated": "2026-10-07T22:13:33+00:00",
+  "ticks": 55,
+  "updated": "2026-10-08T00:22:24+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 5437.427425781625,
+    "cash": 5369.557879585283,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 7.7838899999999995,
         "opened_ts": "2026-09-26 00:00:00+00:00",
         "peak_price": 8.113,
-        "bars_held": 10,
+        "bars_held": 11,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,18 +177,18 @@
         "avg_cost": 1.05362655,
         "opened_ts": "2026-09-29 00:00:00+00:00",
         "peak_price": 1.1846,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "AVAXUSDT": {
         "symbol": "AVAXUSDT",
-        "qty": 313.3823251559222,
-        "avg_cost": 11.166430408432522,
+        "qty": 319.4814874953848,
+        "avg_cost": 11.165478255725395,
         "opened_ts": "2026-09-30 00:00:00+00:00",
         "peak_price": 11.608,
-        "bars_held": 6,
+        "bars_held": 7,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -198,8 +198,8 @@
         "qty": 764.4704319923965,
         "avg_cost": 4.8234105,
         "opened_ts": "2026-10-03 00:00:00+00:00",
-        "peak_price": 5.294,
-        "bars_held": 3,
+        "peak_price": 5.335,
+        "bars_held": 4,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -875,6 +875,16 @@
         "ref_price": 11.165,
         "fee": 3.4462296260869656,
         "reason": "consult_moderate: confirmed trend: ma-spread +27.8%, slope +2.08%, rsi 68 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-07 00:00:00+00:00",
+        "symbol": "AVAXUSDT",
+        "side": "buy",
+        "qty": 6.099162339462563,
+        "price": 11.1165555,
+        "ref_price": 11.111,
+        "fee": 0.06786954619634178,
+        "reason": "consult_moderate: confirmed trend: ma-spread +26.0%, slope +1.34%, rsi 65 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1510,6 +1520,10 @@
       [
         "2026-10-06 00:00:00+00:00",
         15485.19745612299
+      ],
+      [
+        "2026-10-07 00:00:00+00:00",
+        15328.455265730185
       ]
     ],
     "peak_nav": 15522.202186073722,
@@ -12410,6 +12424,152 @@
             "symbol": "FETUSDT",
             "side": "buy",
             "status": "rejected"
+          }
+        ],
+        "notes": "regime bull (scale 1.00), breadth 93%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-08T00:22:24+00:00",
+      "bar": "2026-10-07 00:00:00+00:00",
+      "tick": 55,
+      "nav_before": 15328.46,
+      "nav_after": 15359.26,
+      "cash": 5369.56,
+      "cash_before": 5437.43,
+      "positions": {
+        "INJUSDT": 879.05,
+        "FILUSDT": 1465.62,
+        "AVAXUSDT": 3549.76,
+        "NEARUSDT": 4095.27
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-07 00:00:00+00:00",
+        "nav": 15328.455265730185,
+        "regime": "bull",
+        "breadth": 0.9259259259259259,
+        "cash_pct": 0.3547276833522865,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout -1.0%), momentum rank 1.00, slope +0.64%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ADAUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +12.5%, slope +1.02%, rsi 58 in band"
+            },
+            {
+              "symbol": "AVAXUSDT",
+              "side": "buy",
+              "conviction": 0.938,
+              "why": "confirmed trend: ma-spread +26.0%, slope +1.34%, rsi 65 in band"
+            },
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +57.6%, slope +0.64%, rsi 70 in band"
+            },
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +24.0%, slope +4.49%, rsi 61 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.812,
+              "why": "confirmed trend: ma-spread +8.9%, slope +1.59%, rsi 50 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.869,
+              "why": "confirmed trend: ma-spread +21.6%, slope +0.62%, rsi 59 in band"
+            },
+            {
+              "symbol": "ICPUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +19.0%, slope +2.09%, rsi 58 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "AVAXUSDT",
+            "side": "buy",
+            "amount": 67.87,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +26.0%, slope +1.34%, rsi 65 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ADAUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "FILUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ICPUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "AVAXUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 6.099162339462563,
+            "price": 11.1165555,
+            "reason": "consult_moderate: confirmed trend: ma-spread +26.0%, slope +1.34%, rsi 65 in band | superior_judge: approved (cap-checked)"
           }
         ],
         "notes": "regime bull (scale 1.00), breadth 93%",
