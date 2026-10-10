@@ -3531,6 +3531,38 @@ every `evolve` call.
     evidence-gathering. Once decided, record the decision and outcome here
     the same way items 2/5/6 above are recorded.
 
+    **Design pass done 2026-10-10 (weekend all-hands) — quantified each
+    bounded alternative instead of leaving this as a qualitative "needs
+    owner attention," no code shipped, still not decided — see "Current
+    state" above and `runs/2026-10-10-0600-weekend-all-hands.md`.** Confirmed
+    the live numbers against the formula directly (`n=1198`, margin `7.530`,
+    matches `HOLDOUT_SIGMA * sqrt(2*ln(n))` exactly) and computed what three
+    concrete bounded designs would actually change: a rolling window over the
+    last 1000/500/200/100 cumulative draws brings the margin-to-best-edge
+    ratio down from today's 6.88x to only 6.79x/6.44x/5.95x/5.54x
+    respectively — a real but modest hygiene improvement, not close to
+    parity. Only a full periodic reset to the formula's own floor (`n=2`)
+    gets near parity (2.15x) — and that is the specific move the
+    constitution's own docstring already argues against by name. **Revises
+    the 2026-09-20 framing**: the margin side of this question has less
+    headroom than "needs roughly 9x the best edge" implied on its own — no
+    bounded, principled alternative short of the explicitly-rejected full
+    reset moves the ratio below ~5.5x, so the real reason nothing has
+    cleared the gate in 1198 cumulative draws reads closer to "search hasn't
+    found a genuinely much-better genome yet" than "the gate's bookkeeping
+    is unreasonable." Growth under status quo is also genuinely mild on any
+    realistic horizon (projected +0.32 at 30 days, +1.19 after a full year at
+    the observed ~34 draws/day rate) — not a runaway number. Still the
+    owner's call, now with effect sizes attached rather than just a
+    direction: status quo (simplest, consistent with the docstring's own
+    argument, costs nothing new since the drawdown situation is already
+    disclosed on the dashboard), a rolling window (bounds worst-case growth
+    over years, barely changes today's number, a "guard against the far
+    future" rather than a near-term unlock), or a full reset (not
+    recommended, explicitly warned against in the code it would change).
+    `constitution/__init__.py` untouched throughout — this was read-only
+    analysis against the live `holdout-pressure` output, no re-seal needed.
+
 ---
 
 ## Measured 2026-08-16 — read before proposing more genes
