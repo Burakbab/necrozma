@@ -114,5 +114,28 @@ hygiene improvement, not something likely to unlock a promotion by itself.
 Ran a larger-than-usual real `evolve` batch (40 generations, vs. the
 3-hourly checks' standard 15) against the live v3 champion via
 `tools/background_runner.py`, started before the analysis above and
-collected afterward. See the "Current state" update in `AGENTS.md` for the
-result.
+collected after it, ~35 minutes wall-clock. Result: no promotion. Champion's
+fold-aggregate fitness held flat at 1.864 across all 40 generations (988
+trades, 40% win, 1% stops, 3 halts, unchanged throughout) — the same reading
+the item-13 analysis above would predict: best-of-generation fold-fitness
+ranged roughly 1.578-2.538, cumulative candidates tried against v3 rose
+57840 → 58393 (`researcher_memory.tested`), stagnation/boldness counter 4180
+→ 4219. `holdout-pressure`'s cumulative sealed-holdout draw count moved 1198
+→ 1201 (3 new draws this batch, all lost), margin 7.530 → 7.532 — matching
+the design-pass projection almost exactly (+30d was projected at +0.32 for
+roughly 1000 new draws; 3 draws moving it +0.002 is consistent).
+
+Verified before commit: `python3 -m pytest -q` 465/465 both before (baseline,
+right after the item-13 commit) and after `evolve`; top-level key diff of
+`live_state.json` (checked directly in Python against `git show
+HEAD:live_state.json`, not just eyeballed) showed only
+`updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+hard_call_reviews byte-identical); `lineage` length unchanged at 202 (bounded
+ring buffer, no new promotion attempt recorded — this is also why
+`holdout-pressure`'s "individual sealed-holdout draws" count against the
+*current* champion read 26 instead of growing past 28: older generations
+rolled off the ring buffer as new ones were added, the cumulative draw
+counter itself is unaffected and lives in `researcher_memory`, not
+`lineage`); `tools/edit_bundle_module.py verify`/`sync --check` both clean.
+Dashboard rebuilt with `EVO_STATE` set (`index.html` shows 58393 challenger
+idea(s) tried). Genome still v3 (1d) live, untouched.

@@ -454,6 +454,59 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-10 (weekend all-hands, ~06:00-07:30 UTC): item 13 design pass
+  (see item 13 above and `runs/2026-10-10-0600-weekend-all-hands.md`), plus
+  one larger real `evolve` batch (40 generations, vs. the 3-hourly checks'
+  usual 15) against the live v3 champion, no promotion.** Deliberately spent
+  the weekend's extra time budget on item 13 — the one open question
+  explaining *why* weeks of 15-gen evolve batches keep finding nothing —
+  rather than just another routine batch. Quantified three bounded
+  alternatives to the never-resetting cumulative holdout margin instead of
+  leaving it as a qualitative flag: confirmed the live formula directly
+  (`n=1198` → margin `7.530`, exact match), then computed that a rolling
+  window over the last 1000/500/200/100 cumulative draws only brings the
+  margin-to-best-edge ratio from today's 6.88x down to 6.79x/6.44x/5.95x/
+  5.54x — real but modest — while only a full reset to the formula's own
+  floor (`n=2`) gets near parity (2.15x), which is the specific move the
+  constitution's docstring already argues against. Revises the 2026-09-20
+  framing: the margin side has less headroom than "9x the best edge" implied
+  on its own; the likelier explanation for zero promotions in 1198 cumulative
+  draws is "search hasn't found a much-better genome," not "the gate's
+  bookkeeping is unreasonable." No code shipped, `constitution/__init__.py`
+  untouched, still the owner's risk-appetite call. Committed and pushed
+  separately (`ba76bbc`) before starting the evolve batch.
+
+  Then ran a 40-generation batch via `tools/background_runner.py` (`start` +
+  separate `wait`, the second `wait` call needed a longer background timeout
+  after the first one hit its own 1800s backgrounding limit while the real
+  evolve process — detached, unaffected — kept running; confirmed alive via
+  `ps` at generation 19/40 in between), ~35 minutes wall-clock, exit code 0,
+  no truncation. Champion's fold-aggregate fitness held flat at 1.864 across
+  all 40 generations (988 trades, 40% win, 1% stops, 3 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged roughly 1.578-2.538,
+  never clearing the promotion-margin bar — same story the item-13 analysis
+  above predicts. **This batch's own `live_state.json` was not committed**:
+  by the time verification finished, a concurrent 3-hourly check had already
+  pushed its own 15-generation batch (`e610e01`, see the entry immediately
+  below) from the same ancestor commit (`ba76bbc`). Two independent `evolve`
+  runs against the same starting state produce divergent
+  `researcher_memory`/`lineage` snapshots that cannot be losslessly combined
+  — hand-merging them risks silently corrupting the Researcher's
+  already-tested-candidate dedup memory (the exact failure mode the
+  2026-08-15 fix in "Two flaws found by watching it run" exists to prevent).
+  Rather than attempt that merge, this session took origin's post-conflict
+  `live_state.json`/`index.html` as-is (`git show origin/main:<path>`, no
+  destructive git reset/checkout — those are blocked by this environment's
+  safety policy — just explicit file reads) and recorded only the qualitative
+  finding here: a 40-gen batch run in parallel also found no promotion, fully
+  consistent with both the item-13 prediction and the other session's own
+  15-gen result. `python3 -m pytest -q` 465/465 confirmed clean against this
+  session's own pre-merge snapshot before the conflict was discovered.
+  Container arrived detached HEAD, 49 commits behind `origin/main`; `git
+  checkout main` plus `tools/git_sync.py` fast-forwarded cleanly, nothing
+  lost. `AGENTS.md` size 240,310 bytes at session start — comfortably under
+  the 256KB threshold, not rotated this cycle.
+
 - **Run 2026-10-10 (3-hourly check, ~06:46-07:18 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 57840 → 58050 (per
