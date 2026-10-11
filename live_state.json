@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 57,
-  "updated": "2026-10-10T22:20:46+00:00",
+  "ticks": 58,
+  "updated": "2026-10-11T00:22:05+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -166,7 +166,7 @@
         "avg_cost": 7.7838899999999995,
         "opened_ts": "2026-09-26 00:00:00+00:00",
         "peak_price": 8.113,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 1.05362655,
         "opened_ts": "2026-09-29 00:00:00+00:00",
         "peak_price": 1.1846,
-        "bars_held": 10,
+        "bars_held": 11,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +188,7 @@
         "avg_cost": 11.05732605946871,
         "opened_ts": "2026-09-30 00:00:00+00:00",
         "peak_price": 11.608,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -199,7 +199,7 @@
         "avg_cost": 4.8234105,
         "opened_ts": "2026-10-03 00:00:00+00:00",
         "peak_price": 5.335,
-        "bars_held": 6,
+        "bars_held": 7,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -209,8 +209,8 @@
         "qty": 0.15540677841013015,
         "avg_cost": 165.85288500000001,
         "opened_ts": "2026-10-08 00:00:00+00:00",
-        "peak_price": 167.35,
-        "bars_held": 1,
+        "peak_price": 168.37,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1563,6 +1563,10 @@
       [
         "2026-10-09 00:00:00+00:00",
         14720.780983588598
+      ],
+      [
+        "2026-10-10 00:00:00+00:00",
+        15174.821769293456
       ]
     ],
     "peak_nav": 15522.202186073722,
@@ -12776,6 +12780,83 @@
         "vetoes": [
           {
             "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [],
+        "notes": "regime bull (scale 1.00), breadth 93%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-11T00:22:05+00:00",
+      "bar": "2026-10-10 00:00:00+00:00",
+      "tick": 58,
+      "nav_before": 15174.82,
+      "nav_after": 15188.25,
+      "cash": 4996.78,
+      "cash_before": 4996.78,
+      "positions": {
+        "INJUSDT": 913.3,
+        "FILUSDT": 1536.18,
+        "AVAXUSDT": 3674.05,
+        "NEARUSDT": 4041.76,
+        "AAVEUSDT": 26.18
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-10 00:00:00+00:00",
+        "nav": 15174.821769293456,
+        "regime": "bull",
+        "breadth": 0.9259259259259259,
+        "cash_pct": 0.3292810042936423,
+        "proposals": {
+          "consult_risky": [],
+          "consult_moderate": [
+            {
+              "symbol": "AAVEUSDT",
+              "side": "buy",
+              "conviction": 0.927,
+              "why": "confirmed trend: ma-spread +22.7%, slope +1.60%, rsi 63 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.915,
+              "why": "confirmed trend: ma-spread +19.9%, slope +0.99%, rsi 60 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +7.4%, slope +3.32%, rsi 52 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [],
+        "vetoes": [
+          {
+            "symbol": "AAVEUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "FILUSDT",
             "side": "buy",
             "by": "risk_judge",
             "reason": "no room: size cap or cash floor"
