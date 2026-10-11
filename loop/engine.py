@@ -665,6 +665,117 @@ def benchmark_asymmetric_short(replay: Replay, genome: Genome, symbols: list[str
     }
 
 
+def benchmark_dual_trend_short(replay: Replay, symbols: list[str], start: int, end: int,
+                               cash: float, fast: int = 10, slow: int = 50,
+                               short_enter: float = -0.05, short_exit: float = -0.02,
+                               slope_lookback: int = 20,
+                               fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                               borrow_bps_per_bar: float = 0.0,
+                               bars_per_year: float = 365.25) -> dict[str, Any]:
+    """A genuinely new short-timing signal, not another way of wiring the
+    existing basket-wide regime classifier to trend-break (AGENTS.md item 5,
+    2026-10-03/04's `benchmark_combined_short`/`benchmark_asymmetric_short`
+    both tried that and both found the regime half to be the weak link --
+    noisy on the exit side, or barely filtering anything on the entry side,
+    because its `bear` leg fires almost as often as individual symbols' own
+    trend-break during ordinary pullbacks inside a still-intact bull market).
+    This instead adds a second, purely price-only confirmation dimension to
+    `benchmark_trend_break_short`'s own entry signal: TIMEFRAME agreement,
+    not basket-wide regime agreement.
+
+    `benchmark_trend_break_short` opens a short the instant a symbol's own
+    fast/slow SMA ratio dips below `short_enter` -- but that ratio can dip
+    briefly even while the SLOW SMA itself is still rising (an ordinary
+    pullback inside a longer uptrend, the exact false-positive mechanism
+    that makes a static or naively-timed short lose money in bull markets).
+    This function additionally requires the slow SMA's own medium-term
+    trajectory to be flat-or-declining over `slope_lookback` bars (today's
+    slow SMA no higher than it was `slope_lookback` bars ago) before opening
+    -- i.e. the longer-horizon trend has to actually be turning down, not
+    just dip briefly while still climbing. Covering is left to trend-break
+    ALONE (`trend > short_exit`), same ablation discipline
+    `benchmark_asymmetric_short` used: this isolates the effect of the new
+    ENTRY filter by itself, without also changing when a position closes.
+
+    Needs `slow + slope_lookback` bars of warmup (more than
+    `benchmark_trend_break_short`'s plain `slow`), to read both the current
+    slow SMA and its value `slope_lookback` bars back from the same closes
+    array. Same no-leverage sizing, same next-bar-open fill convention
+    (`replay.next_open`, no lookahead), same read-only discipline (no
+    genome, no council, no `RiskJudge`/`SuperiorJudge`, no
+    `live_state.json` touch) as every other benchmark in this module.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    need = slow + slope_lookback + 5
+    is_short = {s: False for s in usable}
+    flips = 0
+    symbol_bars_short = 0
+    for i, window in replay.walk(start, end):
+        prices = {s: replay.close_at(s, i) for s in usable}
+        prices = {s: p for s, p in prices.items() if p is not None}
+        if prices:
+            broker.mark(str(window.ts), prices, dd_halt=10.0, cooldown=1)
+        symbol_bars_short += sum(1 for v in is_short.values() if v)
+        ts = str(window.ts)
+        for s in usable:
+            c = window.closes(s, need + 10)
+            c = c[~np.isnan(c)]
+            if len(c) < need:
+                continue
+            ma_f = float(np.mean(c[-fast:]))
+            ma_s = float(np.mean(c[-slow:]))
+            ma_s_past = float(np.mean(c[-slow - slope_lookback:-slope_lookback]))
+            if ma_s <= 0 or ma_s_past <= 0:
+                continue
+            trend = ma_f / ma_s - 1
+            slow_slope = ma_s / ma_s_past - 1
+            fill = replay.next_open(s, i)
+            if fill is None:
+                continue
+            if not is_short[s] and trend < short_enter and slow_slope <= 0.0:
+                per = broker.cash / len(usable)
+                f = broker.short(ts, s, per, fill, reason="dual-trend: open")
+                if f:
+                    is_short[s] = True
+                    flips += 1
+            elif is_short[s] and trend > short_exit:
+                pos = broker.positions.get(s)
+                if pos and pos.is_open:
+                    broker.cover(ts, s, 1.0, fill, reason="dual-trend: cover")
+                is_short[s] = False
+                flips += 1
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        pos = broker.positions.get(s)
+        if pos and pos.is_open:
+            px = replay.close_at(s, end - 1)
+            if px:
+                broker.cover(close_ts, s, 1.0, px, reason="dual-trend benchmark close")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash
+    bars_total = max(0, end - start)
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+        "symbol_bars_short": symbol_bars_short, "bars_total": bars_total,
+        "avg_concurrent_short": (symbol_bars_short / bars_total) if bars_total > 0 else 0.0,
+        "flips": flips,
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.
