@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 60,
-  "updated": "2026-10-13T22:18:13+00:00",
+  "ticks": 61,
+  "updated": "2026-10-14T00:22:20+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -166,7 +166,7 @@
         "avg_cost": 1.0636855149983735,
         "opened_ts": "2026-09-29 00:00:00+00:00",
         "peak_price": 1.2287,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 11.05732605946871,
         "opened_ts": "2026-09-30 00:00:00+00:00",
         "peak_price": 11.608,
-        "bars_held": 12,
+        "bars_held": 13,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +188,7 @@
         "avg_cost": 4.8234105,
         "opened_ts": "2026-10-03 00:00:00+00:00",
         "peak_price": 5.896,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -199,7 +199,7 @@
         "avg_cost": 172.2244924275015,
         "opened_ts": "2026-10-08 00:00:00+00:00",
         "peak_price": 172.72,
-        "bars_held": 4,
+        "bars_held": 5,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1609,6 +1609,10 @@
       [
         "2026-10-12 00:00:00+00:00",
         14897.474482981033
+      ],
+      [
+        "2026-10-13 00:00:00+00:00",
+        14995.636288990829
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -13154,6 +13158,114 @@
           }
         ],
         "notes": "regime chop (scale 0.60), breadth 93%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-14T00:22:20+00:00",
+      "bar": "2026-10-13 00:00:00+00:00",
+      "tick": 61,
+      "nav_before": 14995.64,
+      "nav_after": 15066.81,
+      "cash": 5218.59,
+      "cash_before": 5218.59,
+      "positions": {
+        "FILUSDT": 2005.08,
+        "AVAXUSDT": 3637.59,
+        "NEARUSDT": 3904.91,
+        "AAVEUSDT": 300.64
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-13 00:00:00+00:00",
+        "nav": 14995.636288990829,
+        "regime": "bull",
+        "breadth": 0.8518518518518519,
+        "cash_pct": 0.34800692753661433,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.499,
+              "why": "at/near range high (breakout -0.9%), momentum rank 0.65, slope +0.92%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "DOTUSDT",
+              "side": "buy",
+              "conviction": 0.881,
+              "why": "confirmed trend: ma-spread +10.7%, slope +0.58%, rsi 55 in band"
+            },
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +14.4%, slope +0.92%, rsi 60 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +20.8%, slope +3.37%, rsi 61 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.904,
+              "why": "confirmed trend: ma-spread +9.2%, slope +2.72%, rsi 56 in band"
+            }
+          ],
+          "consult_conservative": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "buy",
+              "conviction": 0.286,
+              "why": "oversold inside an uptrend: rsi 38, z -2.07, trend -0.9%"
+            }
+          ]
+        },
+        "forced_exits": [],
+        "orders": [],
+        "vetoes": [
+          {
+            "symbol": "FILUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "DOTUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "conviction 0.29 below floor"
+          }
+        ],
+        "fills": [],
+        "notes": "regime bull (scale 1.00), breadth 85%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
