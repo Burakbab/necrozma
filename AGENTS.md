@@ -454,6 +454,61 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-15 (3-hourly check, ~00:47-01:18 UTC): recorded the first
+  hard-call review since tick 53 (tick 62, FILUSDT lone-voice re-entry
+  right after a time-stop exit), then 15 more real `evolve` generations
+  against the live v3 (1d) champion, no promotion — cumulative candidates
+  tried against v3 rose 65671 → 65877 (per `researcher_memory.tested`),
+  stagnation/boldness counter 4750 → 4764.** No live trading this cycle
+  (tick 62 already handled at the dedicated 00:20 UTC daily slot — confirmed
+  via `live_state.json`'s `updated` timestamp at session start,
+  `2026-10-15T00:22:13+00:00`, matching `runs/2026-10-15-0020-daily-trading.md`;
+  `62 % 7 == 6` so no `evolve` ran as part of that tick). `review-hard-calls`
+  showed 1 bar pending (the first new flag since tick 53 on 2026-10-05):
+  hand-reconstructed `RiskJudge.rule`'s scoring against v3's evolved genes
+  and matched the fill to the cent — Guardian's forced-exits time-stopped
+  the existing FILUSDT position (15 bars, +2.8%) before any new proposal was
+  scored, freeing its slot/cash; `consult_moderate` then proposed 3
+  fresh lone-voice buys (FILUSDT conv 0.95 top-scored at 1.4051,
+  ATOMUSDT/INJUSDT below it), and FILUSDT's buy consumed all $1969.18 of
+  deployable cash exactly, correctly leaving $0 for the other two. No bug,
+  verdict `approve`. Hit a shell-quoting bug while recording it: the first
+  `--notes` call used double-quoted text containing literal `$` characters
+  (`$1969.18`, `$0.00`), which bash silently interpolated before the command
+  ran, corrupting the text actually written to `live_state.json`'s
+  `hard_call_reviews`. Caught immediately on re-read, fixed with a small
+  scoped Python script that replaced only that one record's `notes` field
+  and re-saved with the app's own `json.dump(indent=2, default=str)`
+  formatting — `git diff` confirmed nothing else in the file changed.
+  `review-hard-calls` now reports 0 pending (6 reviewed total). See
+  `runs/2026-10-15-0118-self-improvement.md`. Then ran one more real
+  15-generation `evolve` batch via `tools/background_runner.py` (`start` +
+  separate `wait`), concurrently with a baseline `pytest` pass; the evolve
+  process itself finished cleanly (exit 0) but the container running this
+  session restarted mid-verification, losing the in-flight backgrounded
+  `pytest`/`wait` checks (harmless — `live_state.json`/`index.html` on disk
+  were unaffected, both checks simply re-run after the restart). Champion's
+  fold-aggregate fitness recalculated to 1.267 this cycle (down from 1.595
+  last cycle — today's new daily bar shifted the trailing 4-year evaluation
+  window, not a regression) and held flat across all 15 generations (998
+  trades, 39% win, 1% stops, 3 halts, unchanged throughout). Best-of-generation
+  fold-fitness ranged roughly 1.249-1.943, never clearing the promotion-margin
+  bar. Verified after the restart: `python3 -m pytest -q` 474/474; top-level
+  key diff of `live_state.json` against a pre-batch baseline copy showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  `hard_call_reviews` unchanged by the evolve batch itself); `lineage` length
+  unchanged at 202 (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin rose
+  slightly (7.550 → 7.554), draw count 1248 → 1252 (several new
+  sealed-holdout draws from this batch's fold-aggregate-gate-clearing
+  candidates, all correctly rejected), same slow-rise pattern already
+  tracked under item 13, nothing new; dashboard rebuilt with `EVO_STATE` set
+  (`index.html` shows 65877 challenger ideas tried). Genome still v3 (1d)
+  live, untouched. Container started in detached HEAD, 1 commit behind
+  `origin/main`; `git checkout main` + `tools/git_sync.py` fast-forwarded
+  cleanly (26 files), no divergence, no shallow-clone staleness this cycle.
+
 - **Run 2026-10-14 (3-hourly check, ~21:47-22:20 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 65466 → 65671 (per
