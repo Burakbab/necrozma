@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 61,
-  "updated": "2026-10-14T22:19:53+00:00",
+  "ticks": 62,
+  "updated": "2026-10-15T00:22:13+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,30 +154,19 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 5218.585311388256,
+    "cash": 5141.410385928696,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "borrow_bps_per_bar": 0.0,
     "positions": {
-      "FILUSDT": {
-        "symbol": "FILUSDT",
-        "qty": 1730.4571638083464,
-        "avg_cost": 1.0636855149983735,
-        "opened_ts": "2026-09-29 00:00:00+00:00",
-        "peak_price": 1.2287,
-        "bars_held": 14,
-        "entry_agents": [
-          "consult_moderate"
-        ]
-      },
       "AVAXUSDT": {
         "symbol": "AVAXUSDT",
         "qty": 353.95478691930634,
         "avg_cost": 11.05732605946871,
         "opened_ts": "2026-09-30 00:00:00+00:00",
         "peak_price": 11.608,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +177,7 @@
         "avg_cost": 4.8234105,
         "opened_ts": "2026-10-03 00:00:00+00:00",
         "peak_price": 5.896,
-        "bars_held": 10,
+        "bars_held": 11,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -199,7 +188,18 @@
         "avg_cost": 172.2244924275015,
         "opened_ts": "2026-10-08 00:00:00+00:00",
         "peak_price": 172.72,
-        "bars_held": 5,
+        "bars_held": 6,
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      },
+      "FILUSDT": {
+        "symbol": "FILUSDT",
+        "qty": 1795.6455627638943,
+        "avg_cost": 1.0955475,
+        "opened_ts": "2026-10-14 00:00:00+00:00",
+        "peak_price": 1.095,
+        "bars_held": 0,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -935,6 +935,26 @@
         "ref_price": 1.1021,
         "fee": 0.3918984846686389,
         "reason": "consult_moderate: confirmed trend: ma-spread +20.8%, slope +3.24%, rsi 60 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-14 00:00:00+00:00",
+        "symbol": "FILUSDT",
+        "side": "sell",
+        "qty": 1730.4571638083464,
+        "price": 1.0944525,
+        "ref_price": 1.095,
+        "fee": 1.8939031690729542,
+        "reason": "guardian: time stop (15 bars, +2.8%)"
+      },
+      {
+        "ts": "2026-10-14 00:00:00+00:00",
+        "symbol": "FILUSDT",
+        "side": "buy",
+        "qty": 1795.6455627638943,
+        "price": 1.0955475,
+        "ref_price": 1.095,
+        "fee": 1.969184191363441,
+        "reason": "consult_moderate: confirmed trend: ma-spread +20.1%, slope +1.73%, rsi 54 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1367,6 +1387,21 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "FILUSDT",
+        "qty": 1730.4571638083464,
+        "entry_price": 1.0636855149983735,
+        "exit_price": 1.0944525,
+        "entry_ts": "2026-09-29 00:00:00+00:00",
+        "exit_ts": "2026-10-14 00:00:00+00:00",
+        "pnl": 51.34704643577567,
+        "pnl_pct": 0.028924888576369767,
+        "bars_held": 15,
+        "exit_reason": "guardian: time stop (15 bars, +2.8%)",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -1613,6 +1648,10 @@
       [
         "2026-10-13 00:00:00+00:00",
         14995.636288990829
+      ],
+      [
+        "2026-10-14 00:00:00+00:00",
+        14677.163533910067
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -13269,6 +13308,104 @@
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-15T00:22:13+00:00",
+      "bar": "2026-10-14 00:00:00+00:00",
+      "tick": 62,
+      "nav_before": 14677.16,
+      "nav_after": 14649.11,
+      "cash": 5141.41,
+      "cash_before": 5218.59,
+      "positions": {
+        "AVAXUSDT": 3544.15,
+        "NEARUSDT": 3710.74,
+        "AAVEUSDT": 286.58,
+        "FILUSDT": 1966.23
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-14 00:00:00+00:00",
+        "nav": 14677.163533910067,
+        "regime": "chop",
+        "breadth": 0.7777777777777778,
+        "cash_pct": 0.48446653611672613,
+        "proposals": {
+          "consult_risky": [],
+          "consult_moderate": [
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.823,
+              "why": "confirmed trend: ma-spread +13.7%, slope +0.41%, rsi 58 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +20.1%, slope +1.73%, rsi 54 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "buy",
+              "conviction": 0.892,
+              "why": "confirmed trend: ma-spread +8.9%, slope +1.58%, rsi 55 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [
+          {
+            "symbol": "FILUSDT",
+            "why": "guardian: time stop (15 bars, +2.8%)"
+          }
+        ],
+        "orders": [
+          {
+            "symbol": "FILUSDT",
+            "side": "buy",
+            "amount": 1969.18,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +20.1%, slope +1.73%, rsi 54 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "ATOMUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "FILUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 1795.6455627638943,
+            "price": 1.0955475,
+            "reason": "consult_moderate: confirmed trend: ma-spread +20.1%, slope +1.73%, rsi 54 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime chop (scale 0.60), breadth 78%",
+        "hard_call": {
+          "is_hard_call": true,
+          "reasons": [
+            "lone-voice buy on FILUSDT (agreement 0.33) is the only order the bar produced (0.95 conviction, 13.4% of equity)"
+          ]
         }
       }
     }
