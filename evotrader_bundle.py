@@ -36,6 +36,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py short-headroom --combined  # same, but require BOTH the trend-break and regime signals to agree before opening a short
     python evotrader_bundle.py short-headroom --asymmetric  # same, but gate opening on both signals while letting trend-break alone govern covering
     python evotrader_bundle.py short-headroom --dual-trend  # same, but confirm trend-break's entry with the slow SMA's own slope instead of the basket-wide regime switch
+    python evotrader_bundle.py dual-trend-oos  # does dual-trend's slope_lookback sweet spot survive windows it was never tuned on?
 """
 import sys, types, json, os, math
 
@@ -886,6 +887,173 @@ def main():
                   "filter's own effect. Still read-only, still no RiskJudge/SuperiorJudge code "
                   "path, no live_state.json touch -- a reason to consider designing a real "
                   "short-opening signal, never itself that design.")
+    elif cmd == "dual-trend-oos":
+        # Diagnostic: AGENTS.md item 5's 2026-10-11 writeup swept
+        # benchmark_dual_trend_short's slope_lookback (10/20/30/40/50/60/80)
+        # against the live champion's own 4 fold/holdout windows and found a
+        # non-monotonic sweet spot around 40-50 -- but flagged, in its own
+        # words, that "the sweep was read directly off the same four windows
+        # it's being judged against -- picking 40-50 ... would be exactly the
+        # kind of in-sample parameter mining this whole repo's fold/holdout
+        # discipline exists to catch, not a free pass around it." This is
+        # that free pass's replacement: the identical sweep, same lookback
+        # values, same genome-independent trend-break/dual-trend mechanics
+        # (no genome mutation, no RiskJudge/SuperiorJudge/Analyst involved --
+        # just loop.engine.benchmark_trend_break_short/benchmark_dual_trend_short
+        # on the champion's own universe/interval/fee/slippage), but run
+        # against history-perturb's own --independent tiling instead: fixed-
+        # width (default 2.0y, --window-years to change), non-overlapping
+        # windows walking backward from "now" over the full available history
+        # per symbol (loaded the same generous 12y way --independent does) --
+        # genuinely different calendar stretches the original sweep never
+        # saw, not another read of the same 4 windows. Reports each
+        # independent window's own row (buy&hold, plain trend-break baseline,
+        # one column per slope_lookback), then a summary: mean return per
+        # slope_lookback across all windows, and mean captured-edge fraction
+        # restricted to windows where buy&hold actually lost money (the only
+        # windows a short's "theoretical edge" is a positive number for).
+        # Read-only throughout, same cost class as `history-perturb
+        # --independent` (one real benchmark replay per window per
+        # slope_lookback, times two signals) -- never touches
+        # live_state.json or the champion, and does not itself decide
+        # whether to build a real short-opening signal.
+        import time
+        import pandas as pd
+        from core import market
+        from core.market import Replay
+        from loop.engine import (benchmark_buy_hold, benchmark_trend_break_short,
+                                 benchmark_dual_trend_short)
+        window_years = 2.0
+        if "--window-years" in sys.argv:
+            window_years = float(sys.argv[sys.argv.index("--window-years") + 1])
+        lookbacks = [10, 20, 30, 40, 50, 60, 80]
+        if "--lookbacks" in sys.argv:
+            lookbacks = [int(x) for x in
+                        sys.argv[sys.argv.index("--lookbacks") + 1].split(",")]
+        borrow_bps = 3.0
+        if "--borrow-bps-per-bar" in sys.argv:
+            borrow_bps = float(sys.argv[sys.argv.index("--borrow-bps-per-bar") + 1])
+        g0 = acct.genome
+        bcfg = g0.data.get("broker", {})
+        cash = float(bcfg.get("start_cash", 10_000.0))
+        fee_bps = float(bcfg.get("fee_bps", 10.0))
+        slippage_bps = float(bcfg.get("slippage_bps", 5.0))
+        bpy = market.BARS_PER_YEAR.get(g0.bar_interval, 365.25)
+        print(f"[dual-trend-oos] loading {g0.bar_interval} history for "
+              f"{len(g0.universe)} symbols (up to 12y) ...", flush=True)
+        raw = market.load_universe(g0.universe, g0.bar_interval, 12.0)
+        if not raw:
+            print("no market data")
+            sys.exit(1)
+        starts = [df.index[0] for df in raw.values() if len(df) > 0]
+        if not starts:
+            print("no market data")
+            sys.exit(1)
+        earliest = min(starts)
+        now_ts = pd.Timestamp(int(time.time() * 1000), unit="ms", tz="UTC")
+        width = pd.Timedelta(days=window_years * 365.25)
+        windows = []
+        w_end = now_ts
+        while w_end > earliest:
+            w_start = max(w_end - width, earliest)
+            windows.append((w_start, w_end))
+            w_end = w_start
+        windows.reverse()  # oldest first, chronological
+        print(f"[dual-trend-oos] {len(windows)} independent {window_years:.1f}y "
+              f"windows, slope_lookback sweep {lookbacks}, "
+              f"borrow={borrow_bps:.1f}bps/bar (fee={fee_bps:.0f}bps "
+              f"slippage={slippage_bps:.0f}bps, the genome's own)")
+        print()
+        print("OUT-OF-SAMPLE SLOPE_LOOKBACK SWEEP -- dual-trend short vs. plain "
+              "trend-break, per independent window, real costs")
+        print("=" * 120)
+        header = (f"  {'window':>6s} {'start':>12s} {'end':>12s} {'symbols':>7s} "
+                  f"{'buy&hold':>9s} {'trend-break':>12s}")
+        for lb in lookbacks:
+            header += f" {'lb=' + str(lb):>9s}"
+        print(header)
+        per_lb_returns = {lb: [] for lb in lookbacks}
+        per_lb_captured = {lb: [] for lb in lookbacks}
+        tb_returns = []
+        for widx, (w_start, w_end) in enumerate(windows, start=1):
+            data = {s: df[(df.index >= w_start) & (df.index < w_end)]
+                    for s, df in raw.items()}
+            data = {s: df for s, df in data.items() if len(df) > 0}
+            if not data:
+                print(f"  {widx:>6d} {str(w_start.date()):>12s} "
+                      f"{str(w_end.date()):>12s}  no market data")
+                continue
+            replay = Replay(data)
+            n = len(replay)
+            start, end = 0, n - 1
+            if end - start < 60:
+                print(f"  {widx:>6d} {str(w_start.date()):>12s} "
+                      f"{str(w_end.date()):>12s}  window too short ({end - start} bars)")
+                continue
+            syms = list(data.keys())
+            bh = benchmark_buy_hold(replay, syms, start, end, cash, bars_per_year=bpy)
+            tb = benchmark_trend_break_short(replay, syms, start, end, cash,
+                                             fee_bps=fee_bps, slippage_bps=slippage_bps,
+                                             borrow_bps_per_bar=borrow_bps, bars_per_year=bpy)
+            if not (bh and tb):
+                print(f"  {widx:>6d} {str(w_start.date()):>12s} "
+                      f"{str(w_end.date()):>12s}  no benchmark data")
+                continue
+            headroom = -bh["total_return"]
+            tb_returns.append(tb["total_return"])
+            row = (f"  {widx:>6d} {str(w_start.date()):>12s} {str(w_end.date()):>12s} "
+                  f"{len(data):>7d} {bh['total_return']:>+8.1%} "
+                  f"{tb['total_return']:>+11.1%}")
+            for lb in lookbacks:
+                dt = benchmark_dual_trend_short(replay, syms, start, end, cash,
+                                                slope_lookback=lb,
+                                                fee_bps=fee_bps, slippage_bps=slippage_bps,
+                                                borrow_bps_per_bar=borrow_bps, bars_per_year=bpy)
+                if not dt:
+                    row += f" {'n/a':>9s}"
+                    continue
+                per_lb_returns[lb].append(dt["total_return"])
+                if headroom > 0:
+                    per_lb_captured[lb].append(dt["total_return"] / headroom)
+                row += f" {dt['total_return']:>+8.1%}"
+            print(row, flush=True)
+        print()
+        tb_mean = sum(tb_returns) / len(tb_returns) if tb_returns else 0.0
+        summary = (f"  {'mean':>6s} {'':>12s} {'':>12s} {'':>7s} {'':>9s} "
+                  f"{tb_mean:>+11.1%}")
+        for lb in lookbacks:
+            rs = per_lb_returns[lb]
+            avg = sum(rs) / len(rs) if rs else 0.0
+            summary += f" {avg:>+8.1%}"
+        print(summary)
+        print()
+        print("  captured-edge summary (mean fraction of EACH BEAR window's own "
+              "zero-cost short edge actually captured after real costs -- bull "
+              "windows excluded since buy&hold winning means there is no bear "
+              "edge for a short to capture there):")
+        for lb in lookbacks:
+            cs = per_lb_captured[lb]
+            if cs:
+                print(f"    slope_lookback={lb:<4d} mean captured "
+                      f"{sum(cs) / len(cs):>+7.1%} over {len(cs)} bear window(s)")
+            else:
+                print(f"    slope_lookback={lb:<4d} no bear window in this sweep")
+        print()
+        print("dual-trend-oos: re-runs AGENTS.md item 5's 2026-10-11 slope_lookback "
+              "sweep (loop.engine.benchmark_dual_trend_short, same fast/slow/"
+              "short_enter/short_exit defaults) against history-perturb's own "
+              "--independent tiling instead of the champion's own 4 fold/holdout "
+              "windows the original sweep was read off -- genuinely different "
+              "calendar stretches, not a second look at the same ones. "
+              "'trend-break' is the no-slope-filter baseline (loop.engine."
+              "benchmark_trend_break_short) every lb= column is being compared "
+              "against; 'symbols' is how many of the universe's symbols had any "
+              "data in that window (early windows have fewer -- most Binance "
+              "USDT pairs listed well after 2017). Still read-only, no genome "
+              "mutation (trend-break/dual-trend take no genome at all, same as "
+              "`short-headroom --trend-break/--dual-trend`), no live_state.json "
+              "touch -- a reason to consider designing a real short-opening "
+              "signal, never itself that design.")
     elif cmd == "regime-scan":
         # Diagnostic: `regime` characterises the market over exactly the
         # N_FOLDS windows evolution uses; this scans the *searchable* region at
