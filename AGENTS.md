@@ -454,6 +454,47 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-17 (weekend all-hands, ~06:00-07:10 UTC): shipped a new
+  read-only diagnostic (`dual-trend-oos`) and used it to run the
+  out-of-sample validation the 2026-10-11 dual-trend `slope_lookback`
+  sweep's own writeup flagged as missing — result is a clean negative:
+  the claimed 40-50 "sweet spot" does not survive contact with windows it
+  wasn't tuned on.** New `evotrader_bundle.py dual-trend-oos` (168 lines,
+  CLI glue only — reuses the already-shipped, already-tested
+  `loop.engine.benchmark_trend_break_short`/`benchmark_dual_trend_short`
+  as-is, no new library function, no bundle sync needed since CLI
+  dispatch isn't a `_SRC` module) re-runs the identical `slope_lookback`
+  sweep against `history-perturb --independent`'s own fixed-width,
+  non-overlapping window tiling instead of the champion's own 4
+  fold/holdout windows the original sweep was read directly off. Ran it
+  twice: at the default 2.0y window width, every one of the 5 independent
+  windows spanning 2017-2026 turned out to be a bull market (buy&hold
+  +18% to +250%), so there was no bear window anywhere in the sweep for
+  the captured-edge metric to even be defined — mean return across
+  windows favored `lb=20` (-3.1%), not `lb=40-50` (-5.9%/-5.6%). Re-ran at
+  1.1333y (the champion's own actual per-fold width) to get real bear
+  windows: 2 of 9 windows were genuinely bearish (buy&hold -30.2% and
+  -53.3%), and captured-edge there was positive only at `lb=10` (+11.9%,
+  and even that was a net loss in the deeper of the two bear windows,
+  -34.9% captured) — `lb=40`/`50`, the shipped "sweet spot," captured
+  **-6.8%/-8.3%**, i.e. lost money during the real bear markets it exists
+  to profit from. Mean return across all 8 valid windows at this width
+  also favors `lb=10` (-4.1%) over `lb=40-50` (-9.6%/-7.7%). Both
+  independent runs point the same direction — away from, not toward, the
+  in-sample sweep's favorite region. See AGENTS.md item 5's new entry
+  below (inserted directly after the 2026-10-11 dual-trend writeup) for
+  the full numbers and reasoning, and
+  `runs/2026-10-17-0600-weekend-all-hands.md` for the session writeup.
+  Verified: `python3 -m pytest -q` 474/474 both before and after (no
+  library code touched, only CLI glue); `live_state.json` byte-identical
+  throughout (diffed directly against a pre-session copy, not just
+  eyeballed) — this was genome-independent and read-only the whole way,
+  same discipline as every other `short-headroom` variant in this item's
+  history. Does not change the shipped function's default
+  (`slope_lookback=20`, deliberately never reset to either sweep's
+  favorite) or the still-open, owner-gated question of whether to let the
+  Researcher open a short at all.
+
 - **Run 2026-10-17 (3-hourly check, ~03:47-04:22 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 69230 → 69435 (per
@@ -2855,6 +2896,55 @@ every `evolve` call.
    question of whether/how to let the Researcher open a short at all. Still
    read-only throughout: no `RiskJudge`/`SuperiorJudge` code path, no
    genome/Analyst involvement, no `live_state.json` touch.
+
+   **Measured 2026-10-17 (weekend all-hands): ran the out-of-sample check
+   the 2026-10-11 writeup called for, and it's a clean negative result —
+   the 40-50 "sweet spot" does not generalize.** New CLI command
+   `dual-trend-oos` (see "Current state" below; `evotrader_bundle.py`, no
+   new `loop.engine` function — reuses `benchmark_trend_break_short`/
+   `benchmark_dual_trend_short` as-is) re-runs the identical
+   `slope_lookback` sweep (10/20/30/40/50/60/80) against
+   `history-perturb --independent`'s own tiling: fixed-width,
+   non-overlapping windows walking backward from "now" over the full
+   ~2017-2026 history, genuinely different calendar stretches than the
+   champion's own 4 fold/holdout windows the original sweep was read off.
+   Two widths tested: at the default 2.0y tiling, all 5 independent windows
+   turned out to be bull markets (buy&hold +18% to +250% in every one) —
+   this crypto universe simply has no 2-year stretch in its real history
+   that nets out bearish, so the captured-edge metric was undefined in
+   every window (`no bear window in this sweep`) and the only readable
+   signal was mean return across windows: `lb=20` did best (-3.1% mean
+   vs. plain trend-break's -11.5%), not `lb=40-50` (-5.9%/-5.6%). Narrowed
+   to 1.1333y (the champion's own actual per-fold width, `4.0 *
+   (1-HOLDOUT_FRAC) / N_FOLDS`) to get real bear windows to test against:
+   9 windows, 2 genuinely bearish (window 3, 2018-11 to 2019-12, buy&hold
+   -30.2%; window 6, 2022-04 to 2023-05, buy&hold -53.3%). Captured-edge by
+   `slope_lookback`: `10` → **+11.9%** (the only positive value, driven
+   entirely by window 3's +58.6% capture — window 6 was a net **loss**,
+   -34.9% captured, i.e. the signal lost money during the deeper of the
+   two real bear markets), `20` → -20.6%, `30` → -26.6%, **`40` → -6.8%,
+   `50` → -8.3%** (negative — the shipped "sweet spot" loses money, after
+   real costs, during the bear windows it exists to profit from), `60` →
+   -19.8%, `80` → -38.5%. Mean return across all 8 valid windows
+   (bull+bear combined) tells the same story: `lb=10` is the actual best
+   performer out-of-sample (-4.1%, vs. plain trend-break's -8.3%), not
+   `lb=40-50` (-9.6%/-7.7%). **Both independent runs agree the true
+   out-of-sample-best region is short lookbacks (10-20), roughly the
+   opposite end of the sweep from where the in-sample table pointed, and
+   neither width finds any `slope_lookback` value with a reliably positive
+   captured-edge across more than one bear window at a time** — confirms
+   the 2026-10-11 writeup's own stated concern exactly: reading a
+   parameter choice off the same windows it's scored against was in-sample
+   mining, not validation, and the number it produced does not survive
+   contact with data it was never tuned on. Does not change the shipped
+   function's unchanged default (`slope_lookback=20`, never reset to
+   either sweep's favorite) or the still-open, still owner-gated question
+   of whether to let the Researcher open a short at all — if anything,
+   this *raises* the bar for that question, since the one concrete tuning
+   choice this item's whole combination-search history had produced turns
+   out not to hold up. Read-only throughout: no genome mutation
+   (trend-break/dual-trend take no genome at all), no `RiskJudge`/
+   `SuperiorJudge` code path, no `live_state.json` touch.
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
