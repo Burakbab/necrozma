@@ -454,6 +454,67 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-18 (weekend all-hands, ~06:15-07:30 UTC): a real 40-generation
+  `evolve` batch against live v3, no promotion — then a genuine two-sided git
+  divergence (not the usual shallow-clone staleness) with a concurrent
+  3-hourly check, resolved by hand-reconciling `researcher_memory` rather
+  than picking a side.** Weekend session with a bigger time budget, so used
+  it for a larger batch than a 3-hourly check's usual 15: `evolve 40` via
+  `tools/background_runner.py` (`start` + `wait`, two separate `wait` calls
+  needed since the first used the wrong CLI flags, then one hit the Bash
+  tool's own 30-minute default background timeout while the real process
+  kept running — both were tooling mistakes on this session's part, not
+  anything wrong with `background_runner.py` itself), ~62 minutes real
+  wall-clock. Champion's fold-aggregate fitness held flat at 1.675 across
+  all 40 generations (1017 trades, 40% win, 0% stops, 3 halts, unchanged
+  throughout); best-of-generation fold-fitness ranged 0.332-2.017, never
+  clearing the promotion-margin bar. Cumulative candidates tried against v3
+  rose 71084 → 71638, stagnation/boldness counter 5143 → 5183 in this
+  session's own branch. `python3 -m pytest -q` 474/474 both before and
+  after; `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` margin/draw count unchanged (7.594/1350 — no candidate
+  this batch reached the sealed holdout).
+
+  **Then `git push` was rejected**: a concurrent 3-hourly check session
+  (`runs/2026-10-18-0710-evolve-batch-v3.md`) had pushed its own real
+  15-generation batch from the exact same parent commit while this session's
+  40-generation batch was still running — a genuine two-sided divergence,
+  not the shallow-clone-fetch-staleness pattern this file's Run protocol
+  normally expects (`tools/git_sync.py` correctly refused: "Diverging
+  branches can't be fast-forwarded... Not possible to fast-forward,
+  aborting" — it only fast-forwards when one side has no commits of its
+  own, which wasn't true here). Both sides had real, independent evolve
+  work from the same base (`df664b2`): this session's 554 new
+  `researcher_memory.tested` entries and the other session's 207, neither
+  overlapping. **Resolved by hand, not by `git rebase`/`reset --hard`
+  discarding either side**: extracted all three versions
+  (common-ancestor/mine/theirs) via `git show <rev>:live_state.json`,
+  confirmed `genome`/`broker`/`journal`/`hard_call_reviews` were
+  byte-identical across all three (neither branch traded, only searched),
+  then merged `researcher_memory` deliberately — `tested` as the set union
+  (71084 base → 71845 merged, confirming zero hash collisions between the
+  two branches' candidates), `stagnation`/`holdout_draws` as base +
+  each side's own increment (5143+40+15=5198, 1350+0+1=1351), and
+  `lineage` by concatenating base + each side's new (non-`accepted`)
+  entries and re-running the real `_trim_lineage(keep=200)` logic by hand
+  in Python so the result matches exactly what the app itself would have
+  produced. `git merge origin/main`, replaced the two conflicted files
+  (`live_state.json` with the hand-merged JSON, `index.html` by rebuilding
+  the dashboard from it rather than hand-merging generated HTML), verified
+  valid JSON + `pytest -q` 474/474 + `edit_bundle_module.py verify` clean on
+  the merged result, committed as a merge commit, pushed successfully
+  (`d5d9540`). **Why this matters for future sessions**: every prior
+  "diverged" report this file's history has logged turned out to be
+  shallow-clone staleness (one side with no real commits of its own,
+  `git_sync.py`'s fast-forward path handles it). This is the first logged
+  case of a *real* concurrent-push collision between two sessions that both
+  ran genuine `evolve` batches from the same base — `git_sync.py` is not
+  built for this case and correctly says so rather than guessing; the fix
+  is this kind of field-aware JSON reconciliation (union the dedup memory,
+  add the counters, re-trim the lineage), not blindly taking either side's
+  file or force-pushing over the other. Nothing in `core/`/`agents/`/`loop/`
+  touched; `evotrader.manifest` unchanged throughout.
+
 - **Run 2026-10-18 (3-hourly check, ~06:47-07:10 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 71084 → 71291 (per
