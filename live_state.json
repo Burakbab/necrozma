@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 64,
-  "updated": "2026-10-17T22:15:11+00:00",
+  "ticks": 65,
+  "updated": "2026-10-18T00:22:35+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 5238.642505811344,
+    "cash": 5053.889455472436,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 4.8234105,
         "opened_ts": "2026-10-03 00:00:00+00:00",
         "peak_price": 5.896,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 172.2244924275015,
         "opened_ts": "2026-10-08 00:00:00+00:00",
         "peak_price": 172.72,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +188,7 @@
         "avg_cost": 1.1193988860444062,
         "opened_ts": "2026-10-14 00:00:00+00:00",
         "peak_price": 1.1608,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -199,18 +199,18 @@
         "avg_cost": 1.7458725,
         "opened_ts": "2026-10-15 00:00:00+00:00",
         "peak_price": 1.774,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "INJUSDT": {
         "symbol": "INJUSDT",
-        "qty": 5.727271695409251,
-        "avg_cost": 8.649322499999998,
+        "qty": 27.110841796132497,
+        "avg_cost": 8.635117971906046,
         "opened_ts": "2026-10-16 00:00:00+00:00",
         "peak_price": 8.645,
-        "bars_held": 0,
+        "bars_held": 1,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -1007,6 +1007,16 @@
         "ref_price": 8.645,
         "fee": 0.04958660654526164,
         "reason": "consult_moderate: confirmed trend: ma-spread +13.8%, slope +2.00%, rsi 66 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-17 00:00:00+00:00",
+        "symbol": "INJUSDT",
+        "side": "buy",
+        "qty": 21.383570100723247,
+        "price": 8.631313500000001,
+        "ref_price": 8.627,
+        "fee": 0.18475305033890785,
+        "reason": "consult_moderate: confirmed trend: ma-spread +14.3%, slope +3.47%, rsi 65 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1727,6 +1737,10 @@
       [
         "2026-10-16 00:00:00+00:00",
         14954.731675167981
+      ],
+      [
+        "2026-10-17 00:00:00+00:00",
+        14427.317886018944
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -13682,6 +13696,94 @@
           }
         ],
         "notes": "regime chop (scale 0.60), breadth 59%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-18T00:22:35+00:00",
+      "bar": "2026-10-17 00:00:00+00:00",
+      "tick": 65,
+      "nav_before": 14427.32,
+      "nav_after": 14408.38,
+      "cash": 5053.89,
+      "cash_before": 5238.64,
+      "positions": {
+        "NEARUSDT": 3716.09,
+        "AAVEUSDT": 280.65,
+        "FILUSDT": 3463.36,
+        "ATOMUSDT": 1660.5,
+        "INJUSDT": 233.89
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-17 00:00:00+00:00",
+        "nav": 14427.317886018944,
+        "regime": "chop",
+        "breadth": 0.5555555555555556,
+        "cash_pct": 0.36310577941087346,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout -1.6%), momentum rank 1.00, slope +3.47%"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "buy",
+              "conviction": 0.549,
+              "why": "at/near range high (breakout -0.9%), momentum rank 0.85, slope +0.10%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +14.3%, slope +3.47%, rsi 65 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "amount": 184.75,
+            "fraction": 0.0,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: at/near range high (breakout -1.6%), momentum rank 1.00, slope +3.47%",
+              "consult_moderate: confirmed trend: ma-spread +14.3%, slope +3.47%, rsi 65 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "PAXGUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 21.383570100723247,
+            "price": 8.631313500000001,
+            "reason": "consult_moderate: confirmed trend: ma-spread +14.3%, slope +3.47%, rsi 65 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime chop (scale 0.60), breadth 56%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
