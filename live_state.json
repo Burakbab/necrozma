@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 65,
-  "updated": "2026-10-18T22:14:00+00:00",
+  "ticks": 66,
+  "updated": "2026-10-19T00:22:13+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,30 +154,19 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 5053.889455472436,
+    "cash": 5064.987836432664,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "borrow_bps_per_bar": 0.0,
     "positions": {
-      "NEARUSDT": {
-        "symbol": "NEARUSDT",
-        "qty": 764.4704319923965,
-        "avg_cost": 4.8234105,
-        "opened_ts": "2026-10-03 00:00:00+00:00",
-        "peak_price": 5.896,
-        "bars_held": 14,
-        "entry_agents": [
-          "consult_moderate"
-        ]
-      },
       "AAVEUSDT": {
         "symbol": "AAVEUSDT",
         "qty": 1.8571530698391319,
         "avg_cost": 172.2244924275015,
         "opened_ts": "2026-10-08 00:00:00+00:00",
         "peak_price": 172.72,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +177,7 @@
         "avg_cost": 1.1193988860444062,
         "opened_ts": "2026-10-14 00:00:00+00:00",
         "peak_price": 1.1608,
-        "bars_held": 3,
+        "bars_held": 4,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -199,7 +188,7 @@
         "avg_cost": 1.7458725,
         "opened_ts": "2026-10-15 00:00:00+00:00",
         "peak_price": 1.774,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -209,11 +198,33 @@
         "qty": 27.110841796132497,
         "avg_cost": 8.635117971906046,
         "opened_ts": "2026-10-16 00:00:00+00:00",
-        "peak_price": 8.645,
-        "bars_held": 1,
+        "peak_price": 8.722,
+        "bars_held": 2,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
+        ]
+      },
+      "NEARUSDT": {
+        "symbol": "NEARUSDT",
+        "qty": 575.2320844289193,
+        "avg_cost": 5.0024999999999995,
+        "opened_ts": "2026-10-18 00:00:00+00:00",
+        "peak_price": 5.0,
+        "bars_held": 0,
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      },
+      "DOTUSDT": {
+        "symbol": "DOTUSDT",
+        "qty": 832.122801140226,
+        "avg_cost": 1.110555,
+        "opened_ts": "2026-10-18 00:00:00+00:00",
+        "peak_price": 1.11,
+        "bars_held": 0,
+        "entry_agents": [
+          "consult_moderate"
         ]
       }
     },
@@ -1017,6 +1028,36 @@
         "ref_price": 8.627,
         "fee": 0.18475305033890785,
         "reason": "consult_moderate: confirmed trend: ma-spread +14.3%, slope +3.47%, rsi 65 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-18 00:00:00+00:00",
+        "symbol": "NEARUSDT",
+        "side": "sell",
+        "qty": 764.4704319923965,
+        "price": 4.9975000000000005,
+        "ref_price": 5.0,
+        "fee": 3.8204409838820013,
+        "reason": "guardian: time stop (15 bars, +4.0%)"
+      },
+      {
+        "ts": "2026-10-18 00:00:00+00:00",
+        "symbol": "NEARUSDT",
+        "side": "buy",
+        "qty": 575.2320844289193,
+        "price": 5.0024999999999995,
+        "ref_price": 5.0,
+        "fee": 2.880478981337006,
+        "reason": "consult_moderate: confirmed trend: ma-spread +32.4%, slope +0.16%, rsi 59 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-18 00:00:00+00:00",
+        "symbol": "DOTUSDT",
+        "side": "buy",
+        "qty": 832.122801140226,
+        "price": 1.110555,
+        "ref_price": 1.11,
+        "fee": 0.9250431806008846,
+        "reason": "consult_moderate: confirmed trend: ma-spread +6.7%, slope +0.08%, rsi 52 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1479,6 +1520,21 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "NEARUSDT",
+        "qty": 764.4704319923965,
+        "entry_price": 4.8234105,
+        "exit_price": 4.9975000000000005,
+        "entry_ts": "2026-10-03 00:00:00+00:00",
+        "exit_ts": "2026-10-18 00:00:00+00:00",
+        "pnl": 129.26583428645898,
+        "pnl_pct": 0.03609261538075614,
+        "bars_held": 15,
+        "exit_reason": "guardian: time stop (15 bars, +4.0%)",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -1741,6 +1797,10 @@
       [
         "2026-10-17 00:00:00+00:00",
         14427.317886018944
+      ],
+      [
+        "2026-10-18 00:00:00+00:00",
+        14459.000389473778
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -13784,6 +13844,136 @@
           }
         ],
         "notes": "regime chop (scale 0.60), breadth 56%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-19T00:22:13+00:00",
+      "bar": "2026-10-18 00:00:00+00:00",
+      "tick": 66,
+      "nav_before": 14459.0,
+      "nav_after": 14439.15,
+      "cash": 5064.99,
+      "cash_before": 5053.89,
+      "positions": {
+        "AAVEUSDT": 281.88,
+        "FILUSDT": 3403.64,
+        "ATOMUSDT": 1655.61,
+        "INJUSDT": 233.21,
+        "NEARUSDT": 2876.16,
+        "DOTUSDT": 923.66
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-18 00:00:00+00:00",
+        "nav": 14459.000389473778,
+        "regime": "chop",
+        "breadth": 0.5185185185185185,
+        "cash_pct": 0.6134940009288836,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout -0.2%), momentum rank 1.00, slope +4.88%"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "buy",
+              "conviction": 0.559,
+              "why": "at/near range high (breakout -0.3%), momentum rank 0.88, slope +0.14%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "DOTUSDT",
+              "side": "buy",
+              "conviction": 0.846,
+              "why": "confirmed trend: ma-spread +6.7%, slope +0.08%, rsi 52 in band"
+            },
+            {
+              "symbol": "NEARUSDT",
+              "side": "buy",
+              "conviction": 0.938,
+              "why": "confirmed trend: ma-spread +32.4%, slope +0.16%, rsi 59 in band"
+            },
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +16.0%, slope +4.88%, rsi 64 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [
+          {
+            "symbol": "NEARUSDT",
+            "why": "guardian: time stop (15 bars, +4.0%)"
+          }
+        ],
+        "orders": [
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "amount": 2880.48,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +32.4%, slope +0.16%, rsi 59 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          },
+          {
+            "symbol": "DOTUSDT",
+            "side": "buy",
+            "amount": 925.04,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +6.7%, slope +0.08%, rsi 52 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "NEARUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 575.2320844289193,
+            "price": 5.0024999999999995,
+            "reason": "consult_moderate: confirmed trend: ma-spread +32.4%, slope +0.16%, rsi 59 in band | superior_judge: approved (cap-checked)"
+          },
+          {
+            "symbol": "DOTUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 832.122801140226,
+            "price": 1.110555,
+            "reason": "consult_moderate: confirmed trend: ma-spread +6.7%, slope +0.08%, rsi 52 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime chop (scale 0.60), breadth 52%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
