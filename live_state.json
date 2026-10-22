@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 68,
-  "updated": "2026-10-21T22:30:42+00:00",
+  "ticks": 69,
+  "updated": "2026-10-22T00:22:22+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -166,7 +166,7 @@
         "avg_cost": 172.2244924275015,
         "opened_ts": "2026-10-08 00:00:00+00:00",
         "peak_price": 172.72,
-        "bars_held": 12,
+        "bars_held": 13,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 1.1193988860444062,
         "opened_ts": "2026-10-14 00:00:00+00:00",
         "peak_price": 1.1608,
-        "bars_held": 6,
+        "bars_held": 7,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +188,7 @@
         "avg_cost": 1.7458725,
         "opened_ts": "2026-10-15 00:00:00+00:00",
         "peak_price": 1.774,
-        "bars_held": 5,
+        "bars_held": 6,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -199,7 +199,7 @@
         "avg_cost": 8.635117971906046,
         "opened_ts": "2026-10-16 00:00:00+00:00",
         "peak_price": 8.948,
-        "bars_held": 4,
+        "bars_held": 5,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -210,8 +210,8 @@
         "qty": 575.2320844289193,
         "avg_cost": 5.0024999999999995,
         "opened_ts": "2026-10-18 00:00:00+00:00",
-        "peak_price": 5.0,
-        "bars_held": 2,
+        "peak_price": 5.262,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -222,7 +222,7 @@
         "avg_cost": 1.110555,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 1.153,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1809,6 +1809,10 @@
       [
         "2026-10-20 00:00:00+00:00",
         14471.232081043228
+      ],
+      [
+        "2026-10-21 00:00:00+00:00",
+        14712.448488250362
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -14155,6 +14159,85 @@
             "by": "risk_judge",
             "reason": "no room: size cap or cash floor"
           },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          }
+        ],
+        "fills": [],
+        "notes": "regime chop (scale 0.60), breadth 37%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-22T00:22:22+00:00",
+      "bar": "2026-10-21 00:00:00+00:00",
+      "tick": 69,
+      "nav_before": 14712.45,
+      "nav_after": 14717.88,
+      "cash": 5064.99,
+      "cash_before": 5064.99,
+      "positions": {
+        "AAVEUSDT": 288.82,
+        "FILUSDT": 3434.97,
+        "ATOMUSDT": 1714.19,
+        "INJUSDT": 232.31,
+        "NEARUSDT": 3024.0,
+        "DOTUSDT": 958.61
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-21 00:00:00+00:00",
+        "nav": 14712.448488250362,
+        "regime": "chop",
+        "breadth": 0.37037037037037035,
+        "cash_pct": 0.3442654593134283,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "buy",
+              "conviction": 0.529,
+              "why": "at/near range high (breakout -1.5%), momentum rank 0.77, slope +0.05%"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.569,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.92, slope +2.11%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +17.6%, slope +4.76%, rsi 55 in band"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [],
+        "vetoes": [
           {
             "symbol": "INJUSDT",
             "side": "buy",
