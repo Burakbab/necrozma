@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 70,
-  "updated": "2026-10-23T22:13:56+00:00",
+  "ticks": 71,
+  "updated": "2026-10-24T00:22:15+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,52 +154,41 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 4961.02393604915,
+    "cash": 5711.219489429944,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "borrow_bps_per_bar": 0.0,
     "positions": {
-      "AAVEUSDT": {
-        "symbol": "AAVEUSDT",
-        "qty": 1.8571530698391319,
-        "avg_cost": 172.2244924275015,
-        "opened_ts": "2026-10-08 00:00:00+00:00",
-        "peak_price": 172.72,
-        "bars_held": 14,
-        "entry_agents": [
-          "consult_moderate"
-        ]
-      },
       "FILUSDT": {
         "symbol": "FILUSDT",
         "qty": 3263.6307634933546,
         "avg_cost": 1.1193988860444062,
         "opened_ts": "2026-10-14 00:00:00+00:00",
         "peak_price": 1.1608,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "ATOMUSDT": {
         "symbol": "ATOMUSDT",
-        "qty": 976.1880126642976,
+        "qty": 488.0940063321488,
         "avg_cost": 1.7458725,
         "opened_ts": "2026-10-15 00:00:00+00:00",
         "peak_price": 1.774,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "INJUSDT": {
         "symbol": "INJUSDT",
-        "qty": 40.19313952352981,
-        "avg_cost": 8.408530851703318,
+        "qty": 84.27786214889088,
+        "avg_cost": 8.048294475591627,
         "opened_ts": "2026-10-16 00:00:00+00:00",
         "peak_price": 8.948,
-        "bars_held": 6,
+        "bars_held": 7,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -211,7 +200,7 @@
         "avg_cost": 5.0024999999999995,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 5.262,
-        "bars_held": 4,
+        "bars_held": 5,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -222,7 +211,7 @@
         "avg_cost": 1.110555,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 1.153,
-        "bars_held": 4,
+        "bars_held": 5,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1068,6 +1057,36 @@
         "ref_price": 7.935,
         "fee": 0.10396390038351461,
         "reason": "consult_moderate: confirmed trend: ma-spread +17.4%, slope +3.38%, rsi 50 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-23 00:00:00+00:00",
+        "symbol": "AAVEUSDT",
+        "side": "sell",
+        "qty": 1.8571530698391319,
+        "price": 142.718605,
+        "ref_price": 142.79,
+        "fee": 0.26505029539890845,
+        "reason": "guardian: time stop (15 bars, -16.2%)"
+      },
+      {
+        "ts": "2026-10-23 00:00:00+00:00",
+        "symbol": "ATOMUSDT",
+        "side": "sell",
+        "qty": 488.0940063321488,
+        "price": 1.6941525000000002,
+        "ref_price": 1.695,
+        "fee": 0.8269056810626259,
+        "reason": "consult_moderate: trend broke: trend -0.0%, rsi 46"
+      },
+      {
+        "ts": "2026-10-23 00:00:00+00:00",
+        "symbol": "INJUSDT",
+        "side": "buy",
+        "qty": 44.084722625361074,
+        "price": 7.719857999999999,
+        "ref_price": 7.716,
+        "fee": 0.34066846710427895,
+        "reason": "consult_moderate: confirmed trend: ma-spread +16.0%, slope +1.37%, rsi 49 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1545,6 +1564,36 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "AAVEUSDT",
+        "qty": 1.8571530698391319,
+        "entry_price": 172.2244924275015,
+        "exit_price": 142.718605,
+        "entry_ts": "2026-10-08 00:00:00+00:00",
+        "exit_ts": "2026-10-23 00:00:00+00:00",
+        "pnl": -55.06199970971117,
+        "pnl_pct": -0.17132224930157425,
+        "bars_held": 15,
+        "exit_reason": "guardian: time stop (15 bars, -16.2%)",
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      },
+      {
+        "symbol": "ATOMUSDT",
+        "qty": 488.0940063321488,
+        "entry_price": 1.7458725,
+        "exit_price": 1.6941525000000002,
+        "entry_ts": "2026-10-15 00:00:00+00:00",
+        "exit_ts": "2026-10-23 00:00:00+00:00",
+        "pnl": -26.071127688561248,
+        "pnl_pct": -0.029624156403173618,
+        "bars_held": 8,
+        "exit_reason": "consult_moderate: trend broke: trend -0.0%, rsi 46",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -1827,6 +1876,10 @@
       [
         "2026-10-22 00:00:00+00:00",
         14162.21506151627
+      ],
+      [
+        "2026-10-23 00:00:00+00:00",
+        13945.59153310985
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -14354,6 +14407,159 @@
           }
         ],
         "notes": "regime chop (scale 0.60), breadth 33%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-24T00:22:15+00:00",
+      "bar": "2026-10-23 00:00:00+00:00",
+      "tick": 71,
+      "nav_before": 13945.59,
+      "nav_after": 13865.91,
+      "cash": 5711.22,
+      "cash_before": 4961.02,
+      "positions": {
+        "FILUSDT": 3108.93,
+        "ATOMUSDT": 827.32,
+        "INJUSDT": 650.29,
+        "NEARUSDT": 2671.95,
+        "DOTUSDT": 896.2
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-23 00:00:00+00:00",
+        "nav": 13945.59153310985,
+        "regime": "bear",
+        "breadth": 0.2962962962962963,
+        "cash_pct": 0.37472839848675177,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "buy",
+              "conviction": 0.569,
+              "why": "at/near range high (breakout -1.8%), momentum rank 0.92, slope +0.09%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +16.0%, slope +1.37%, rsi 49 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.722,
+              "why": "confirmed trend: ma-spread +1.3%, slope +1.71%, rsi 49 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -0.0%, rsi 46"
+            }
+          ],
+          "consult_conservative": [
+            {
+              "symbol": "AVAXUSDT",
+              "side": "buy",
+              "conviction": 0.28,
+              "why": "oversold inside an uptrend: rsi 38, z -2.04, trend +0.6%"
+            },
+            {
+              "symbol": "TRXUSDT",
+              "side": "buy",
+              "conviction": 0.306,
+              "why": "oversold inside an uptrend: rsi 37, z -1.15, trend -1.0%"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "buy",
+              "conviction": 0.339,
+              "why": "oversold inside an uptrend: rsi 35, z -0.61, trend -0.2%"
+            }
+          ]
+        },
+        "forced_exits": [
+          {
+            "symbol": "AAVEUSDT",
+            "why": "guardian: time stop (15 bars, -16.2%)"
+          }
+        ],
+        "orders": [
+          {
+            "symbol": "ATOMUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -0.0%, rsi 46"
+            ]
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "amount": 340.67,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +16.0%, slope +1.37%, rsi 49 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "AVAXUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "conviction 0.28 below floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "ATOMUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 488.0940063321488,
+            "price": 1.6941525000000002,
+            "reason": "consult_moderate: trend broke: trend -0.0%, rsi 46"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 44.084722625361074,
+            "price": 7.719857999999999,
+            "reason": "consult_moderate: confirmed trend: ma-spread +16.0%, slope +1.37%, rsi 49 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 30%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
