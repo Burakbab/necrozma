@@ -454,6 +454,67 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-24 (3-hourly check, ~15:47-16:2x UTC): archived the oldest
+  remaining AGENTS.md slice, then 15 more real `evolve` generations against
+  the live v3 (1d) champion, no promotion — cumulative candidates tried
+  against v3 rose 82201 → 82408 (per `researcher_memory.tested`),
+  stagnation/boldness counter 5951 → 5966.** No live trading this cycle
+  (tick 71 already handled at the dedicated 00:20 UTC daily slot, and the
+  09:00 UTC daily discussion, the 06:00 UTC weekend all-hands, and three
+  prior 3-hourly checks already covered the rest of today — confirmed via
+  `live_state.json`'s `updated` timestamp at session start,
+  `2026-10-24T13:11:09+00:00`, matching `runs/2026-10-24-1320-evolve-batch-v3.md`).
+  Freshness checks before running: `review-hard-calls` still 0 pending (6
+  reviewed, unchanged), items 6/13 still owner decisions, `AGENTS.md` size
+  254,632 bytes — within ~1.4KB of the 256KB threshold, close enough to the
+  margin every prior rotation in this index has used to trigger one — so
+  archived the oldest remaining slice (all eight 2026-10-21 3-hourly-check
+  entries) verbatim to new `AGENTS_ARCHIVE_2026-10-21.md` first, cutting the
+  live file to 230,687 bytes; verified via exact line-range removal (the
+  removed 348-line block diffed byte-for-byte identical against the new
+  archive file's body) and `python3 -m pytest -q` 474/474 unaffected.
+  Committed and pushed as `1392f88` before starting evolve work. Then, with
+  nothing else queued, used the slot for one more real 15-generation batch
+  via `tools/background_runner.py` (`start` + separate `wait`), run after a
+  baseline `pytest` pass, exit code 0, no truncation, completed within the
+  single `wait` call. Champion's fold-aggregate fitness held flat at 2.267
+  across all 15 generations (1017 trades, 40% win, 0% stops, 3 halts,
+  unchanged throughout). Best-of-generation fold-fitness ranged roughly
+  1.904-2.502, never clearing the promotion-margin bar. See
+  `runs/2026-10-24-1619-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 474/474 both before (baseline, right after the
+  archival commit) and after `evolve`; top-level key diff of
+  `live_state.json` (checked directly in Python against the pre-batch
+  committed copy, not just eyeballed) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked (read-only, no state change) — margin and
+  draw count both held flat (7.672, draw 1567 — none of this batch's
+  candidates cleared the fold-aggregate gate at a new draw), same slow-rise
+  pattern already tracked under item 13, nothing new; dashboard rebuilt
+  with `EVO_STATE` set (`index.html` shows 82408 challenger ideas tried).
+  Genome still v3 (1d) live, untouched. Container synced cleanly from
+  `main` via `git checkout main` + `tools/git_sync.py` fast-forward (7
+  commits), no divergence, no shallow-clone staleness this cycle.
+
+- **Archived 2026-10-24 (3-hourly check, ~15:47-16:2x UTC): the next oldest
+  remaining slice of this log (all eight 2026-10-21 3-hourly-check entries)
+  moved verbatim to new `AGENTS_ARCHIVE_2026-10-21.md`, cutting this file
+  from 254,632 bytes back down to 230,687 bytes** — the pre-write size was
+  within ~1.4KB of the 256KB threshold, the same margin range that has
+  triggered every prior rotation in this index. Verified via exact
+  line-range removal (the removed 348-line block diffed byte-for-byte
+  identical against the new archive file's body) and `python3 -m pytest -q`
+  474/474 unaffected (text-only change, no code touched). Nothing
+  reworded, nothing lost — see that file (and, for anything older, the rest
+  of this index below) for the full history. This file now keeps
+  everything from 2026-10-22 ~00:46 UTC onward, plus the full "Owner
+  decisions pending", promotion-history, "Measured", and "Rules" sections,
+  never part of any rotation. No protected file touched, `live_state.json`
+  untouched by this housekeeping step itself.
+
 - **Run 2026-10-24 (3-hourly check, ~12:46-13:20 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 81995 → 82201 (per
