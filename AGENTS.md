@@ -454,6 +454,67 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-10-24 (weekend all-hands, ~06:00-06:40 UTC): closed the
+  out-of-sample gap in item 5's COMBINED/ASYMMETRIC short-signal results —
+  mixed, genuinely informative, not a clean validation.** New read-only CLI
+  `regime-combo-oos` (`evotrader_bundle.py`, no `loop.engine` change — reuses
+  `benchmark_combined_short`/`benchmark_asymmetric_short`/
+  `benchmark_trend_break_short` exactly as `short-headroom --combined/
+  --asymmetric` already call them) re-runs the 2026-10-03/04 writeups'
+  comparison against `history-perturb`'s own `--independent` tiling instead
+  of the champion's own 4 fold/holdout windows those writeups were read off
+  — the same gap `dual-trend-oos` (2026-10-17) closed for the
+  `slope_lookback` sweep, and for the same reason: an in-sample claim read
+  off 4 windows is not validated until it's checked against windows it was
+  never tuned on. At the default 2.0y tiling all 5 windows were bull markets
+  (same finding `dual-trend-oos` already made about this universe's real
+  history), mean return trend-break −7.4% / combined −6.7% / asymmetric
+  +1.2% — asymmetric actually positive on average. Narrowed to 1.1333y (the
+  champion's own per-fold width, same as `dual-trend-oos`'s second sweep) to
+  get real bear windows: 9 windows, 3 genuinely bearish (−6.2%/−5.0%/−46.9%
+  buy&hold). Mean return across all 8 valid windows: trend-break −11.1% /
+  combined −7.9% / asymmetric −7.3% — both filtered signals beat plain
+  trend-break on average, unlike the slope_lookback sweep's complete
+  reversal. But the per-window "which signal is least-bad" tally is a
+  three-way split with no consistent winner (trend-break best in 3 windows,
+  combined best in 3, asymmetric best in 2), and combined's mean advantage
+  turns out to be concentrated in one extreme window (window 4, 2020-01 to
+  2021-02, buy&hold +1032.7%, where combined alone was profitable at +5.4%
+  against trend-break's −32.6%) — excluding that single window flips the
+  ranking (trend-break −8.1%, combined −9.8%, now the worst of the three,
+  asymmetric −7.2%, essentially unchanged). Asymmetric's edge is the more
+  robust of the two: smaller and more stable with or without the outlier
+  window, though never the single best performer in any individual bear
+  window. The "captured-edge" percentage metric this item's prior writeups
+  used broke down badly here — two of the three bear windows have tiny
+  headroom (−6.2%/−5.0%), so dividing by it amplifies ordinary variance into
+  swings over ±400% (trend-break "captured" 497% in window 2), not a
+  genuine edge measurement; raw mean return is the reliable number here, the
+  captured-edge mean is not. In the one real severe bear window (window 6,
+  2022-04 to 2023-05, the LUNA/FTX crash era, buy&hold −46.9%), combined
+  actually did best (−17.0% vs trend-break's −25.6% and asymmetric's
+  −29.5%) — the opposite of the whipsaw problem the 2026-10-03 writeup found
+  combined to have in-sample, suggesting the regime-forced-cover behavior
+  that hurt in a choppy in-sample fold can help in a genuine crash by
+  exiting before a post-crash bounce gives back gains. **Reading: unlike
+  the slope_lookback sweet spot (which reversed completely out-of-sample),
+  the directional claim that AND-gating trend-break with the regime signal
+  reduces average losses does hold up on this check — but "holds up on
+  average" and "reliable" are different things when the advantage is this
+  unevenly distributed across windows and partly concentrated in one
+  outlier.** Does not change the still-open, still owner-gated question of
+  whether/how to let the Researcher open a short at all; if this item is
+  picked up again, the next step is the same kind of question
+  `dual-trend-oos` raised for its own result — whether a *combination* of
+  signals can be found whose advantage doesn't concentrate in one window —
+  not re-reading this same data. Read-only throughout: no genome mutation
+  beyond what `Analyst._regime` already reads from the live genome, no
+  `RiskJudge`/`SuperiorJudge` code path, no `live_state.json` touch. New
+  command shipped and committed separately (`b9b79df`) ahead of running it,
+  verified via `python3 -m pytest -q` 474/474 unaffected (pure CLI addition,
+  no module change) before the diagnostic itself was run. See
+  `runs/2026-10-24-0600-weekend-all-hands.md`.
+
 - **Run 2026-10-24 (3-hourly check, ~03:46-04:12 UTC): archived the oldest
   remaining AGENTS.md slice, then 15 more real `evolve` generations against
   the live v3 (1d) champion, no promotion — cumulative candidates tried
@@ -2946,6 +3007,57 @@ every `evolve` call.
    out not to hold up. Read-only throughout: no genome mutation
    (trend-break/dual-trend take no genome at all), no `RiskJudge`/
    `SuperiorJudge` code path, no `live_state.json` touch.
+
+   **Measured 2026-10-24 (weekend all-hands): ran the same out-of-sample
+   check against COMBINED/ASYMMETRIC instead of the slope_lookback sweep —
+   mixed result, not the clean reversal `dual-trend-oos` found.** New CLI
+   `regime-combo-oos` (see "Current state" above; `evotrader_bundle.py`, no
+   new `loop.engine` function — reuses `benchmark_combined_short`/
+   `benchmark_asymmetric_short`/`benchmark_trend_break_short` exactly as
+   `short-headroom --combined/--asymmetric` call them) re-runs the
+   2026-10-03/04 combined/asymmetric comparison against the identical
+   `--independent` tiling. At 2.0y (all 5 windows bull, same finding
+   `dual-trend-oos` made about this universe's history), mean return
+   trend-break −7.4% / combined −6.7% / asymmetric +1.2%. At 1.1333y (9
+   windows, 3 genuinely bearish this time — the tiling's boundaries shifted
+   slightly from `dual-trend-oos`'s own 1.1333y run a week earlier since
+   both walk backward from "now", so window counts/dates don't line up
+   exactly, nothing wrong): mean trend-break −11.1% / combined −7.9% /
+   asymmetric −7.3% — unlike the slope_lookback sweep, both filtered
+   signals beat the unfiltered baseline on average here. But per-window
+   "least-bad" is a genuine three-way split (trend-break best in 3 of 8
+   valid windows, combined best in 3, asymmetric best in 2), and combined's
+   mean edge concentrates in one outlier window (2020-01 to 2021-02,
+   buy&hold +1032.7%, where combined alone was profitable at +5.4% against
+   trend-break's −32.6%) — drop that one window and combined's mean flips
+   to the *worst* of the three (−9.8% vs. trend-break's −8.1%), while
+   asymmetric barely moves (−7.2%), making asymmetric the more robust of
+   the two. In the one real severe bear window measured (2022-04 to
+   2023-05, the LUNA/FTX era, buy&hold −46.9%), combined did best (−17.0%
+   vs. trend-break's −25.6% and asymmetric's −29.5%) — the opposite of the
+   whipsaw problem that same signal showed in-sample, because exiting on a
+   regime-leaves-bear signal that hurts amid an ordinary pullback can help
+   amid a real crash by covering before a post-crash bounce gives back
+   gains. Also found and flagged a measurement-reliability problem with
+   this item's own captured-edge metric: two of the three bear windows have
+   tiny headroom (buy&hold only −6.2%/−5.0%), so dividing by it amplifies
+   ordinary variance into swings past ±400% (trend-break "captured" 497% in
+   one window) — not a real edge number; raw mean return, not mean
+   captured-edge, is the reliable summary statistic when headroom is this
+   small. **Reading: the directional claim (AND-gating with the regime
+   signal reduces average losses) survives this check better than the
+   slope_lookback sweet spot did, but "better on average across 8 windows"
+   and "a reliable signal" are different claims — no single variant wins
+   consistently, and the strongest-looking one (combined) owes most of its
+   edge to a single extreme bull window.** Does not change the still-open,
+   still owner-gated question of whether to let the Researcher open a
+   short at all. If this item is picked up again, the next step is the
+   same kind `dual-trend-oos` raised for its own result: whether a
+   genuinely different combination can be found whose advantage doesn't
+   concentrate in one window, not re-reading this same output. Read-only
+   throughout: no genome mutation beyond what `Analyst._regime` already
+   reads from the live genome, no `RiskJudge`/`SuperiorJudge` code path, no
+   `live_state.json` touch.
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
