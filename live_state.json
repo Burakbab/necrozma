@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 71,
-  "updated": "2026-10-24T22:15:28+00:00",
+  "ticks": 72,
+  "updated": "2026-10-25T00:21:59+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 5711.219489429944,
+    "cash": 5631.367440634865,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,29 +166,29 @@
         "avg_cost": 1.1193988860444062,
         "opened_ts": "2026-10-14 00:00:00+00:00",
         "peak_price": 1.1608,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "ATOMUSDT": {
         "symbol": "ATOMUSDT",
-        "qty": 488.0940063321488,
+        "qty": 244.0470031660744,
         "avg_cost": 1.7458725,
         "opened_ts": "2026-10-15 00:00:00+00:00",
         "peak_price": 1.774,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "INJUSDT": {
         "symbol": "INJUSDT",
-        "qty": 84.27786214889088,
-        "avg_cost": 8.048294475591627,
+        "qty": 203.11403444906108,
+        "avg_cost": 7.843257749771428,
         "opened_ts": "2026-10-16 00:00:00+00:00",
         "peak_price": 8.948,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -200,18 +200,18 @@
         "avg_cost": 5.0024999999999995,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 5.262,
-        "bars_held": 5,
+        "bars_held": 6,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "DOTUSDT": {
         "symbol": "DOTUSDT",
-        "qty": 832.122801140226,
+        "qty": 416.061400570113,
         "avg_cost": 1.110555,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 1.153,
-        "bars_held": 5,
+        "bars_held": 6,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1087,6 +1087,36 @@
         "ref_price": 7.716,
         "fee": 0.34066846710427895,
         "reason": "consult_moderate: confirmed trend: ma-spread +16.0%, slope +1.37%, rsi 49 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-24 00:00:00+00:00",
+        "symbol": "DOTUSDT",
+        "side": "sell",
+        "qty": 416.061400570113,
+        "price": 1.0494750000000002,
+        "ref_price": 1.05,
+        "fee": 0.43664603836331944,
+        "reason": "consult_moderate: trend broke: trend -0.8%, rsi 48"
+      },
+      {
+        "ts": "2026-10-24 00:00:00+00:00",
+        "symbol": "ATOMUSDT",
+        "side": "sell",
+        "qty": 244.0470031660744,
+        "price": 1.63918,
+        "ref_price": 1.64,
+        "fee": 0.40003696664976585,
+        "reason": "consult_moderate: trend broke: trend -0.9%, rsi 48"
+      },
+      {
+        "ts": "2026-10-24 00:00:00+00:00",
+        "symbol": "INJUSDT",
+        "side": "buy",
+        "qty": 118.83617230017019,
+        "price": 7.697846999999999,
+        "ref_price": 7.694,
+        "fee": 0.9156983708031514,
+        "reason": "consult_moderate: confirmed trend: ma-spread +15.2%, slope +0.40%, rsi 50 in band | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -1594,6 +1624,36 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "DOTUSDT",
+        "qty": 416.061400570113,
+        "entry_price": 1.110555,
+        "exit_price": 1.0494750000000002,
+        "entry_ts": "2026-10-18 00:00:00+00:00",
+        "exit_ts": "2026-10-24 00:00:00+00:00",
+        "pnl": -25.84967638518574,
+        "pnl_pct": -0.05499952726339519,
+        "bars_held": 6,
+        "exit_reason": "consult_moderate: trend broke: trend -0.8%, rsi 48",
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      },
+      {
+        "symbol": "ATOMUSDT",
+        "qty": 244.0470031660744,
+        "entry_price": 1.7458725,
+        "exit_price": 1.63918,
+        "entry_ts": "2026-10-15 00:00:00+00:00",
+        "exit_ts": "2026-10-24 00:00:00+00:00",
+        "pnl": -26.43802185194612,
+        "pnl_pct": -0.061111278171802286,
+        "bars_held": 9,
+        "exit_reason": "consult_moderate: trend broke: trend -0.9%, rsi 48",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -1880,6 +1940,10 @@
       [
         "2026-10-23 00:00:00+00:00",
         13945.59153310985
+      ],
+      [
+        "2026-10-24 00:00:00+00:00",
+        13689.754834789586
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -14560,6 +14624,147 @@
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 30%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-25T00:21:59+00:00",
+      "bar": "2026-10-24 00:00:00+00:00",
+      "tick": 72,
+      "nav_before": 13689.75,
+      "nav_after": 13699.67,
+      "cash": 5631.37,
+      "cash_before": 5711.22,
+      "positions": {
+        "FILUSDT": 3067.81,
+        "ATOMUSDT": 400.24,
+        "INJUSDT": 1562.76,
+        "NEARUSDT": 2600.62,
+        "DOTUSDT": 436.86
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-24 00:00:00+00:00",
+        "nav": 13689.754834789586,
+        "regime": "bear",
+        "breadth": 0.2222222222222222,
+        "cash_pct": 0.4171893184614307,
+        "proposals": {
+          "consult_risky": [],
+          "consult_moderate": [
+            {
+              "symbol": "DOTUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -0.8%, rsi 48"
+            },
+            {
+              "symbol": "INJUSDT",
+              "side": "buy",
+              "conviction": 0.95,
+              "why": "confirmed trend: ma-spread +15.2%, slope +0.40%, rsi 50 in band"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "buy",
+              "conviction": 0.781,
+              "why": "confirmed trend: ma-spread +1.9%, slope +1.44%, rsi 53 in band"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -0.9%, rsi 48"
+            }
+          ],
+          "consult_conservative": [
+            {
+              "symbol": "BCHUSDT",
+              "side": "buy",
+              "conviction": 0.33,
+              "why": "oversold inside an uptrend: rsi 35, z -0.76, trend -0.1%"
+            }
+          ]
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "DOTUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -0.8%, rsi 48"
+            ]
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -0.9%, rsi 48"
+            ]
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "amount": 915.7,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: confirmed trend: ma-spread +15.2%, slope +0.40%, rsi 50 in band",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "no room: size cap or cash floor"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "DOTUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 416.061400570113,
+            "price": 1.0494750000000002,
+            "reason": "consult_moderate: trend broke: trend -0.8%, rsi 48"
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 244.0470031660744,
+            "price": 1.63918,
+            "reason": "consult_moderate: trend broke: trend -0.9%, rsi 48"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 118.83617230017019,
+            "price": 7.697846999999999,
+            "reason": "consult_moderate: confirmed trend: ma-spread +15.2%, slope +0.40%, rsi 50 in band | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 22%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
