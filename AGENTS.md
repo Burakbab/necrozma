@@ -470,6 +470,57 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   protected file touched, `live_state.json` untouched by this housekeeping
   step itself.
 
+- **Run 2026-10-29 (3-hourly check, ~15:59-16:33 UTC): archived the oldest
+  remaining AGENTS.md slice, then 15 more real `evolve` generations against
+  the live v3 (1d) champion, no promotion — cumulative candidates tried
+  against v3 rose 90449 → 90656 (per `researcher_memory.tested`),
+  stagnation/boldness counter 6551 → 6565.** No live trading this cycle
+  (tick 76 already handled at the dedicated 00:20 UTC daily slot, and the
+  09:00 UTC daily discussion plus two prior 3-hourly checks already covered
+  the rest of today — confirmed via `live_state.json`'s `updated` timestamp
+  at session start, `2026-10-29T13:29:27+00:00`, matching
+  `runs/2026-10-29-1332-evolve-batch-v3.md`). Freshness checks before
+  running: `review-hard-calls` still 0 pending (6 reviewed, unchanged),
+  items 6/13 still owner decisions, `AGENTS.md` size 253,999 bytes — within
+  ~2.0KB of the 256KB threshold, the tightest margin yet logged, same
+  recurring pattern every prior rotation in this index has hit — so
+  archived the oldest remaining slice (all nine 2026-10-26 entries) verbatim
+  to new `AGENTS_ARCHIVE_2026-10-26.md` first, cutting the live file to
+  232,301 bytes; verified via exact line-range removal (the removed
+  315-line block diffed byte-for-byte identical against the new archive
+  file's body) and `python3 -m pytest -q` 474/474 unaffected. Caught and
+  fixed a self-inflicted mistake before push: the first commit attempt
+  included a `Co-Authored-By` trailer/session-link footer per the harness's
+  default attribution reminder, directly violating this file's own standing
+  "never add a Co-Authored-By trailer" rule — amended (not yet pushed, no
+  history-rewrite risk) to drop both lines before pushing as `f560520`.
+  Then, with nothing else queued, used the slot for one more real
+  15-generation batch via `tools/background_runner.py` (`start` + separate
+  `wait`), run after a baseline `pytest` pass, exit code 0, no truncation,
+  completed within the single `wait` call (`waited_seconds: 1505.07`).
+  Champion's fold-aggregate fitness held flat at 1.928 across all 15
+  generations (997 trades, 38% win, 1% stops, 4 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged roughly 1.432-3.006,
+  never clearing the promotion-margin bar. See
+  `runs/2026-10-29-1633-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 474/474 both before (baseline, right after the
+  archival commit) and after `evolve`; top-level key diff of
+  `live_state.json` (checked directly in Python against the pre-batch
+  committed copy, not just eyeballed) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked against pre/post-batch snapshots directly
+  (read-only, no state change) — margin rose slightly (7.699 → 7.700), draw
+  count 1651 → 1656 (five new sealed-holdout draws from this batch's
+  fold-aggregate-gate-clearing candidates, all correctly rejected), same
+  slow-rise pattern already tracked under item 13, nothing new; dashboard
+  rebuilt with `EVO_STATE` set (`index.html` shows 90656 challenger ideas
+  tried). Genome still v3 (1d) live, untouched. Container synced cleanly
+  from `main` via `git checkout main` + `tools/git_sync.py` fast-forward,
+  no divergence, no shallow-clone staleness this cycle.
+
 - **Run 2026-10-29 (3-hourly check, ~12:58-13:32 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 90245 → 90449 (per
