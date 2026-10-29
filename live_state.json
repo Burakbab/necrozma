@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 75,
-  "updated": "2026-10-28T22:15:57+00:00",
+  "ticks": 76,
+  "updated": "2026-10-29T00:22:44+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 7323.877598228498,
+    "cash": 7748.592495598229,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -162,22 +162,22 @@
     "positions": {
       "FILUSDT": {
         "symbol": "FILUSDT",
-        "qty": 815.9076908733387,
+        "qty": 407.9538454366693,
         "avg_cost": 1.1193988860444062,
         "opened_ts": "2026-10-14 00:00:00+00:00",
         "peak_price": 1.1608,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "ATOMUSDT": {
         "symbol": "ATOMUSDT",
-        "qty": 30.5058753957593,
+        "qty": 15.25293769787965,
         "avg_cost": 1.7458725,
         "opened_ts": "2026-10-15 00:00:00+00:00",
         "peak_price": 1.774,
-        "bars_held": 12,
+        "bars_held": 13,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -188,7 +188,7 @@
         "avg_cost": 7.843257749771428,
         "opened_ts": "2026-10-16 00:00:00+00:00",
         "peak_price": 8.948,
-        "bars_held": 11,
+        "bars_held": 12,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -200,18 +200,18 @@
         "avg_cost": 5.0024999999999995,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 5.262,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "DOTUSDT": {
         "symbol": "DOTUSDT",
-        "qty": 52.007675071264124,
+        "qty": 26.003837535632062,
         "avg_cost": 1.110555,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 1.153,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -222,7 +222,7 @@
         "avg_cost": 0.34304192022469976,
         "opened_ts": "2026-10-25 00:00:00+00:00",
         "peak_price": 0.3436,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1228,6 +1228,36 @@
         "ref_price": 1.634,
         "fee": 0.049821677096472367,
         "reason": "consult_moderate: trend broke: trend -2.8%, rsi 42"
+      },
+      {
+        "ts": "2026-10-28 00:00:00+00:00",
+        "symbol": "DOTUSDT",
+        "side": "sell",
+        "qty": 26.003837535632062,
+        "price": 1.0114940000000001,
+        "ref_price": 1.012,
+        "fee": 0.02630272564426662,
+        "reason": "consult_risky: leadership lost: rsi 37, trend -5.1% | consult_moderate: trend broke: trend -5.1%, rsi 37"
+      },
+      {
+        "ts": "2026-10-28 00:00:00+00:00",
+        "symbol": "FILUSDT",
+        "side": "sell",
+        "qty": 407.9538454366693,
+        "price": 0.9161417000000001,
+        "ref_price": 0.9166,
+        "fee": 0.3737435294798875,
+        "reason": "consult_risky: leadership lost: rsi 41, trend -4.1% | consult_moderate: trend broke: trend -4.1%, rsi 41"
+      },
+      {
+        "ts": "2026-10-28 00:00:00+00:00",
+        "symbol": "ATOMUSDT",
+        "side": "sell",
+        "qty": 15.25293769787965,
+        "price": 1.645177,
+        "ref_price": 1.646,
+        "fee": 0.025093782282984547,
+        "reason": "consult_moderate: trend broke: trend -2.9%, rsi 42"
       }
     ],
     "closed": [
@@ -1885,6 +1915,51 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "DOTUSDT",
+        "qty": 26.003837535632062,
+        "entry_price": 1.110555,
+        "exit_price": 1.0114940000000001,
+        "entry_ts": "2026-10-18 00:00:00+00:00",
+        "exit_ts": "2026-10-28 00:00:00+00:00",
+        "pnl": -2.6022688757615104,
+        "pnl_pct": -0.08919954437195798,
+        "bars_held": 10,
+        "exit_reason": "consult_risky: leadership lost: rsi 37, trend -5.1% | consult_moderate: trend broke: trend -5.1%, rsi 37",
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      },
+      {
+        "symbol": "FILUSDT",
+        "qty": 407.9538454366693,
+        "entry_price": 1.1193988860444062,
+        "exit_price": 0.9161417000000001,
+        "entry_ts": "2026-10-14 00:00:00+00:00",
+        "exit_ts": "2026-10-28 00:00:00+00:00",
+        "pnl": -83.29329418893188,
+        "pnl_pct": -0.18157708443203058,
+        "bars_held": 14,
+        "exit_reason": "consult_risky: leadership lost: rsi 41, trend -4.1% | consult_moderate: trend broke: trend -4.1%, rsi 41",
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      },
+      {
+        "symbol": "ATOMUSDT",
+        "qty": 15.25293769787965,
+        "entry_price": 1.7458725,
+        "exit_price": 1.645177,
+        "entry_ts": "2026-10-15 00:00:00+00:00",
+        "exit_ts": "2026-10-28 00:00:00+00:00",
+        "pnl": -1.5609959702398257,
+        "pnl_pct": -0.057676319433406564,
+        "bars_held": 13,
+        "exit_reason": "consult_moderate: trend broke: trend -2.9%, rsi 42",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -2187,6 +2262,10 @@
       [
         "2026-10-27 00:00:00+00:00",
         13727.563902382764
+      ],
+      [
+        "2026-10-28 00:00:00+00:00",
+        13790.458482935846
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -15443,6 +15522,173 @@
             "qty": 30.5058753957593,
             "price": 1.633183,
             "reason": "consult_moderate: trend broke: trend -2.8%, rsi 42"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 15%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-29T00:22:44+00:00",
+      "bar": "2026-10-28 00:00:00+00:00",
+      "tick": 76,
+      "nav_before": 13790.46,
+      "nav_after": 13762.91,
+      "cash": 7748.59,
+      "cash_before": 7323.88,
+      "positions": {
+        "FILUSDT": 373.93,
+        "ATOMUSDT": 25.11,
+        "INJUSDT": 1646.44,
+        "NEARUSDT": 2707.62,
+        "DOTUSDT": 26.32,
+        "CRVUSDT": 1234.91
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-28 00:00:00+00:00",
+        "nav": 13790.458482935846,
+        "regime": "bear",
+        "breadth": 0.14814814814814814,
+        "cash_pct": 0.5310829663343666,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "BNBUSDT",
+              "side": "buy",
+              "conviction": 0.549,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.85, slope +1.16%"
+            },
+            {
+              "symbol": "DOTUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 37, trend -5.1%"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "buy",
+              "conviction": 0.579,
+              "why": "at/near range high (breakout -0.4%), momentum rank 0.96, slope +3.74%"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 41, trend -4.1%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "DOTUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -5.1%, rsi 37"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "buy",
+              "conviction": 0.718,
+              "why": "confirmed trend: ma-spread +0.5%, slope +1.34%, rsi 40 in band"
+            },
+            {
+              "symbol": "FILUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -4.1%, rsi 41"
+            },
+            {
+              "symbol": "ATOMUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -2.9%, rsi 42"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "DOTUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 37, trend -5.1%",
+              "consult_moderate: trend broke: trend -5.1%, rsi 37"
+            ]
+          },
+          {
+            "symbol": "FILUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 41, trend -4.1%",
+              "consult_moderate: trend broke: trend -4.1%, rsi 41"
+            ]
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -2.9%, rsi 42"
+            ]
+          }
+        ],
+        "vetoes": [
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          },
+          {
+            "symbol": "BNBUSDT",
+            "side": "buy",
+            "by": "risk_judge",
+            "reason": "position slots full (6/6)"
+          }
+        ],
+        "fills": [
+          {
+            "symbol": "DOTUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 26.003837535632062,
+            "price": 1.0114940000000001,
+            "reason": "consult_risky: leadership lost: rsi 37, trend -5.1% | consult_moderate: trend broke: trend -5.1%, rsi 37"
+          },
+          {
+            "symbol": "FILUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 407.9538454366693,
+            "price": 0.9161417000000001,
+            "reason": "consult_risky: leadership lost: rsi 41, trend -4.1% | consult_moderate: trend broke: trend -4.1%, rsi 41"
+          },
+          {
+            "symbol": "ATOMUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 15.25293769787965,
+            "price": 1.645177,
+            "reason": "consult_moderate: trend broke: trend -2.9%, rsi 42"
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 15%",
