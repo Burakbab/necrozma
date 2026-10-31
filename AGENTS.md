@@ -3078,6 +3078,87 @@ every `evolve` call.
    reads from the live genome, no `RiskJudge`/`SuperiorJudge` code path, no
    `live_state.json` touch.
 
+   **Measured 2026-10-31 (weekend all-hands): tried the genuinely new
+   (non-regime) signal the 2026-10-24 writeup called for — a cross-sectional
+   confirmation instead of a temporal one — and it is NOT an improvement
+   over plain trend-break in the champion's bull windows, the opposite of
+   what dual-trend found; it is a real improvement only in the one real
+   bear window and in holdout.** New `loop.engine.benchmark_breadth_trend_short`
+   (10 new tests, `tests/test_breadth_trend_short.py`, full suite 474 → 484)
+   adds a BREADTH confirmation to `benchmark_trend_break_short`'s entry: a
+   symbol opens a short only when its own trend-break fires AND at least
+   `breadth_threshold` (default 0.4) of the universe's own symbols are also
+   reading a breakdown that same bar — a purely price-only, cross-sectional
+   measure of whether a pullback is broad-based or idiosyncratic, never
+   touching `agents.analyst.Analyst._regime` or any genome. Covering is
+   trend-break alone, same ablation discipline `dual-trend`/`asymmetric`
+   used. Wired into `short-headroom --breadth-trend [--breadth-threshold X]`.
+
+   Real 4-year result against the live champion's current four windows
+   (fee+slippage+3bps/bar borrow), trend-break / dual-trend / breadth-trend
+   (default 0.4) side by side:
+
+   | window | trend-break | dual-trend | breadth-trend |
+   |---|---|---|---|
+   | fold 1 (bull, b&h +219.0%) | -45.7% | **-11.7%** | -49.5% (worst) |
+   | fold 2 (bull, b&h +60.6%) | -36.1% | **-20.7%** | -41.0% (worst) |
+   | fold 3 (bear, b&h -14.0%) | +12.9% (92% capt.) | +8.9% (63% capt.) | **+18.2% (130% capt.)** |
+   | holdout (bull, b&h +37.3%) | -15.3% | -12.5% | **-7.2%** |
+
+   Breadth-trend is the WORST of the three in both bull folds — even worse
+   than plain trend-break with no confirmation at all — while dual-trend
+   (temporal confirmation) clearly helps there. Checked directly: avg
+   concurrent short and flip count are both slightly LOWER for breadth-trend
+   than plain trend-break in folds 1/2 (8.47/8.75 vs 9.07/9.49, fewer flips
+   too) — the filter is being more selective, not less, yet the trades it
+   lets through lose more. Reading: requiring many symbols to break down
+   together during an overall bull market is more likely to catch a sharp,
+   broad, synchronized pullback than an isolated one — and a broad
+   synchronized selloff inside an intact bull run is exactly the "buy the
+   dip" shape that tends to resolve in a sharp, broad, synchronized rally.
+   The cross-sectional filter ends up selecting for the *more* dangerous
+   setups to be short, not the safer ones — the opposite of what it was
+   built to do, and the opposite of dual-trend's own temporal-confirmation
+   result. It is a real improvement only where the champion's one actual
+   bear window and the (also bullish, but less extreme) holdout are
+   concerned.
+
+   Swept `breadth_threshold` ∈ {0.2, 0.3, 0.4, 0.5, 0.6, 0.7} directly
+   against the same four windows to check whether this is a stable
+   relationship or an artifact of the one default value: fold 1's loss
+   worsens monotonically as the threshold rises (-45.4% → -51.6%); fold 2's
+   loss actually improves at higher thresholds (-35.6% → -24.6%, the
+   opposite direction from fold 1); fold 3 — the one window where breadth
+   helps at all — holds up through 0.5 (+91% to +130% captured) and then
+   **flips sign sharply at 0.6** (-145% captured, a real loss where every
+   lower threshold showed a real gain); holdout's loss is smallest at 0.5
+   (-0.9%) but surrounded by worse values on both sides (-7.2% at 0.4,
+   -12.6% at 0.6) — not a clean curve in any window, and the one window
+   that matters most (fold 3) shows a sharp instability rather than a
+   gentle slope. Same caution `dual-trend`'s own writeup flagged before
+   `dual-trend-oos` checked it out-of-sample: nothing here should be read
+   as "threshold 0.4-0.5 is the right setting" — this is an in-sample sweep
+   against the same four windows the signal is being judged on, and
+   `dual-trend-oos` already showed once that this repo's apparent in-sample
+   sweet spots do not reliably survive contact with calendar windows they
+   were never read off. No out-of-sample check attempted this session
+   (would need a `breadth-trend-oos` sibling to `dual-trend-oos`, not built
+   here) — that is the concretely scoped next step if this signal is picked
+   up again, before any threshold choice is trusted. **Reading for item 5
+   overall: two genuinely different non-regime confirmation dimensions have
+   now been tried (temporal: dual-trend; cross-sectional: breadth-trend) and
+   they help in opposite places** — dual-trend protects bull markets but
+   gives up some bear capture (63% vs plain trend-break's 92%); breadth-trend
+   gives up bull-market protection entirely (worse than no filter) but
+   sharpens the one real bear window (130% capture, the best of any variant
+   measured in this item's whole history) and improves holdout. Neither
+   dominates, same non-dominance pattern `regime-combo-oos` already found
+   between combined/asymmetric/trend-break. Does not change the still-open,
+   still owner-gated question of whether to let the Researcher open a short
+   at all. Read-only throughout: no genome mutation, no `RiskJudge`/
+   `SuperiorJudge` code path, no `live_state.json` touch, `evotrader.manifest`
+   unchanged (`loop/engine.py` is not `_PROTECTED`).
+
 6. **Equities/FX** behind the same `MarketData` interface.
 
    **Design pass done 2026-09-02 (3-hourly check, ~15:46-16:05 UTC), no code
