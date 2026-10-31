@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 77,
-  "updated": "2026-10-30T22:14:59+00:00",
+  "ticks": 78,
+  "updated": "2026-10-31T00:22:48+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,30 +154,19 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 7935.869170089725,
+    "cash": 7854.561792312205,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "borrow_bps_per_bar": 0.0,
     "positions": {
-      "ATOMUSDT": {
-        "symbol": "ATOMUSDT",
-        "qty": 15.25293769787965,
-        "avg_cost": 1.7458725,
-        "opened_ts": "2026-10-15 00:00:00+00:00",
-        "peak_price": 1.774,
-        "bars_held": 14,
-        "entry_agents": [
-          "consult_moderate"
-        ]
-      },
       "INJUSDT": {
         "symbol": "INJUSDT",
         "qty": 203.11403444906108,
         "avg_cost": 7.843257749771428,
         "opened_ts": "2026-10-16 00:00:00+00:00",
         "peak_price": 8.948,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_moderate",
           "consult_risky"
@@ -189,7 +178,7 @@
         "avg_cost": 5.0024999999999995,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 5.262,
-        "bars_held": 11,
+        "bars_held": 12,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -200,28 +189,39 @@
         "avg_cost": 1.110555,
         "opened_ts": "2026-10-18 00:00:00+00:00",
         "peak_price": 1.153,
-        "bars_held": 11,
+        "bars_held": 12,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "CRVUSDT": {
         "symbol": "CRVUSDT",
-        "qty": 1833.837607260085,
+        "qty": 916.9188036300425,
         "avg_cost": 0.34304192022469976,
         "opened_ts": "2026-10-25 00:00:00+00:00",
         "peak_price": 0.3436,
-        "bars_held": 4,
+        "bars_held": 5,
         "entry_agents": [
           "consult_moderate"
         ]
       },
       "TRXUSDT": {
         "symbol": "TRXUSDT",
-        "qty": 1909.124639146124,
+        "qty": 954.562319573062,
         "avg_cost": 0.35627805,
         "opened_ts": "2026-10-29 00:00:00+00:00",
         "peak_price": 0.3561,
+        "bars_held": 1,
+        "entry_agents": [
+          "consult_risky"
+        ]
+      },
+      "BCHUSDT": {
+        "symbol": "BCHUSDT",
+        "qty": 2.2911343955301295,
+        "avg_cost": 296.64824999999996,
+        "opened_ts": "2026-10-30 00:00:00+00:00",
+        "peak_price": 296.5,
         "bars_held": 0,
         "entry_agents": [
           "consult_risky"
@@ -1288,6 +1288,46 @@
         "ref_price": 0.3561,
         "fee": 0.6808600637056405,
         "reason": "consult_risky: at/near range high (breakout +0.0%), momentum rank 1.00, slope +0.46% | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-10-30 00:00:00+00:00",
+        "symbol": "ATOMUSDT",
+        "side": "sell",
+        "qty": 15.25293769787965,
+        "price": 1.5512240000000002,
+        "ref_price": 1.552,
+        "fee": 0.023660723027455664,
+        "reason": "guardian: time stop (15 bars, -11.1%)"
+      },
+      {
+        "ts": "2026-10-30 00:00:00+00:00",
+        "symbol": "TRXUSDT",
+        "side": "sell",
+        "qty": 954.562319573062,
+        "price": 0.3256371,
+        "ref_price": 0.3258,
+        "fee": 0.3108409055150451,
+        "reason": "consult_moderate: trend broke: trend -0.9%, rsi 46"
+      },
+      {
+        "ts": "2026-10-30 00:00:00+00:00",
+        "symbol": "CRVUSDT",
+        "side": "sell",
+        "qty": 916.9188036300425,
+        "price": 0.28915535000000003,
+        "ref_price": 0.2893,
+        "fee": 0.2651319775852262,
+        "reason": "consult_moderate: trend broke: trend -2.7%, rsi 39"
+      },
+      {
+        "ts": "2026-10-30 00:00:00+00:00",
+        "symbol": "BCHUSDT",
+        "side": "buy",
+        "qty": 2.2911343955301295,
+        "price": 296.64824999999996,
+        "ref_price": 296.5,
+        "fee": 0.6803413502991199,
+        "reason": "consult_risky: at/near range high (breakout -0.7%), momentum rank 1.00, slope +0.60% | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -2020,6 +2060,51 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "ATOMUSDT",
+        "qty": 15.25293769787965,
+        "entry_price": 1.7458725,
+        "exit_price": 1.5512240000000002,
+        "entry_ts": "2026-10-15 00:00:00+00:00",
+        "exit_ts": "2026-10-30 00:00:00+00:00",
+        "pnl": -2.9926221665131796,
+        "pnl_pct": -0.11149067300160798,
+        "bars_held": 15,
+        "exit_reason": "guardian: time stop (15 bars, -11.1%)",
+        "entry_agents": [
+          "consult_moderate"
+        ]
+      },
+      {
+        "symbol": "TRXUSDT",
+        "qty": 954.562319573062,
+        "entry_price": 0.35627805,
+        "exit_price": 0.3256371,
+        "entry_ts": "2026-10-29 00:00:00+00:00",
+        "exit_ts": "2026-10-30 00:00:00+00:00",
+        "pnl": -29.559537211437263,
+        "pnl_pct": -0.08600291261277537,
+        "bars_held": 1,
+        "exit_reason": "consult_moderate: trend broke: trend -0.9%, rsi 46",
+        "entry_agents": [
+          "consult_risky"
+        ]
+      },
+      {
+        "symbol": "CRVUSDT",
+        "qty": 916.9188036300425,
+        "entry_price": 0.34304192022469976,
+        "exit_price": 0.28915535000000003,
+        "entry_ts": "2026-10-25 00:00:00+00:00",
+        "exit_ts": "2026-10-30 00:00:00+00:00",
+        "pnl": -49.67474147974317,
+        "pnl_pct": -0.15708450497654303,
+        "bars_held": 5,
+        "exit_reason": "consult_moderate: trend broke: trend -2.7%, rsi 39",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -2330,6 +2415,10 @@
       [
         "2026-10-29 00:00:00+00:00",
         13080.592987883192
+      ],
+      [
+        "2026-10-30 00:00:00+00:00",
+        13070.627534907253
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -15910,6 +15999,156 @@
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 11%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-10-31T00:22:48+00:00",
+      "bar": "2026-10-30 00:00:00+00:00",
+      "tick": 78,
+      "nav_before": 13070.63,
+      "nav_after": 13087.93,
+      "cash": 7854.56,
+      "cash_before": 7935.87,
+      "positions": {
+        "INJUSDT": 1464.45,
+        "NEARUSDT": 2487.88,
+        "DOTUSDT": 25.46,
+        "CRVUSDT": 265.26,
+        "TRXUSDT": 311.0,
+        "BCHUSDT": 679.32
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-10-30 00:00:00+00:00",
+        "nav": 13070.627534907253,
+        "regime": "bear",
+        "breadth": 0.07407407407407407,
+        "cash_pct": 0.6089612921137098,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "DOTUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 40, trend -8.3%"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout -0.7%), momentum rank 1.00, slope +0.60%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "DOTUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -8.3%, rsi 40"
+            },
+            {
+              "symbol": "TRXUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -0.9%, rsi 46"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -2.7%, rsi 39"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [
+          {
+            "symbol": "ATOMUSDT",
+            "why": "guardian: time stop (15 bars, -11.1%)"
+          }
+        ],
+        "orders": [
+          {
+            "symbol": "DOTUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 40, trend -8.3%",
+              "consult_moderate: trend broke: trend -8.3%, rsi 40"
+            ]
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -0.9%, rsi 46"
+            ]
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -2.7%, rsi 39"
+            ]
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "amount": 680.34,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_risky: at/near range high (breakout -0.7%), momentum rank 1.00, slope +0.60%",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "DOTUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 954.562319573062,
+            "price": 0.3256371,
+            "reason": "consult_moderate: trend broke: trend -0.9%, rsi 46"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 916.9188036300425,
+            "price": 0.28915535000000003,
+            "reason": "consult_moderate: trend broke: trend -2.7%, rsi 39"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 2.2911343955301295,
+            "price": 296.64824999999996,
+            "reason": "consult_risky: at/near range high (breakout -0.7%), momentum rank 1.00, slope +0.60% | superior_judge: approved (cap-checked)"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 7%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
