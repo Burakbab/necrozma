@@ -39,6 +39,7 @@ written to ./live_state.json so it can be round-tripped through storage.
     python evotrader_bundle.py short-headroom --breadth-trend  # same, but confirm trend-break's entry with cross-sectional breadth (fraction of the universe also breaking down) instead of the basket-wide regime switch
     python evotrader_bundle.py dual-trend-oos  # does dual-trend's slope_lookback sweet spot survive windows it was never tuned on?
     python evotrader_bundle.py regime-combo-oos  # do COMBINED/ASYMMETRIC's apparent bull-market loss reductions survive windows they were never tuned on?
+    python evotrader_bundle.py breadth-trend-oos  # does breadth-trend's apparent bear-window edge/threshold shape survive windows it was never tuned on?
 """
 import sys, types, json, os, math
 
@@ -1268,6 +1269,173 @@ def main():
               "--asymmetric`), no RiskJudge/SuperiorJudge code path, no "
               "live_state.json touch -- a reason to consider designing a real "
               "short-opening signal, never itself that design.")
+    elif cmd == "breadth-trend-oos":
+        # Diagnostic: the 2026-10-31 weekend all-hands measured
+        # benchmark_breadth_trend_short (a CROSS-SECTIONAL confirmation --
+        # at least breadth_threshold of the universe must also be breaking
+        # down the same bar before a symbol opens a short) against the live
+        # champion's own 4 fold/holdout windows and found a real pattern:
+        # worse than plain trend-break in both bull folds, but the sharpest
+        # bear-window capture (130% at the default 0.4) and best holdout
+        # result of any variant tried in item 5's whole history. A
+        # breadth_threshold in {0.2..0.7} sweep against those same 4 windows
+        # found fold 3 (the one bear window) FLIPS SIGN sharply at 0.6, not
+        # a gentle curve -- and that writeup explicitly flagged this as
+        # in-sample mining, the same caution dual-trend's own 2026-10-11
+        # writeup gave before dual-trend-oos (2026-10-17) showed its
+        # slope_lookback "sweet spot" did not survive contact with windows
+        # it was never tuned on. This is breadth-trend's missing
+        # out-of-sample check, the "concretely scoped next step" that
+        # writeup named explicitly: the identical breadth_threshold sweep
+        # against history-perturb's own --independent tiling (fixed-width,
+        # non-overlapping windows walking backward from "now" over the full
+        # available history), same genome-independent mechanics (no
+        # genome/Analyst/RiskJudge/SuperiorJudge involved -- just
+        # loop.engine.benchmark_buy_hold/benchmark_trend_break_short/
+        # benchmark_breadth_trend_short on the champion's own
+        # universe/interval/fee/slippage), same reporting shape
+        # dual-trend-oos used. Read-only throughout, same cost class as
+        # dual-trend-oos/regime-combo-oos (one real benchmark replay per
+        # window per threshold) -- never touches live_state.json or the
+        # champion, and does not itself decide whether to build a real
+        # short-opening signal.
+        import time
+        import pandas as pd
+        from core import market
+        from core.market import Replay
+        from loop.engine import (benchmark_buy_hold, benchmark_trend_break_short,
+                                 benchmark_breadth_trend_short)
+        window_years = 2.0
+        if "--window-years" in sys.argv:
+            window_years = float(sys.argv[sys.argv.index("--window-years") + 1])
+        thresholds = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+        if "--thresholds" in sys.argv:
+            thresholds = [float(x) for x in
+                         sys.argv[sys.argv.index("--thresholds") + 1].split(",")]
+        borrow_bps = 3.0
+        if "--borrow-bps-per-bar" in sys.argv:
+            borrow_bps = float(sys.argv[sys.argv.index("--borrow-bps-per-bar") + 1])
+        g0 = acct.genome
+        bcfg = g0.data.get("broker", {})
+        cash = float(bcfg.get("start_cash", 10_000.0))
+        fee_bps = float(bcfg.get("fee_bps", 10.0))
+        slippage_bps = float(bcfg.get("slippage_bps", 5.0))
+        bpy = market.BARS_PER_YEAR.get(g0.bar_interval, 365.25)
+        print(f"[breadth-trend-oos] loading {g0.bar_interval} history for "
+              f"{len(g0.universe)} symbols (up to 12y) ...", flush=True)
+        raw = market.load_universe(g0.universe, g0.bar_interval, 12.0)
+        if not raw:
+            print("no market data")
+            sys.exit(1)
+        starts = [df.index[0] for df in raw.values() if len(df) > 0]
+        if not starts:
+            print("no market data")
+            sys.exit(1)
+        earliest = min(starts)
+        now_ts = pd.Timestamp(int(time.time() * 1000), unit="ms", tz="UTC")
+        width = pd.Timedelta(days=window_years * 365.25)
+        windows = []
+        w_end = now_ts
+        while w_end > earliest:
+            w_start = max(w_end - width, earliest)
+            windows.append((w_start, w_end))
+            w_end = w_start
+        windows.reverse()  # oldest first, chronological
+        print(f"[breadth-trend-oos] {len(windows)} independent {window_years:.1f}y "
+              f"windows, breadth_threshold sweep {thresholds}, "
+              f"borrow={borrow_bps:.1f}bps/bar (fee={fee_bps:.0f}bps "
+              f"slippage={slippage_bps:.0f}bps, the genome's own)")
+        print()
+        print("OUT-OF-SAMPLE BREADTH_THRESHOLD SWEEP -- breadth-trend short vs. plain "
+              "trend-break, per independent window, real costs")
+        print("=" * 120)
+        header = (f"  {'window':>6s} {'start':>12s} {'end':>12s} {'symbols':>7s} "
+                  f"{'buy&hold':>9s} {'trend-break':>12s}")
+        for th in thresholds:
+            header += f" {'th=' + str(th):>9s}"
+        print(header)
+        per_th_returns = {th: [] for th in thresholds}
+        per_th_captured = {th: [] for th in thresholds}
+        tb_returns = []
+        for widx, (w_start, w_end) in enumerate(windows, start=1):
+            data = {s: df[(df.index >= w_start) & (df.index < w_end)]
+                    for s, df in raw.items()}
+            data = {s: df for s, df in data.items() if len(df) > 0}
+            if not data:
+                print(f"  {widx:>6d} {str(w_start.date()):>12s} "
+                      f"{str(w_end.date()):>12s}  no market data")
+                continue
+            replay = Replay(data)
+            n = len(replay)
+            start, end = 0, n - 1
+            if end - start < 60:
+                print(f"  {widx:>6d} {str(w_start.date()):>12s} "
+                      f"{str(w_end.date()):>12s}  window too short ({end - start} bars)")
+                continue
+            syms = list(data.keys())
+            bh = benchmark_buy_hold(replay, syms, start, end, cash, bars_per_year=bpy)
+            tb = benchmark_trend_break_short(replay, syms, start, end, cash,
+                                             fee_bps=fee_bps, slippage_bps=slippage_bps,
+                                             borrow_bps_per_bar=borrow_bps, bars_per_year=bpy)
+            if not (bh and tb):
+                print(f"  {widx:>6d} {str(w_start.date()):>12s} "
+                      f"{str(w_end.date()):>12s}  no benchmark data")
+                continue
+            headroom = -bh["total_return"]
+            tb_returns.append(tb["total_return"])
+            row = (f"  {widx:>6d} {str(w_start.date()):>12s} {str(w_end.date()):>12s} "
+                  f"{len(data):>7d} {bh['total_return']:>+8.1%} "
+                  f"{tb['total_return']:>+11.1%}")
+            for th in thresholds:
+                bt = benchmark_breadth_trend_short(replay, syms, start, end, cash,
+                                                   breadth_threshold=th,
+                                                   fee_bps=fee_bps, slippage_bps=slippage_bps,
+                                                   borrow_bps_per_bar=borrow_bps, bars_per_year=bpy)
+                if not bt:
+                    row += f" {'n/a':>9s}"
+                    continue
+                per_th_returns[th].append(bt["total_return"])
+                if headroom > 0:
+                    per_th_captured[th].append(bt["total_return"] / headroom)
+                row += f" {bt['total_return']:>+8.1%}"
+            print(row, flush=True)
+        print()
+        tb_mean = sum(tb_returns) / len(tb_returns) if tb_returns else 0.0
+        summary = (f"  {'mean':>6s} {'':>12s} {'':>12s} {'':>7s} {'':>9s} "
+                  f"{tb_mean:>+11.1%}")
+        for th in thresholds:
+            rs = per_th_returns[th]
+            avg = sum(rs) / len(rs) if rs else 0.0
+            summary += f" {avg:>+8.1%}"
+        print(summary)
+        print()
+        print("  captured-edge summary (mean fraction of EACH BEAR window's own "
+              "zero-cost short edge actually captured after real costs -- bull "
+              "windows excluded since buy&hold winning means there is no bear "
+              "edge for a short to capture there):")
+        for th in thresholds:
+            cs = per_th_captured[th]
+            if cs:
+                print(f"    breadth_threshold={th:<4} mean captured "
+                      f"{sum(cs) / len(cs):>+7.1%} over {len(cs)} bear window(s)")
+            else:
+                print(f"    breadth_threshold={th:<4} no bear window in this sweep")
+        print()
+        print("breadth-trend-oos: re-runs AGENTS.md item 5's 2026-10-31 breadth_threshold "
+              "sweep (loop.engine.benchmark_breadth_trend_short, same fast/slow/"
+              "short_enter/short_exit defaults) against history-perturb's own "
+              "--independent tiling instead of the champion's own 4 fold/holdout "
+              "windows the original sweep was read off -- genuinely different "
+              "calendar stretches, not a second look at the same ones. "
+              "'trend-break' is the no-breadth-filter baseline (loop.engine."
+              "benchmark_trend_break_short) every th= column is being compared "
+              "against; 'symbols' is how many of the universe's symbols had any "
+              "data in that window (early windows have fewer -- most Binance "
+              "USDT pairs listed well after 2017). Still read-only, no genome "
+              "mutation (trend-break/breadth-trend take no genome at all, same as "
+              "`short-headroom --trend-break/--breadth-trend`), no live_state.json "
+              "touch -- a reason to consider designing a real short-opening "
+              "signal, never itself that design.")
     elif cmd == "regime-scan":
         # Diagnostic: `regime` characterises the market over exactly the
         # N_FOLDS windows evolution uses; this scans the *searchable* region at
