@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 81,
-  "updated": "2026-11-03T22:15:33+00:00",
+  "ticks": 82,
+  "updated": "2026-11-04T00:22:02+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 12749.416827430085,
+    "cash": 12788.450688879122,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 0.34304192022469976,
         "opened_ts": "2026-10-25 00:00:00+00:00",
         "peak_price": 0.3436,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,18 +177,18 @@
         "avg_cost": 0.35627805,
         "opened_ts": "2026-10-29 00:00:00+00:00",
         "peak_price": 0.3561,
-        "bars_held": 4,
+        "bars_held": 5,
         "entry_agents": [
           "consult_risky"
         ]
       },
       "BCHUSDT": {
         "symbol": "BCHUSDT",
-        "qty": 0.2863917994412662,
+        "qty": 0.1431958997206331,
         "avg_cost": 296.64824999999996,
         "opened_ts": "2026-10-30 00:00:00+00:00",
         "peak_price": 296.5,
-        "bars_held": 3,
+        "bars_held": 4,
         "entry_agents": [
           "consult_risky"
         ]
@@ -1424,6 +1424,16 @@
         "ref_price": 277.2,
         "fee": 0.07934811290171644,
         "reason": "consult_moderate: trend broke: trend -1.1%, rsi 42"
+      },
+      {
+        "ts": "2026-11-03 00:00:00+00:00",
+        "symbol": "BCHUSDT",
+        "side": "sell",
+        "qty": 0.1431958997206331,
+        "price": 272.8635,
+        "ref_price": 273.0,
+        "fee": 0.039072934383420965,
+        "reason": "consult_moderate: trend broke: trend -1.6%, rsi 40"
       }
     ],
     "closed": [
@@ -2397,6 +2407,21 @@
         "entry_agents": [
           "consult_risky"
         ]
+      },
+      {
+        "symbol": "BCHUSDT",
+        "qty": 0.1431958997206331,
+        "entry_price": 296.64824999999996,
+        "exit_price": 272.8635,
+        "entry_ts": "2026-10-30 00:00:00+00:00",
+        "exit_ts": "2026-11-03 00:00:00+00:00",
+        "pnl": -3.444951610263745,
+        "pnl_pct": -0.08017829196700121,
+        "bars_held": 4,
+        "exit_reason": "consult_moderate: trend broke: trend -1.6%, rsi 40",
+        "entry_agents": [
+          "consult_risky"
+        ]
       }
     ],
     "nav_history": [
@@ -2723,6 +2748,10 @@
       [
         "2026-11-02 00:00:00+00:00",
         12888.04439691691
+      ],
+      [
+        "2026-11-03 00:00:00+00:00",
+        12896.4056747411
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -16908,6 +16937,120 @@
             "qty": 0.2863917994412662,
             "price": 277.0614,
             "reason": "consult_moderate: trend broke: trend -1.1%, rsi 42"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-04T00:22:02+00:00",
+      "bar": "2026-11-03 00:00:00+00:00",
+      "tick": 82,
+      "nav_before": 12896.41,
+      "nav_after": 12895.63,
+      "cash": 12788.45,
+      "cash_before": 12749.42,
+      "positions": {
+        "CRVUSDT": 29.67,
+        "TRXUSDT": 38.41,
+        "BCHUSDT": 39.09
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-03 00:00:00+00:00",
+        "nav": 12896.4056747411,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.9886023399838525,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 35, trend -12.3%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -2.1%, rsi 44"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -1.6%, rsi 40"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -12.3%, rsi 35"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 35, trend -12.3%",
+              "consult_moderate: trend broke: trend -12.3%, rsi 35"
+            ]
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -2.1%, rsi 44"
+            ]
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -1.6%, rsi 40"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 0.1431958997206331,
+            "price": 272.8635,
+            "reason": "consult_moderate: trend broke: trend -1.6%, rsi 40"
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 0%",
