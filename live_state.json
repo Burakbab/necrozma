@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 82,
-  "updated": "2026-11-04T22:16:31+00:00",
+  "ticks": 83,
+  "updated": "2026-11-05T00:23:05+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 12788.450688879122,
+    "cash": 11456.978033122372,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 0.34304192022469976,
         "opened_ts": "2026-10-25 00:00:00+00:00",
         "peak_price": 0.3436,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 0.35627805,
         "opened_ts": "2026-10-29 00:00:00+00:00",
         "peak_price": 0.3561,
-        "bars_held": 5,
+        "bars_held": 6,
         "entry_agents": [
           "consult_risky"
         ]
@@ -188,7 +188,29 @@
         "avg_cost": 296.64824999999996,
         "opened_ts": "2026-10-30 00:00:00+00:00",
         "peak_price": 296.5,
-        "bars_held": 4,
+        "bars_held": 5,
+        "entry_agents": [
+          "consult_risky"
+        ]
+      },
+      "ZECUSDT": {
+        "symbol": "ZECUSDT",
+        "qty": 0.5165299730621885,
+        "avg_cost": 1298.4989249999999,
+        "opened_ts": "2026-11-04 00:00:00+00:00",
+        "peak_price": 1297.85,
+        "bars_held": 0,
+        "entry_agents": [
+          "consult_risky"
+        ]
+      },
+      "UNIUSDT": {
+        "symbol": "UNIUSDT",
+        "qty": 85.59714536880412,
+        "avg_cost": 7.703849999999999,
+        "opened_ts": "2026-11-04 00:00:00+00:00",
+        "peak_price": 7.7,
+        "bars_held": 0,
         "entry_agents": [
           "consult_risky"
         ]
@@ -1434,6 +1456,26 @@
         "ref_price": 273.0,
         "fee": 0.039072934383420965,
         "reason": "consult_moderate: trend broke: trend -1.6%, rsi 40"
+      },
+      {
+        "ts": "2026-11-04 00:00:00+00:00",
+        "symbol": "ZECUSDT",
+        "side": "buy",
+        "qty": 0.5165299730621885,
+        "price": 1298.4989249999999,
+        "ref_price": 1297.85,
+        "fee": 0.6713849997512817,
+        "reason": "consult_risky: at/near range high (breakout -1.4%), momentum rank 1.00, slope +0.37% | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-11-04 00:00:00+00:00",
+        "symbol": "UNIUSDT",
+        "side": "buy",
+        "qty": 85.59714536880412,
+        "price": 7.70385,
+        "ref_price": 7.7,
+        "fee": 0.660087656005467,
+        "reason": "consult_risky: at/near range high (breakout +0.0%), momentum rank 0.96, slope +1.69% | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -2752,6 +2794,10 @@
       [
         "2026-11-03 00:00:00+00:00",
         12896.4056747411
+      ],
+      [
+        "2026-11-04 00:00:00+00:00",
+        12898.5593193984
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -17051,6 +17097,169 @@
             "qty": 0.1431958997206331,
             "price": 272.8635,
             "reason": "consult_moderate: trend broke: trend -1.6%, rsi 40"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-05T00:23:05+00:00",
+      "bar": "2026-11-04 00:00:00+00:00",
+      "tick": 83,
+      "nav_before": 12898.56,
+      "nav_after": 12896.65,
+      "cash": 11456.98,
+      "cash_before": 12788.45,
+      "positions": {
+        "CRVUSDT": 31.61,
+        "TRXUSDT": 38.13,
+        "BCHUSDT": 40.45,
+        "ZECUSDT": 670.38,
+        "UNIUSDT": 659.1
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-04 00:00:00+00:00",
+        "nav": 12898.5593193984,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.9914634938838724,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "ZECUSDT",
+              "side": "buy",
+              "conviction": 0.588,
+              "why": "at/near range high (breakout -1.4%), momentum rank 1.00, slope +0.37%"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "buy",
+              "conviction": 0.579,
+              "why": "at/near range high (breakout +0.0%), momentum rank 0.96, slope +1.69%"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 37, trend -14.0%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -2.3%, rsi 44"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -1.9%, rsi 42"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -14.0%, rsi 37"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 37, trend -14.0%",
+              "consult_moderate: trend broke: trend -14.0%, rsi 37"
+            ]
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -2.3%, rsi 44"
+            ]
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -1.9%, rsi 42"
+            ]
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "amount": 671.38,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_risky: at/near range high (breakout -1.4%), momentum rank 1.00, slope +0.37%",
+              "superior_judge: approved (cap-checked)"
+            ]
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "amount": 660.09,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_risky: at/near range high (breakout +0.0%), momentum rank 0.96, slope +1.69%",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 0.5165299730621885,
+            "price": 1298.4989249999999,
+            "reason": "consult_risky: at/near range high (breakout -1.4%), momentum rank 1.00, slope +0.37% | superior_judge: approved (cap-checked)"
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 85.59714536880412,
+            "price": 7.70385,
+            "reason": "consult_risky: at/near range high (breakout +0.0%), momentum rank 0.96, slope +1.69% | superior_judge: approved (cap-checked)"
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 0%",
