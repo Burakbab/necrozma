@@ -454,6 +454,51 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-07 (3-hourly check, ~06:47-07:16 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 104743 → 104949 (per
+  `researcher_memory.tested`), stagnation/boldness counter 7592 → 7607.**
+  No live trading this cycle (tick 85 already handled at the dedicated
+  00:20 UTC daily slot, and the 06:00 UTC weekend all-hands already shipped
+  a real item-5 result this morning — confirmed via `live_state.json`'s
+  `updated` timestamp at session start, `2026-11-07T04:10:58+00:00`,
+  matching `runs/2026-11-07-0413-evolve-batch-v3.md`). Freshness checks
+  before running: `review-hard-calls` still 0 pending (6 reviewed,
+  unchanged), items 6/13 still owner decisions, `AGENTS.md` size 244,402
+  bytes — comfortably under the 256KB threshold, not rotated this cycle —
+  so, with nothing else queued, used the slot for one more real
+  15-generation batch via `tools/background_runner.py` (`start` + separate
+  `wait`), run after a baseline `pytest` pass, exit code 0, no truncation.
+  Champion's fold-aggregate fitness held flat at 1.670 across all 15
+  generations (1010 trades, 40% win, 0% stops, 3 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged roughly 1.094-2.581,
+  never clearing the promotion-margin bar. See
+  `runs/2026-11-07-0716-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 493/493 both before and after `evolve` (one
+  transient failure seen mid-verification traced to this session
+  accidentally running two pytest invocations concurrently, not a real
+  regression — a clean re-run came back 493/493); genome version still 3
+  (checked directly), `lineage` length unchanged at 202 (bounded ring
+  buffer, no new promotion attempt recorded) — confirmed via the evolve
+  log's own generation-by-generation output since this session's attempted
+  pre/post snapshot diff was taken too late to be a true before-batch copy
+  (flagged in the run note so a future session snapshots `live_state.json`
+  *before* calling `background_runner start`, not after the `wait`
+  notification arrives); `tools/edit_bundle_module.py verify`/`sync --check`
+  both clean; `holdout-pressure` re-checked post-batch — margin and draw
+  count both held exactly flat (7.763, draw 1870 — same as the prior 04:13
+  batch's end state, none of this batch's candidates cleared the
+  fold-aggregate gate at a new draw), same slow-rise pattern already
+  tracked under item 13, nothing new; dashboard rebuilt with `EVO_STATE`
+  set (`index.html` shows 104949 challenger idea(s) tried). Genome still v3
+  (1d) live, untouched. Container synced cleanly from `main` via `git
+  checkout main` + `tools/git_sync.py` fast-forward through the weekend
+  all-hands commit already pushed today, no divergence, no shallow-clone
+  staleness this cycle. Hit the recurring `pip3` vs `python3 -m pip`
+  numpy/pandas split on this container (already tracked under items
+  9/12's history) — `python3 -m pip install -r requirements.txt -q` fixed
+  it immediately.
+
 - **Run 2026-11-07 (weekend all-hands, ~06:00-07:xx UTC): shipped item 5's
   dual-breadth-trend short signal (combines dual-trend's temporal filter
   with breadth-trend's cross-sectional filter) and out-of-sample-checked
