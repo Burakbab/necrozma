@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 84,
-  "updated": "2026-11-06T22:13:35+00:00",
+  "ticks": 85,
+  "updated": "2026-11-07T00:22:35+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 12085.63233690588,
+    "cash": 12404.393514209558,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 0.34304192022469976,
         "opened_ts": "2026-10-25 00:00:00+00:00",
         "peak_price": 0.3436,
-        "bars_held": 11,
+        "bars_held": 12,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 0.35627805,
         "opened_ts": "2026-10-29 00:00:00+00:00",
         "peak_price": 0.3561,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_risky"
         ]
@@ -188,29 +188,29 @@
         "avg_cost": 296.64824999999996,
         "opened_ts": "2026-10-30 00:00:00+00:00",
         "peak_price": 296.5,
-        "bars_held": 6,
+        "bars_held": 7,
         "entry_agents": [
           "consult_risky"
         ]
       },
       "ZECUSDT": {
         "symbol": "ZECUSDT",
-        "qty": 0.25826498653109425,
+        "qty": 0.12913249326554713,
         "avg_cost": 1298.4989249999999,
         "opened_ts": "2026-11-04 00:00:00+00:00",
-        "peak_price": 1297.85,
-        "bars_held": 1,
+        "peak_price": 1323.01,
+        "bars_held": 2,
         "entry_agents": [
           "consult_risky"
         ]
       },
       "UNIUSDT": {
         "symbol": "UNIUSDT",
-        "qty": 42.79857268440206,
+        "qty": 21.39928634220103,
         "avg_cost": 7.703849999999999,
         "opened_ts": "2026-11-04 00:00:00+00:00",
         "peak_price": 7.7,
-        "bars_held": 1,
+        "bars_held": 2,
         "entry_agents": [
           "consult_risky"
         ]
@@ -1496,6 +1496,26 @@
         "ref_price": 6.895,
         "fee": 0.2949486105796227,
         "reason": "consult_risky: leadership lost: rsi 38, trend -10.7% | consult_moderate: trend broke: trend -10.7%, rsi 38"
+      },
+      {
+        "ts": "2026-11-06 00:00:00+00:00",
+        "symbol": "ZECUSDT",
+        "side": "sell",
+        "qty": 0.12913249326554713,
+        "price": 1326.926205,
+        "ref_price": 1327.59,
+        "fee": 0.1713492892310405,
+        "reason": "consult_risky: leadership lost: rsi 49, trend -4.7% | consult_moderate: trend broke: trend -4.7%, rsi 49"
+      },
+      {
+        "ts": "2026-11-06 00:00:00+00:00",
+        "symbol": "UNIUSDT",
+        "side": "sell",
+        "qty": 21.39928634220103,
+        "price": 6.9035465,
+        "ref_price": 6.907,
+        "fee": 0.14773096833019972,
+        "reason": "consult_risky: leadership lost: rsi 41, trend -10.7% | consult_moderate: trend broke: trend -10.7%, rsi 41"
       }
     ],
     "closed": [
@@ -2514,6 +2534,36 @@
         "entry_agents": [
           "consult_risky"
         ]
+      },
+      {
+        "symbol": "ZECUSDT",
+        "qty": 0.12913249326554713,
+        "entry_price": 1298.4989249999999,
+        "exit_price": 1326.926205,
+        "entry_ts": "2026-11-04 00:00:00+00:00",
+        "exit_ts": "2026-11-06 00:00:00+00:00",
+        "pnl": 3.499536253926796,
+        "pnl_pct": 0.02189241704609035,
+        "bars_held": 2,
+        "exit_reason": "consult_risky: leadership lost: rsi 49, trend -4.7% | consult_moderate: trend broke: trend -4.7%, rsi 49",
+        "entry_agents": [
+          "consult_risky"
+        ]
+      },
+      {
+        "symbol": "UNIUSDT",
+        "qty": 21.39928634220103,
+        "entry_price": 7.703849999999999,
+        "exit_price": 6.9035465,
+        "entry_ts": "2026-11-04 00:00:00+00:00",
+        "exit_ts": "2026-11-06 00:00:00+00:00",
+        "pnl": -17.273654725495867,
+        "pnl_pct": -0.10388357769167356,
+        "bars_held": 2,
+        "exit_reason": "consult_risky: leadership lost: rsi 41, trend -10.7% | consult_moderate: trend broke: trend -10.7%, rsi 41",
+        "entry_agents": [
+          "consult_risky"
+        ]
       }
     ],
     "nav_history": [
@@ -2852,6 +2902,10 @@
       [
         "2026-11-05 00:00:00+00:00",
         12807.952206552824
+      ],
+      [
+        "2026-11-06 00:00:00+00:00",
+        12828.174769220259
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -17487,6 +17541,188 @@
           },
           {
             "symbol": "BCHUSDT",
+            "side": "sell",
+            "status": "rejected"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-07T00:22:35+00:00",
+      "bar": "2026-11-06 00:00:00+00:00",
+      "tick": 85,
+      "nav_before": 12828.17,
+      "nav_after": 12829.56,
+      "cash": 12404.39,
+      "cash_before": 12085.63,
+      "positions": {
+        "CRVUSDT": 30.33,
+        "TRXUSDT": 37.98,
+        "BCHUSDT": 37.62,
+        "ZECUSDT": 171.44,
+        "UNIUSDT": 147.8
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-06 00:00:00+00:00",
+        "nav": 12828.174769220259,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.9421162834407257,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 49, trend -4.7%"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 41, trend -10.7%"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 40, trend -3.9%"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 39, trend -18.2%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -2.9%, rsi 43"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -4.7%, rsi 49"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -10.7%, rsi 41"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -3.9%, rsi 40"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -18.2%, rsi 39"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 49, trend -4.7%",
+              "consult_moderate: trend broke: trend -4.7%, rsi 49"
+            ]
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 41, trend -10.7%",
+              "consult_moderate: trend broke: trend -10.7%, rsi 41"
+            ]
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 40, trend -3.9%",
+              "consult_moderate: trend broke: trend -3.9%, rsi 40"
+            ]
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 39, trend -18.2%",
+              "consult_moderate: trend broke: trend -18.2%, rsi 39"
+            ]
+          },
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -2.9%, rsi 43"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 0.12913249326554713,
+            "price": 1326.926205,
+            "reason": "consult_risky: leadership lost: rsi 49, trend -4.7% | consult_moderate: trend broke: trend -4.7%, rsi 49"
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 21.39928634220103,
+            "price": 6.9035465,
+            "reason": "consult_risky: leadership lost: rsi 41, trend -10.7% | consult_moderate: trend broke: trend -10.7%, rsi 41"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "TRXUSDT",
             "side": "sell",
             "status": "rejected"
           }
