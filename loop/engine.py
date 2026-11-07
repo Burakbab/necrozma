@@ -894,6 +894,123 @@ def benchmark_breadth_trend_short(replay: Replay, symbols: list[str], start: int
     }
 
 
+def benchmark_dual_breadth_trend_short(replay: Replay, symbols: list[str], start: int, end: int,
+                                       cash: float, fast: int = 10, slow: int = 50,
+                                       short_enter: float = -0.05, short_exit: float = -0.02,
+                                       slope_lookback: int = 20, breadth_threshold: float = 0.4,
+                                       fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                                       borrow_bps_per_bar: float = 0.0,
+                                       bars_per_year: float = 365.25) -> dict[str, Any]:
+    """Combines `benchmark_dual_trend_short`'s TEMPORAL confirmation (the
+    slow SMA's own trajectory must be flat-or-declining over
+    `slope_lookback` bars) with `benchmark_breadth_trend_short`'s
+    CROSS-SECTIONAL confirmation (at least `breadth_threshold` of the
+    universe must also be breaking down this same bar) on top of
+    `benchmark_trend_break_short`'s own per-symbol entry -- the combination
+    AGENTS.md item 5's 2026-10-31 writeup named as the next step once both
+    dimensions had been validated separately ("two genuinely different
+    non-regime confirmation dimensions ... and they help in opposite
+    places"). Unlike the regime-based `benchmark_combined_short`/
+    `benchmark_asymmetric_short` (which both found the regime half to be the
+    weak link), neither ingredient here touches `agents.analyst.
+    Analyst._regime` or any genome -- both are purely price-only measures
+    already validated independently (`dual-trend-oos`, `breadth-trend-oos`).
+
+    A symbol opens a fresh short only when its own trend is below
+    `short_enter` AND the slow SMA's trajectory is flat-or-declining AND
+    breadth (computed only over symbols with enough history for BOTH
+    checks, i.e. `slow + slope_lookback` bars, not `breadth_trend`'s
+    shorter `slow`-only requirement) is at or above `breadth_threshold`.
+    Covering is trend-break alone (`trend > short_exit`), same ablation
+    discipline every sibling in this module uses: isolate the entry
+    filter's own effect, change nothing about when a position closes.
+    Same no-leverage sizing, same next-bar-open fill convention
+    (`replay.next_open`, no lookahead), same read-only discipline (no
+    genome, no council, no `RiskJudge`/`SuperiorJudge`, no
+    `live_state.json` touch) as every other benchmark in this module.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    need = slow + slope_lookback + 5
+    is_short = {s: False for s in usable}
+    flips = 0
+    symbol_bars_short = 0
+    for i, window in replay.walk(start, end):
+        prices = {s: replay.close_at(s, i) for s in usable}
+        prices = {s: p for s, p in prices.items() if p is not None}
+        if prices:
+            broker.mark(str(window.ts), prices, dd_halt=10.0, cooldown=1)
+        symbol_bars_short += sum(1 for v in is_short.values() if v)
+        ts = str(window.ts)
+        trends: dict[str, float] = {}
+        slopes: dict[str, float] = {}
+        for s in usable:
+            c = window.closes(s, need + 10)
+            c = c[~np.isnan(c)]
+            if len(c) < need:
+                continue
+            ma_f = float(np.mean(c[-fast:]))
+            ma_s = float(np.mean(c[-slow:]))
+            ma_s_past = float(np.mean(c[-slow - slope_lookback:-slope_lookback]))
+            if ma_s <= 0 or ma_s_past <= 0:
+                continue
+            trends[s] = ma_f / ma_s - 1
+            slopes[s] = ma_s / ma_s_past - 1
+        breadth = (sum(1 for t in trends.values() if t < short_enter) / len(trends)
+                  if trends else 0.0)
+        breadth_ok = breadth >= breadth_threshold
+        for s in usable:
+            trend = trends.get(s)
+            slope = slopes.get(s)
+            if trend is None or slope is None:
+                continue
+            fill = replay.next_open(s, i)
+            if fill is None:
+                continue
+            if (not is_short[s] and breadth_ok and trend < short_enter
+                    and slope <= 0.0):
+                per = broker.cash / len(usable)
+                f = broker.short(ts, s, per, fill, reason="dual-breadth-trend: open")
+                if f:
+                    is_short[s] = True
+                    flips += 1
+            elif is_short[s] and trend > short_exit:
+                pos = broker.positions.get(s)
+                if pos and pos.is_open:
+                    broker.cover(ts, s, 1.0, fill, reason="dual-breadth-trend: cover")
+                is_short[s] = False
+                flips += 1
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        pos = broker.positions.get(s)
+        if pos and pos.is_open:
+            px = replay.close_at(s, end - 1)
+            if px:
+                broker.cover(close_ts, s, 1.0, px, reason="dual-breadth-trend benchmark close")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash
+    bars_total = max(0, end - start)
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+        "symbol_bars_short": symbol_bars_short, "bars_total": bars_total,
+        "avg_concurrent_short": (symbol_bars_short / bars_total) if bars_total > 0 else 0.0,
+        "flips": flips,
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.

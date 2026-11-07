@@ -454,6 +454,32 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-07 (weekend all-hands, ~06:00-07:xx UTC): shipped item 5's
+  dual-breadth-trend short signal (combines dual-trend's temporal filter
+  with breadth-trend's cross-sectional filter) and out-of-sample-checked
+  it against each ingredient's own already-validated parameter values —
+  the first positive mean-return result anywhere in this item's whole
+  `-oos` history, but non-dominant across tilings and still a loss in the
+  one real crash window.** New `loop.engine.benchmark_dual_breadth_trend_short`
+  (9 new tests, `tests/test_dual_breadth_trend_short.py`, full suite
+  484 → 493), wired into `short-headroom --dual-breadth` and new CLI
+  `dual-breadth-trend-oos`. At the 1.1333y independent tiling (9 windows,
+  2 bearish), `slope_lookback=20, breadth_threshold=0.5` scored +2.1% mean
+  return across all 8 valid windows — beating trend-break (−10.3%) and
+  both breadth-alone thresholds (−9.5%/−9.8%), and the first positive
+  number any variant has scored in this metric across regime-combo,
+  dual-trend, or breadth-trend's own prior `-oos` checks. At the 2.0y
+  tiling (5 windows, all bull) that same cell was only middling (+0.9%);
+  breadth-alone at threshold 0.7 was best there (+4.9%) — no single cell
+  dominates both tilings, the same non-dominance pattern this item's
+  history keeps finding. One sub-finding held in both tilings: adding the
+  slope filter on top of `breadth_threshold=0.5` helped in every case
+  checked, on top of `0.7` hurt in every case checked. The LUNA/FTX crash
+  window is still a net loss for every variant, including the best cell
+  found (−23.9%, the smallest loss recorded this session but not a
+  profit). No `live_state.json` or constitution change — see item 5 below
+  for the full writeup and `runs/2026-11-07-0600-weekend-all-hands.md`.
+
 - **Run 2026-11-07 (3-hourly check, ~03:46-04:13 UTC): archived the oldest
   remaining AGENTS.md slice, then 15 more real `evolve` generations against
   the live v3 (1d) champion, no promotion — cumulative candidates tried
@@ -2957,6 +2983,74 @@ every `evolve` call.
    history. Read-only throughout: no genome mutation, no `RiskJudge`/
    `SuperiorJudge` code path, no `live_state.json` touch,
    `evotrader.manifest` unchanged.
+
+   **Measured 2026-11-07 (weekend all-hands): combined the two
+   previously-separate non-regime confirmation dimensions — the
+   2026-10-31/11-01 writeup's own named next step — and, tested
+   honestly on each ingredient's OWN already-oos-validated parameter
+   values rather than a fresh in-sample grid, it is a real but
+   partial, non-dominant improvement, not a clean win.** New
+   `loop.engine.benchmark_dual_breadth_trend_short` (9 new tests,
+   `tests/test_dual_breadth_trend_short.py`, full suite 484 → 493)
+   requires BOTH `benchmark_dual_trend_short`'s temporal filter (slow
+   SMA flat-or-declining over `slope_lookback` bars) AND
+   `benchmark_breadth_trend_short`'s cross-sectional filter (at least
+   `breadth_threshold` of the universe also breaking down the same
+   bar) before opening a short; covering is trend-break alone, same
+   ablation discipline every sibling in this module uses. Wired into
+   `short-headroom --dual-breadth [--slope-lookback N --breadth-threshold X]`
+   and a new OOS command, `dual-breadth-trend-oos`. Learning directly
+   from both ingredients' own history — dual-trend's in-sample
+   `slope_lookback` sweet spot (40-50) did **not** survive its own
+   `-oos` check (which found 10-20 to be the real out-of-sample-best
+   region instead), and breadth-trend's 0.2-0.4 thresholds likewise
+   failed to generalize while 0.5/0.7 held up — this deliberately
+   tested only the combinations of already-validated values
+   (`slope_lookback` ∈ {10, 20} × `breadth_threshold` ∈ {0.5, 0.7}, 4
+   cells) against `history-perturb --independent`'s tiling, not a
+   fresh grid mined against this sweep's own output.
+
+   Result at 1.1333y tiling (9 windows, 2 genuinely bearish — window 2,
+   2017-10 to 2018-12, buy&hold −47.9%; window 6, 2022-04 to 2023-06,
+   buy&hold −51.6%, the LUNA/FTX era): mean return across all 8 valid
+   windows — trend-break −10.3%, breadth-alone 0.5 −9.5%, breadth-alone
+   0.7 −9.8%, **`slope_lookback=20, breadth_threshold=0.5` (db20/0.5)
+   +2.1%** — the first positive mean-return result anywhere in this
+   whole item's `-oos` history (every prior best, across regime-combo,
+   dual-trend, and breadth-trend alone, was negative). db10/0.5 was
+   also better than its breadth-alone baseline (−3.1% vs −9.5%); both
+   0.7-threshold combinations (db10/0.7 −11.0%, db20/0.7 −5.5%) were
+   flat-to-worse than breadth-alone 0.7. At the 2.0y tiling (5 windows,
+   all bull, the same "no 2-year stretch in this history nets bearish"
+   finding every prior `-oos` check has made), the ranking flips:
+   breadth-alone 0.7 is best outright (+4.9%), db10/0.5 second (+2.4%),
+   and db20/0.5 — the 1.1333y tiling's best cell — is only middling
+   (+0.9%, still better than trend-break's −4.8% but well behind
+   breadth-alone 0.7). **No single (slope_lookback, breadth_threshold)
+   cell dominates both tilings** — the same non-dominance pattern
+   `regime-combo-oos`/breadth-trend's own history has repeatedly found,
+   now confirmed for this combination too.
+
+   One sub-finding is consistent across BOTH tilings, though, and reads
+   as more trustworthy than picking a single best cell: adding the
+   slope filter on top of `breadth_threshold=0.5` helped or was
+   roughly neutral in every case checked (1.1333y: −9.5%→−3.1%/+2.1%;
+   2.0y: +0.4%→+2.4%/+0.9%), while adding it on top of
+   `breadth_threshold=0.7` hurt badly in every case checked (1.1333y:
+   −9.8%→−11.0%/−5.5%; 2.0y: +4.9%→−8.5%/−10.7%). The direction of that
+   interaction, not any one cell's headline number, is the part of
+   this result worth trusting. And the crash window still doesn't pay:
+   even db20/0.5, the best cell found, still LOSES money in window 6
+   (−23.9%) — the smallest loss of any variant tested in this specific
+   session's table for that window, but still a loss, not a profit —
+   extending rather than breaking the standing finding that no signal
+   tried anywhere in item 5's history has ever actually profited in a
+   real severe crash, only reduced losses elsewhere. Does not change
+   the still-open, still owner-gated question of whether to let the
+   Researcher open a short at all. Read-only throughout: no genome
+   mutation, no `RiskJudge`/`SuperiorJudge` code path, no
+   `live_state.json` touch, `evotrader.manifest` unchanged
+   (`loop/engine.py` is not `_PROTECTED`).
 
 6. **Equities/FX** behind the same `MarketData` interface.
 
