@@ -1011,6 +1011,130 @@ def benchmark_dual_breadth_trend_short(replay: Replay, symbols: list[str], start
     }
 
 
+def _realized_vol_ratio(c: np.ndarray, n_short: int, n_long: int) -> float:
+    """Short-term realized return volatility divided by long-term. Not
+    annualized -- the sqrt(bars_per_year) factor would cancel out of the
+    ratio anyway, so it's left out rather than computed and discarded."""
+    if len(c) < n_long + 1:
+        return float("nan")
+    r = np.diff(c[-(n_long + 1):]) / np.maximum(c[-(n_long + 1):-1], 1e-12)
+    if len(r) < n_long or n_long <= 1 or n_short <= 1 or n_short >= n_long:
+        return float("nan")
+    v_l = float(np.std(r, ddof=1))
+    v_s = float(np.std(r[-n_short:], ddof=1))
+    return v_s / v_l if v_l > 1e-12 else float("nan")
+
+
+def benchmark_vol_expansion_short(replay: Replay, symbols: list[str], start: int, end: int,
+                                  cash: float, fast: int = 10, slow: int = 50,
+                                  short_enter: float = -0.05, short_exit: float = -0.02,
+                                  vol_short: int = 10, vol_long: int = 40,
+                                  vol_ratio_threshold: float = 1.3,
+                                  fee_bps: float = 10.0, slippage_bps: float = 5.0,
+                                  borrow_bps_per_bar: float = 0.0,
+                                  bars_per_year: float = 365.25) -> dict[str, Any]:
+    """A third, genuinely new confirmation dimension for
+    `benchmark_trend_break_short`'s entry, alongside `benchmark_dual_trend_short`'s
+    TEMPORAL (is the medium-term trend itself turning down) and
+    `benchmark_breadth_trend_short`'s CROSS-SECTIONAL (is the pullback
+    broad-based across the universe) dimensions. This one is about the
+    CHARACTER of the move itself: realized VOLATILITY EXPANSION. A real
+    breakdown -- the kind this whole item has never found a signal that
+    profits from -- is usually also a volatility event (the LUNA/FTX crash
+    this repo's own `-oos` history keeps citing was not just a decline, it
+    was a decline with trading ranges several times normal); an ordinary
+    pullback inside an intact bull market is comparatively quiet. This
+    requires the ratio of short-term to long-term realized return
+    volatility (`_realized_vol_ratio`, computed directly from the same
+    per-symbol closes every sibling in this module reads -- never
+    `agents.analyst.Analyst`'s own `vol_ratio` feature or any genome, same
+    genome-independence discipline as `benchmark_dual_trend_short`/
+    `benchmark_breadth_trend_short`) to be at or above `vol_ratio_threshold`
+    before opening, on top of trend-break's own entry (fast/slow SMA ratio
+    below `short_enter`). Covering is trend-break ALONE (`trend >
+    short_exit`), same ablation discipline every sibling here uses: isolate
+    the new entry filter's own effect, change nothing about when a
+    position closes.
+
+    Needs `max(slow, vol_long) + 5` bars of warmup. Same no-leverage
+    sizing, same next-bar-open fill convention (`replay.next_open`, no
+    lookahead), same read-only discipline (no genome, no council, no
+    `RiskJudge`/`SuperiorJudge`, no `live_state.json` touch) as every other
+    benchmark in this module.
+    """
+    usable = [s for s in symbols if replay.next_open(s, start) not in (None, 0)]
+    if not usable:
+        return {}
+    broker = PaperBroker(cash=cash, fee_bps=fee_bps, slippage_bps=slippage_bps,
+                         min_order=0.0, borrow_bps_per_bar=borrow_bps_per_bar)
+    need = max(slow, vol_long) + 5
+    is_short = {s: False for s in usable}
+    flips = 0
+    symbol_bars_short = 0
+    for i, window in replay.walk(start, end):
+        prices = {s: replay.close_at(s, i) for s in usable}
+        prices = {s: p for s, p in prices.items() if p is not None}
+        if prices:
+            broker.mark(str(window.ts), prices, dd_halt=10.0, cooldown=1)
+        symbol_bars_short += sum(1 for v in is_short.values() if v)
+        ts = str(window.ts)
+        for s in usable:
+            c = window.closes(s, need + 10)
+            c = c[~np.isnan(c)]
+            if len(c) < need:
+                continue
+            ma_f = float(np.mean(c[-fast:]))
+            ma_s = float(np.mean(c[-slow:]))
+            if ma_s <= 0:
+                continue
+            trend = ma_f / ma_s - 1
+            vol_ratio = _realized_vol_ratio(c, vol_short, vol_long)
+            if not math.isfinite(vol_ratio):
+                continue
+            fill = replay.next_open(s, i)
+            if fill is None:
+                continue
+            if (not is_short[s] and trend < short_enter
+                    and vol_ratio >= vol_ratio_threshold):
+                per = broker.cash / len(usable)
+                f = broker.short(ts, s, per, fill, reason="vol-expansion: open")
+                if f:
+                    is_short[s] = True
+                    flips += 1
+            elif is_short[s] and trend > short_exit:
+                pos = broker.positions.get(s)
+                if pos and pos.is_open:
+                    broker.cover(ts, s, 1.0, fill, reason="vol-expansion: cover")
+                is_short[s] = False
+                flips += 1
+    if len(broker.nav_history) < 3:
+        return {}
+    close_ts = str(replay.index[end - 1])
+    for s in usable:
+        pos = broker.positions.get(s)
+        if pos and pos.is_open:
+            px = replay.close_at(s, end - 1)
+            if px:
+                broker.cover(close_ts, s, 1.0, px, reason="vol-expansion benchmark close")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        st = broker.stats(bars_per_year=bars_per_year)
+    if st.get("error"):
+        return {}
+    realized_end_nav = broker.cash
+    bars_total = max(0, end - start)
+    return {
+        "total_return": float(realized_end_nav / cash - 1),
+        "max_dd": st["max_dd"], "sharpe": st["sharpe"],
+        "end_nav": float(realized_end_nav), "start_nav": float(cash),
+        "trades": st["trades"], "fees_paid": st["fees_paid"],
+        "symbol_bars_short": symbol_bars_short, "bars_total": bars_total,
+        "avg_concurrent_short": (symbol_bars_short / bars_total) if bars_total > 0 else 0.0,
+        "flips": flips,
+    }
+
+
 def pairwise_correlation_stats(rets: dict[str, np.ndarray],
                                threshold: float = 0.5) -> dict[str, Any]:
     """Every pairwise Pearson correlation across a set of return series, summarised.
