@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 85,
-  "updated": "2026-11-07T22:13:19+00:00",
+  "ticks": 86,
+  "updated": "2026-11-08T00:21:31+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 12404.393514209558,
+    "cash": 11916.568334762424,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 0.34304192022469976,
         "opened_ts": "2026-10-25 00:00:00+00:00",
         "peak_price": 0.3436,
-        "bars_held": 12,
+        "bars_held": 13,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 0.35627805,
         "opened_ts": "2026-10-29 00:00:00+00:00",
         "peak_price": 0.3561,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_risky"
         ]
@@ -188,29 +188,40 @@
         "avg_cost": 296.64824999999996,
         "opened_ts": "2026-10-30 00:00:00+00:00",
         "peak_price": 296.5,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_risky"
         ]
       },
       "ZECUSDT": {
         "symbol": "ZECUSDT",
-        "qty": 0.12913249326554713,
+        "qty": 0.06456624663277356,
         "avg_cost": 1298.4989249999999,
         "opened_ts": "2026-11-04 00:00:00+00:00",
         "peak_price": 1323.01,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_risky"
         ]
       },
       "UNIUSDT": {
         "symbol": "UNIUSDT",
-        "qty": 21.39928634220103,
+        "qty": 10.699643171100515,
         "avg_cost": 7.703849999999999,
         "opened_ts": "2026-11-04 00:00:00+00:00",
         "peak_price": 7.7,
-        "bars_held": 2,
+        "bars_held": 3,
+        "entry_agents": [
+          "consult_risky"
+        ]
+      },
+      "PAXGUSDT": {
+        "symbol": "PAXGUSDT",
+        "qty": 0.15854187983782167,
+        "avg_cost": 4065.3316500000005,
+        "opened_ts": "2026-11-07 00:00:00+00:00",
+        "peak_price": 4063.3,
+        "bars_held": 0,
         "entry_agents": [
           "consult_risky"
         ]
@@ -1516,6 +1527,36 @@
         "ref_price": 6.907,
         "fee": 0.14773096833019972,
         "reason": "consult_risky: leadership lost: rsi 41, trend -10.7% | consult_moderate: trend broke: trend -10.7%, rsi 41"
+      },
+      {
+        "ts": "2026-11-07 00:00:00+00:00",
+        "symbol": "ZECUSDT",
+        "side": "sell",
+        "qty": 0.06456624663277356,
+        "price": 1252.47345,
+        "ref_price": 1253.1,
+        "fee": 0.08086750967370078,
+        "reason": "consult_risky: leadership lost: rsi 48, trend -4.7% | consult_moderate: trend broke: trend -4.7%, rsi 48"
+      },
+      {
+        "ts": "2026-11-07 00:00:00+00:00",
+        "symbol": "UNIUSDT",
+        "side": "sell",
+        "qty": 10.699643171100515,
+        "price": 7.1624170000000005,
+        "ref_price": 7.166,
+        "fee": 0.07663530614262425,
+        "reason": "consult_risky: leadership lost: rsi 46, trend -10.4% | consult_moderate: trend broke: trend -10.4%, rsi 46"
+      },
+      {
+        "ts": "2026-11-07 00:00:00+00:00",
+        "symbol": "PAXGUSDT",
+        "side": "buy",
+        "qty": 0.15854187983782167,
+        "price": 4065.33165,
+        "ref_price": 4063.3,
+        "fee": 0.6451704924476409,
+        "reason": "consult_risky: at/near range high (breakout -1.7%), momentum rank 0.92, slope +0.17% | superior_judge: approved (cap-checked)"
       }
     ],
     "closed": [
@@ -2564,6 +2605,36 @@
         "entry_agents": [
           "consult_risky"
         ]
+      },
+      {
+        "symbol": "ZECUSDT",
+        "qty": 0.06456624663277356,
+        "entry_price": 1298.4989249999999,
+        "exit_price": 1252.47345,
+        "entry_ts": "2026-11-04 00:00:00+00:00",
+        "exit_ts": "2026-11-07 00:00:00+00:00",
+        "pnl": -3.052559679914249,
+        "pnl_pct": -0.035445139086272226,
+        "bars_held": 3,
+        "exit_reason": "consult_risky: leadership lost: rsi 48, trend -4.7% | consult_moderate: trend broke: trend -4.7%, rsi 48",
+        "entry_agents": [
+          "consult_risky"
+        ]
+      },
+      {
+        "symbol": "UNIUSDT",
+        "qty": 10.699643171100515,
+        "entry_price": 7.703849999999999,
+        "exit_price": 7.1624170000000005,
+        "entry_ts": "2026-11-04 00:00:00+00:00",
+        "exit_ts": "2026-11-07 00:00:00+00:00",
+        "pnl": -5.8697752072010765,
+        "pnl_pct": -0.07028083360916926,
+        "bars_held": 3,
+        "exit_reason": "consult_risky: leadership lost: rsi 46, trend -10.4% | consult_moderate: trend broke: trend -10.4%, rsi 46",
+        "entry_agents": [
+          "consult_risky"
+        ]
       }
     ],
     "nav_history": [
@@ -2906,6 +2977,10 @@
       [
         "2026-11-06 00:00:00+00:00",
         12828.174769220259
+      ],
+      [
+        "2026-11-07 00:00:00+00:00",
+        12826.593909791489
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -17725,6 +17800,221 @@
             "symbol": "TRXUSDT",
             "side": "sell",
             "status": "rejected"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-08T00:21:31+00:00",
+      "bar": "2026-11-07 00:00:00+00:00",
+      "tick": 86,
+      "nav_before": 12826.59,
+      "nav_after": 12822.8,
+      "cash": 11916.57,
+      "cash_before": 12404.39,
+      "positions": {
+        "CRVUSDT": 30.54,
+        "TRXUSDT": 38.21,
+        "BCHUSDT": 35.7,
+        "ZECUSDT": 80.91,
+        "UNIUSDT": 76.67,
+        "PAXGUSDT": 644.2
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-07 00:00:00+00:00",
+        "nav": 12826.593909791489,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.9670839820336377,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 44, trend -3.1%"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 48, trend -4.7%"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 46, trend -10.4%"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 40, trend -5.2%"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 36, trend -19.9%"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "buy",
+              "conviction": 0.569,
+              "why": "at/near range high (breakout -1.7%), momentum rank 0.92, slope +0.17%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "TRXUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -3.1%, rsi 44"
+            },
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -4.7%, rsi 48"
+            },
+            {
+              "symbol": "UNIUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -10.4%, rsi 46"
+            },
+            {
+              "symbol": "BCHUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -5.2%, rsi 40"
+            },
+            {
+              "symbol": "CRVUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -19.9%, rsi 36"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 44, trend -3.1%",
+              "consult_moderate: trend broke: trend -3.1%, rsi 44"
+            ]
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 48, trend -4.7%",
+              "consult_moderate: trend broke: trend -4.7%, rsi 48"
+            ]
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 46, trend -10.4%",
+              "consult_moderate: trend broke: trend -10.4%, rsi 46"
+            ]
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 40, trend -5.2%",
+              "consult_moderate: trend broke: trend -5.2%, rsi 40"
+            ]
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 36, trend -19.9%",
+              "consult_moderate: trend broke: trend -19.9%, rsi 36"
+            ]
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "buy",
+            "amount": 645.17,
+            "fraction": 0.0,
+            "agreement": 0.33,
+            "why": [
+              "consult_risky: at/near range high (breakout -1.7%), momentum rank 0.92, slope +0.17%",
+              "superior_judge: approved (cap-checked)"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "TRXUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 0.06456624663277356,
+            "price": 1252.47345,
+            "reason": "consult_risky: leadership lost: rsi 48, trend -4.7% | consult_moderate: trend broke: trend -4.7%, rsi 48"
+          },
+          {
+            "symbol": "UNIUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 10.699643171100515,
+            "price": 7.1624170000000005,
+            "reason": "consult_risky: leadership lost: rsi 46, trend -10.4% | consult_moderate: trend broke: trend -10.4%, rsi 46"
+          },
+          {
+            "symbol": "BCHUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "CRVUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "buy",
+            "status": "filled",
+            "qty": 0.15854187983782167,
+            "price": 4065.33165,
+            "reason": "consult_risky: at/near range high (breakout -1.7%), momentum rank 0.92, slope +0.17% | superior_judge: approved (cap-checked)"
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 0%",
