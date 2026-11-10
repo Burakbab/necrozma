@@ -454,24 +454,51 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
-- **Run 2026-11-10 (3-hourly check, ~12:48-13:xx UTC): archived the oldest
+- **Run 2026-11-10 (3-hourly check, ~12:48-13:21 UTC): archived the oldest
   remaining AGENTS.md slice, then 15 more real `evolve` generations against
-  the live v3 (1d) champion — no live trading this cycle (tick 88 already
-  handled at the dedicated 00:20 UTC daily slot, and four prior 3-hourly
-  checks' own evolve batches already ran at ~01:19/~04:15/~06:47/~09:47
-  UTC — confirmed via `live_state.json`'s `updated` timestamp at session
-  start, `2026-11-10T10:15:41+00:00`, matching
-  `runs/2026-11-10-0947-evolve-batch-v3.md`). `AGENTS.md` size at session
-  start was 254,594 bytes — within ~7.4KB of the 256KB threshold, within
-  the margin range every prior rotation in this index has used to trigger
-  one — so archived the oldest remaining slice (all nine 2026-11-08
+  the live v3 (1d) champion, no promotion — cumulative candidates tried
+  against v3 rose 109894 → 110099 (per `researcher_memory.tested`),
+  stagnation/boldness counter 7967 → 7982.** No live trading this cycle
+  (tick 88 already handled at the dedicated 00:20 UTC daily slot, and four
+  prior 3-hourly checks' own evolve batches already ran at
+  ~01:19/~04:15/~06:47/~09:47 UTC — confirmed via `live_state.json`'s
+  `updated` timestamp at session start, `2026-11-10T10:15:41+00:00`,
+  matching `runs/2026-11-10-0947-evolve-batch-v3.md`). `AGENTS.md` size at
+  session start was 254,594 bytes — within ~7.4KB of the 256KB threshold,
+  within the margin range every prior rotation in this index has used to
+  trigger one — so archived the oldest remaining slice (all nine 2026-11-08
   entries, including that day's weekend all-hands) verbatim to new
   `AGENTS_ARCHIVE_2026-11-08.md` first, cutting the live file to 230,815
   bytes; verified via exact line-range removal (the removed 351-line block
   diffed byte-for-byte identical against the new archive file's body) and
-  `python3 -m pytest -q` 505/505 unaffected. Freshness checks:
+  `python3 -m pytest -q` 505/505 unaffected. Committed and pushed as
+  `b1ea8e1` before starting evolve work. Freshness checks:
   `review-hard-calls` still 0 pending (6 reviewed, unchanged), items 6/13
-  still owner decisions. See "evolve batch" details appended below.
+  still owner decisions. Then, with nothing else queued, used the slot for
+  one more real 15-generation batch via `tools/background_runner.py`
+  (`start` + separate `wait`), run after a baseline `pytest` pass, exit
+  code 0, no truncation. Champion's fold-aggregate fitness held flat at
+  1.714 across all 15 generations (946 trades, 38% win, 1% stops, 4 halts,
+  unchanged throughout). Best-of-generation fold-fitness ranged roughly
+  1.529-2.455, never clearing the promotion-margin bar. See
+  `runs/2026-11-10-1248-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 505/505 both before (baseline) and after `evolve`;
+  top-level key diff of `live_state.json` (snapshotted before `start`,
+  checked directly in Python against the pre-batch copy) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py verify`/`sync --check` both clean;
+  `holdout-pressure` re-checked post-batch — margin essentially flat
+  (7.801 → 7.801), draw count 2011 → 2012 (one new sealed-holdout draw
+  from this batch's fold-aggregate-gate-clearing candidates, correctly
+  rejected), same slow-rise pattern already tracked under item 13, nothing
+  new; dashboard rebuilt with `EVO_STATE` set (`index.html` shows 110099
+  challenger idea(s) tried). Genome still v3 (1d) live, untouched.
+  Container synced cleanly from `main` via `git checkout main` +
+  `tools/git_sync.py` fast-forward through other sessions' 2026-11-10
+  commits already pushed, no divergence, no shallow-clone staleness this
+  cycle.
 
 - **Run 2026-11-10 (3-hourly check, ~09:47-10:1x UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
