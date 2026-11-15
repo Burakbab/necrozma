@@ -454,6 +454,58 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-15 (weekend all-hands, ~06:00-08:41 UTC): 40 more real
+  `evolve` generations against the live v3 (1d) champion, no promotion —
+  cumulative candidates tried against v3 rose 117967 → 118514 (per
+  `researcher_memory.tested`), stagnation/boldness counter 8555 → 8595. A
+  first, larger 50-generation attempt on the same slot collided with a
+  concurrent session's own evolve batch and was discarded — see below.**
+  Surveyed the roadmap first: every substantive "Next steps" item is either
+  closed or genuinely owner-blocked (item 5's short-selling signal search
+  reached "a real ceiling, not bad luck" per the 2026-11-08 weekend writeup
+  and needs a different kind of data input this container can't supply;
+  items 6/13 need an owner decision already fully written up with no new
+  evidence to add). Decided to use this session's deeper time budget on a
+  real search batch larger than any weekday 3-hourly slot (15 generations
+  each all week) rather than invent a new structural thread under time
+  pressure. **First attempt**: a 50-generation batch from
+  `tested`=117762, completed cleanly (118444, stagnation 8590), but
+  `git push` was rejected — a concurrent session had already pushed its own
+  15-generation batch from the identical starting state (117762 → 117967,
+  the entry directly below this one). `git pull --rebase` hit a genuine,
+  unresolvable conflict in `live_state.json`: two independently-RNG-seeded
+  `evolve` continuations from the same base cannot be hand-merged. Aborted
+  the rebase, `git reset --hard origin/main` to adopt the already-pushed
+  canonical state, discarding this session's own local, never-pushed,
+  now-orphaned 50-generation result (no public history lost — the other
+  session's real work is the one that survives). **Second attempt**, on the
+  new base (`tested`=117967): a fresh 40-generation batch via
+  `tools/background_runner.py` (`start` + separate `wait`), run after a
+  baseline `pytest` pass, exit code 0, no truncation. Champion's
+  fold-aggregate fitness held flat at 1.556 throughout (974 trades, 39%
+  win, 1% stops, 3 halts). Best-of-generation fold-fitness ranged roughly
+  1.164-2.655, never clearing the promotion-margin bar. See
+  `runs/2026-11-15-0841-weekend-all-hands.md` for the full account,
+  including a note for future sessions on this exact collision pattern
+  (two scheduled routines evolving from the same base concurrently — a new
+  failure mode beyond the shallow-clone staleness `git_sync.py` already
+  handles; no code change needed, just recognize it and reset rather than
+  attempt a manual JSON merge). Verified before commit: `python3 -m
+  pytest -q` 505/505 both before (post-reset baseline) and after; top-level
+  key diff of `live_state.json` showed only `updated`/`researcher_memory`/
+  `lineage` changed (genome, broker, journal, hard_call_reviews
+  byte-identical); `lineage` length unchanged at 202; `tools/
+  edit_bundle_module.py sync --check` clean; `holdout-pressure` re-checked
+  post-batch — margin flat at 7.829, draw count rose to 2127 (new
+  sealed-holdout draws, all correctly rejected); `review-hard-calls` still
+  0 pending; dashboard rebuilt with `EVO_STATE` set (`index.html` shows
+  118514 challenger idea(s) tried); `git fetch origin main` immediately
+  before this commit confirmed no further remote commits had landed.
+  Genome still v3 (1d) live, untouched throughout. Nothing newly queued on
+  the trading/evolution side; the next session should check whether either
+  owner-call (items 5/6/13) has landed before defaulting to another plain
+  evolve batch, since that is now the only unblocked lever left.
+
 - **Run 2026-11-15 (3-hourly check, ~06:47-07:13 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 117762 → 117967 (per
