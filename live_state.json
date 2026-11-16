@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 93,
-  "updated": "2026-11-15T22:15:44+00:00",
+  "ticks": 94,
+  "updated": "2026-11-16T00:22:23+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 10006.125253408476,
+    "cash": 11267.594570955935,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 1298.4989249999999,
         "opened_ts": "2026-11-04 00:00:00+00:00",
         "peak_price": 1323.01,
-        "bars_held": 10,
+        "bars_held": 11,
         "entry_agents": [
           "consult_risky"
         ]
@@ -177,18 +177,18 @@
         "avg_cost": 4065.3316500000005,
         "opened_ts": "2026-11-07 00:00:00+00:00",
         "peak_price": 4125.29,
-        "bars_held": 7,
+        "bars_held": 8,
         "entry_agents": [
           "consult_risky"
         ]
       },
       "INJUSDT": {
         "symbol": "INJUSDT",
-        "qty": 363.34878673074127,
+        "qty": 181.67439336537063,
         "avg_cost": 7.455013678925249,
         "opened_ts": "2026-11-12 00:00:00+00:00",
         "peak_price": 8.096,
-        "bars_held": 2,
+        "bars_held": 3,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1654,6 +1654,16 @@
         "ref_price": 6.858,
         "fee": 0.8442778835832021,
         "reason": "consult_moderate: confirmed trend: ma-spread +1.0%, slope +0.22%, rsi 45 in band | superior_judge: approved (cap-checked)"
+      },
+      {
+        "ts": "2026-11-15 00:00:00+00:00",
+        "symbol": "INJUSDT",
+        "side": "sell",
+        "qty": 181.67439336537063,
+        "price": 6.9505230000000005,
+        "ref_price": 6.954,
+        "fee": 1.2627320495970562,
+        "reason": "consult_moderate: trend broke: trend -0.2%, rsi 41"
       }
     ],
     "closed": [
@@ -2882,6 +2892,21 @@
         "entry_agents": [
           "consult_risky"
         ]
+      },
+      {
+        "symbol": "INJUSDT",
+        "qty": 181.67439336537063,
+        "entry_price": 7.455013678925249,
+        "exit_price": 6.9505230000000005,
+        "entry_ts": "2026-11-12 00:00:00+00:00",
+        "exit_ts": "2026-11-15 00:00:00+00:00",
+        "pnl": -92.91577010182549,
+        "pnl_pct": -0.06767132840432,
+        "bars_held": 3,
+        "exit_reason": "consult_moderate: trend broke: trend -0.2%, rsi 41",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -3256,6 +3281,10 @@
       [
         "2026-11-14 00:00:00+00:00",
         12554.31813841152
+      ],
+      [
+        "2026-11-15 00:00:00+00:00",
+        12614.75389384625
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -19573,6 +19602,120 @@
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 4%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-16T00:22:23+00:00",
+      "bar": "2026-11-15 00:00:00+00:00",
+      "tick": 94,
+      "nav_before": 12614.75,
+      "nav_after": 12598.69,
+      "cash": 11267.59,
+      "cash_before": 10006.13,
+      "positions": {
+        "ZECUSDT": 29.29,
+        "PAXGUSDT": 38.44,
+        "INJUSDT": 1263.36
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-15 00:00:00+00:00",
+        "nav": 12614.75389384625,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.7932081226166197,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 40, trend -13.1%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -13.1%, rsi 40"
+            },
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -0.2%, rsi 41"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -2.4%, rsi 38"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 40, trend -13.1%",
+              "consult_moderate: trend broke: trend -13.1%, rsi 40"
+            ]
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -0.2%, rsi 41"
+            ]
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -2.4%, rsi 38"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 181.67439336537063,
+            "price": 6.9505230000000005,
+            "reason": "consult_moderate: trend broke: trend -0.2%, rsi 41"
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "sell",
+            "status": "rejected"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
