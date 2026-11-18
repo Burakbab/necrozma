@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 95,
-  "updated": "2026-11-17T22:14:31+00:00",
+  "ticks": 96,
+  "updated": "2026-11-18T00:24:05+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,7 +154,7 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 11890.982449838857,
+    "cash": 12227.573810021386,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
@@ -166,7 +166,7 @@
         "avg_cost": 1298.4989249999999,
         "opened_ts": "2026-11-04 00:00:00+00:00",
         "peak_price": 1323.01,
-        "bars_held": 12,
+        "bars_held": 13,
         "entry_agents": [
           "consult_risky"
         ]
@@ -177,18 +177,18 @@
         "avg_cost": 4065.3316500000005,
         "opened_ts": "2026-11-07 00:00:00+00:00",
         "peak_price": 4125.29,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_risky"
         ]
       },
       "INJUSDT": {
         "symbol": "INJUSDT",
-        "qty": 90.83719668268532,
+        "qty": 45.41859834134266,
         "avg_cost": 7.455013678925249,
         "opened_ts": "2026-11-12 00:00:00+00:00",
         "peak_price": 8.096,
-        "bars_held": 4,
+        "bars_held": 5,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1674,6 +1674,16 @@
         "ref_price": 6.873,
         "fee": 0.6240118907736962,
         "reason": "consult_moderate: trend broke: trend -1.8%, rsi 39"
+      },
+      {
+        "ts": "2026-11-17 00:00:00+00:00",
+        "symbol": "INJUSDT",
+        "side": "sell",
+        "qty": 45.41859834134266,
+        "price": 7.418289,
+        "ref_price": 7.422,
+        "fee": 0.3369282884710005,
+        "reason": "consult_moderate: trend broke: trend -2.9%, rsi 43"
       }
     ],
     "closed": [
@@ -2932,6 +2942,21 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "INJUSDT",
+        "qty": 45.41859834134266,
+        "entry_price": 7.455013678925249,
+        "exit_price": 7.418289,
+        "entry_ts": "2026-11-12 00:00:00+00:00",
+        "exit_ts": "2026-11-17 00:00:00+00:00",
+        "pnl": -2.0049117297916514,
+        "pnl_pct": -0.004926171903489207,
+        "bars_held": 5,
+        "exit_reason": "consult_moderate: trend broke: trend -2.9%, rsi 43",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -3314,6 +3339,10 @@
       [
         "2026-11-16 00:00:00+00:00",
         12588.8737973687
+      ],
+      [
+        "2026-11-17 00:00:00+00:00",
+        12634.522109485373
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -19856,6 +19885,127 @@
             "symbol": "PAXGUSDT",
             "side": "sell",
             "status": "rejected"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-18T00:24:05+00:00",
+      "bar": "2026-11-17 00:00:00+00:00",
+      "tick": 96,
+      "nav_before": 12634.52,
+      "nav_after": 12633.69,
+      "cash": 12227.57,
+      "cash_before": 11890.98,
+      "positions": {
+        "ZECUSDT": 31.11,
+        "PAXGUSDT": 37.91,
+        "INJUSDT": 337.1
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-17 00:00:00+00:00",
+        "nav": 12634.522109485373,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.9411501556447234,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 45, trend -17.3%"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 37, trend -3.2%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "ZECUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -17.3%, rsi 45"
+            },
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -2.9%, rsi 43"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -3.2%, rsi 37"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 45, trend -17.3%",
+              "consult_moderate: trend broke: trend -17.3%, rsi 45"
+            ]
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 37, trend -3.2%",
+              "consult_moderate: trend broke: trend -3.2%, rsi 37"
+            ]
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.33,
+            "why": [
+              "consult_moderate: trend broke: trend -2.9%, rsi 43"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "ZECUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "sell",
+            "status": "rejected"
+          },
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "status": "filled",
+            "qty": 45.41859834134266,
+            "price": 7.418289,
+            "reason": "consult_moderate: trend broke: trend -2.9%, rsi 43"
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 0%",
