@@ -454,6 +454,52 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-19 (3-hourly check, ~00:47-01:15 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 124510 → 124715 (per
+  `researcher_memory.tested`), stagnation/boldness counter 9029 → 9044.**
+  No live trading this cycle (tick 97 already handled at the dedicated
+  00:20 UTC daily slot ~27 minutes before this session started — confirmed
+  via `live_state.json`'s `updated` timestamp at session start,
+  `2026-11-19T00:22:35+00:00`, matching `runs/2026-11-19-0020-daily-trading.md`).
+  Freshness checks: `review-hard-calls` still 0 pending (6 reviewed,
+  unchanged), items 6/13 still owner decisions, `AGENTS.md` size 247,061
+  bytes at session start — under the 256KB threshold, not archived this
+  cycle — so, with nothing else queued, used the slot for one more real
+  15-generation batch, run after a baseline `pytest` pass, exit code 0, no
+  truncation. Champion's fold-aggregate fitness held flat at 1.143 across
+  all 15 generations (948 trades, 37% win, 1% stops, 4 halts, unchanged
+  throughout — the daily bar from tick 97 had already rolled the fold
+  windows forward before this session started, same mechanism every prior
+  session has observed). Best-of-generation fold-fitness ranged roughly
+  1.143-1.914, never clearing the promotion-margin bar. See
+  `runs/2026-11-19-0115-evolve-batch-v3.md`. **Process note**: made and
+  caught the exact single-vs-double-backgrounding mistake item 9 warns
+  about — the post-batch `pytest` verification was launched with both the
+  tool's own `run_in_background` and a trailing shell `&`, so the tool
+  reported completion while the real process (PID 1076) kept running
+  detached; caught immediately via the truncated log and a live `ps aux`
+  entry, recovered by polling the real PID directly rather than trusting
+  the premature completion signal. No harm, just a reminder the rule needs
+  re-reading before mixing backgrounding mechanisms. Verified before
+  commit: `python3 -m pytest -q` 505/505 both before (baseline) and after
+  `evolve` (confirmed once polled against the real PID); top-level key diff
+  of `live_state.json` (snapshotted before the batch, checked directly in
+  Python against the pre-batch copy) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py sync --check` clean; `holdout-pressure`
+  re-checked post-batch — margin rose slightly (7.850 → 7.852), draw count
+  2216 → 2223 (seven new sealed-holdout draws from this batch's
+  fold-aggregate-gate-clearing candidates, all correctly rejected), same
+  slow-rise pattern already tracked under item 13, nothing new; dashboard
+  rebuilt with `EVO_STATE` set (`index.html` shows 124715 challenger
+  idea(s) tried). Genome still v3 (1d) live, untouched. Container synced
+  cleanly from `main` via `git checkout main` + `python3 tools/git_sync.py`
+  fast-forward through 11 other sessions' already-pushed commits from
+  earlier today, no divergence, no shallow-clone staleness this cycle.
+
 - **Run 2026-11-18 (3-hourly check, ~21:47-21:55 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 124302 → 124510 (per
