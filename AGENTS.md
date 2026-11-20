@@ -454,6 +454,31 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-20 (daily trading, ~00:20-00:35 UTC): tick 98 traded (sold
+  INJUSDT, NAV $12,612.00 → $12,611.51), then 3 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 126161 → 126200 (per
+  `researcher_memory.tested`), stagnation/boldness counter 9149 → 9152.**
+  `tick % 7 == 0` (98 % 7 == 0), so this was the dedicated daily-trading
+  evolve slot. Champion's fold-aggregate fitness held flat at 1.460 across
+  all 3 generations (950 trades, 38% win, 1% stops, 3 halts). Best-of-
+  generation fold-fitness 1.413/1.221/1.116, never clearing the
+  promotion-margin bar. See `runs/2026-11-20-0020-daily-trading.md`.
+  Verified before commit: `python3 -m pytest -q` 505/505 both before
+  (baseline) and after `evolve`; top-level key diff of `live_state.json`
+  (snapshotted before the batch) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `holdout-pressure` re-checked post-batch — margin and draw count both
+  unchanged (7.867, 2291), consistent with no proposal this batch even
+  clearing the fold-aggregate gate; dashboard rebuilt with `EVO_STATE` set
+  (`index.html` shows 126200 challenger idea(s) tried). Genome still v3
+  (1d) live, untouched. Container synced cleanly from `main` via `git
+  checkout main` + `git pull --rebase origin main`, fast-forward through
+  22 other sessions' already-pushed commits from earlier today, no
+  divergence, no shallow-clone staleness this cycle.
+
 - **Run 2026-11-19 (3-hourly check, ~21:46-22:12 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 125954 → 126161 (per
