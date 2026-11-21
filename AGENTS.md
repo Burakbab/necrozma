@@ -516,6 +516,46 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
   fetch origin main` re-checked immediately before this commit per the
   2026-11-15 collision lesson.
 
+- **Run 2026-11-21 (3-hourly check, ~06:46-07:38 UTC): hit a git-push
+  collision with the weekend-all-hands session above, resolved by resetting
+  to the fresher remote state rather than hand-merging `live_state.json`,
+  then 15 more real `evolve` generations against the live v3 (1d) champion
+  — cumulative candidates tried against v3 rose 128531 → 128735 (per
+  `researcher_memory.tested`), stagnation/boldness counter 9323 → 9337.**
+  No live trading this cycle (tick 99 already handled earlier today).
+  Freshness checks before starting: `review-hard-calls` 0 pending (6
+  reviewed), `AGENTS.md` 235,281 bytes at session start, not archived. Ran
+  and committed a first 15-generation evolve batch (same verification
+  discipline as every prior cycle), but the push was rejected — the
+  weekend-all-hands session above had pushed its own 20-generation batch +
+  `live-benchmark` re-check in the interim, touching the same
+  `live_state.json`/`index.html`/`AGENTS.md` paths. `git rebase origin/main`
+  produced unmergeable conflicts inside `live_state.json` itself (not the
+  shallow-clone staleness `tools/git_sync.py` is built for — two sessions'
+  real, divergent JSON mutations to the same ~7MB state file). Rather than
+  hand-merge a file whose `researcher_memory.tested` alone holds 128k+
+  entries (real risk of silently corrupting the 2026-08-15 dedup-memory
+  fix), confirmed the working tree was clean, aborted the rebase, and
+  `git reset --hard origin/main` — discarding my own unpushed commit, whose
+  only unique content (another "no promotion" evolve batch) was already
+  superseded in substance by the colliding session's own. Redid the work
+  fresh against the post-collision state instead: 15 more generations,
+  fitness held flat at 1.542 (921 trades, 37% win, 1% stops, 4 halts)
+  throughout, best-of-generation 1.374-1.844, no promotion. Verified before
+  this commit: `python3 -m pytest -q` 505/505 (both before this batch and
+  again after, since the reset also re-confirms the colliding commit
+  changed no code, only state/notes); top-level key diff of `live_state.json`
+  showed only `updated`/`researcher_memory`/`lineage` changed (lineage
+  length unchanged at 202, no new promotion attempt); `tools/edit_bundle_module.py
+  sync --check` clean; `holdout-pressure` re-checked post-batch — margin
+  7.872, draw count 2313; dashboard rebuilt with `EVO_STATE` set (`index.html`
+  shows 128735 challenger idea(s) tried). Genome still v3 (1d) live,
+  untouched. See `runs/2026-11-21-0738-evolve-batch-v3.md` for the full
+  collision writeup and the takeaway for future sessions: when a rebase
+  shows conflicts *inside* `live_state.json` itself, don't hand-merge it —
+  confirm the tree is clean, abort, hard-reset to `origin/main`, and redo
+  any lost work against the fresh state.
+
 - **Run 2026-11-21 (3-hourly check, ~03:46-04:09 UTC): archived the oldest
   remaining `AGENTS.md` log slice, then 15 more real `evolve` generations
   against the live v3 (1d) champion, no promotion — cumulative candidates
