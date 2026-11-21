@@ -454,6 +454,68 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-21 (weekend all-hands, ~06:00-07:00 UTC): `live-benchmark`
+  re-checked for the first time in 10+ weeks and flipped sign — live
+  account now beats buy-and-hold by +28.20% excess over its real trading
+  life, not behind it — then 20 more real `evolve` generations against v3,
+  no promotion.** Main finding: the last session to run `live-benchmark`
+  was the 2026-09-12 weekend all-hands (28 bars, -13.21% excess); nothing
+  re-ran it since. Fresh result this session: 98 real 1d bars
+  (2026-08-14 to 2026-11-20), live account +26.03% (sharpe 2.03, maxDD
+  -21.6%) vs. equal-weight buy-and-hold of the same 27-symbol universe
+  -2.17% (maxDD -41.6%) — **excess +28.20%**, a +41.4-point swing from the
+  last check. Checked, not just quoted, the tool's own "traded under
+  multiple genome versions" caveat: `Counter` of the real journal's
+  `genome_version` field is `{3: 97, 1: 1, 2: 1}` — only the account's
+  first two ticks predate the v2→v3 promotion, so 98% of this track record
+  is a clean single-genome (v3) real forward test. Checked what's driving
+  it: today's own `signals` reads "Market read: bear, breadth 0%" and the
+  benchmark window's buy-and-hold is itself negative (-2.17%) — this is not
+  beta captured from a rising market, it's real alpha generated across a
+  choppy-to-bearish 10-week stretch, the first live window where the
+  account didn't just lose less than the benchmark but made money while
+  the benchmark lost money. Does not overturn the 2026-08-16 "Measured"
+  section's full-4-year-backtest finding (-28.4% excess over the complete
+  replay history) — different window, different kind of evidence (replay
+  vs. real fills) — both are true simultaneously; this is item 1's
+  "accumulate live forward-test data" premise finally producing its first
+  genuinely good-looking stretch. Checked against item 0's three revisit
+  triggers below: none fire (trigger 1 is specifically about *persistent
+  negative* excess, which this isn't anymore), so item 0's 2026-08-30
+  recommendation stands un-revisited by design — this is new evidence, not
+  a decision point. Flagged, not fixed: `live-benchmark` isn't part of any
+  session's standard verification checklist, which is why a 10-week gap
+  went unnoticed; recommended (not mandated) that weekend sessions run it
+  as routine going forward. See `runs/2026-11-21-0600-weekend-all-hands.md`
+  for the full writeup.
+
+  Second half of the session: one real 20-generation `evolve` batch
+  (backgrounded via `tools/background_runner.py start`/`wait`, no
+  `nohup`/`&`), run after a baseline `pytest` pass, exit code 0, no
+  truncation, deliberately moderate-sized to avoid the git-push collision
+  the 2026-11-15 weekend session hit with an oversized 50-generation batch.
+  Champion's fold-aggregate fitness held flat at 1.542 across all 20
+  generations (921 trades, 37% win, 1% stops, 4 halts, unchanged
+  throughout). Best-of-generation fold-fitness ranged roughly 1.253-2.649,
+  never clearing the promotion-margin bar. Cumulative candidates tried
+  against v3 rose **128255 → 128531**; stagnation/boldness counter
+  **9303 → 9322**. Verified before commit: `python3 -m pytest -q` 505/505
+  both before and after; top-level key diff of `live_state.json` showed
+  only `updated`/`researcher_memory`/`lineage` changed (genome, broker,
+  journal, hard_call_reviews byte-identical; `lineage` length unchanged at
+  202, no new promotion attempt); `tools/edit_bundle_module.py sync
+  --check` clean; `holdout-pressure` re-checked post-batch — margin rose
+  slightly (7.871 → 7.872), draw count 2307 → 2311 (four new sealed-holdout
+  draws, all correctly rejected), same slow-rise pattern tracked under item
+  13; dashboard rebuilt with `EVO_STATE` set (`index.html` shows 128531
+  challenger idea(s) tried). Genome still v3 (1d) live, untouched. No
+  constitution change, no promotion, no README.md update needed. Container
+  synced cleanly from `main` via `git checkout main` + `python3
+  tools/git_sync.py` fast-forward through 38 other sessions' already-pushed
+  commits, no divergence, no shallow-clone staleness this cycle; `git
+  fetch origin main` re-checked immediately before this commit per the
+  2026-11-15 collision lesson.
+
 - **Run 2026-11-21 (3-hourly check, ~03:46-04:09 UTC): archived the oldest
   remaining `AGENTS.md` log slice, then 15 more real `evolve` generations
   against the live v3 (1d) champion, no promotion — cumulative candidates
@@ -1651,6 +1713,19 @@ every `evolve` call.
    where fitness and excess return disagree at the sealed holdout; or a fourth
    real champion promoted) — check `live-benchmark`'s current bar count/excess
    figure against that first trigger before starting any new angle on this.
+
+   **Checked 2026-11-21 (weekend all-hands, ~06:00-07:00 UTC): `live-benchmark`
+   re-run for the first time since 2026-09-12 (28 bars, -13.21% excess) —
+   now 98 bars, +28.20% excess, a +41.4-point swing.** See "Current state"
+   above and `runs/2026-11-21-0600-weekend-all-hands.md`. Trigger 1 does
+   not fire — it was written to catch *persistent negative* excess, and
+   this is now strongly positive, 98%-attributable to a clean v3-only
+   track record (only the account's first two ticks predate the v2→v3
+   promotion). No decision point reached, no re-measurement of the closed
+   question performed — this is simply the first time in 10+ weeks anyone
+   checked the number the trigger itself depends on. Recommended, not
+   mandated: future weekend sessions run `live-benchmark` as routine so
+   this doesn't go unchecked for months again.
 
    **Resolved 2026-08-30 (3-hourly check, ~00:46 UTC): tick 16's hard-call
    flag reviewed, verdict `approve`.** See "Current state" above and
