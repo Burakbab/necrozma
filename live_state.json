@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 99,
-  "updated": "2026-11-21T22:14:53+00:00",
+  "ticks": 100,
+  "updated": "2026-11-22T00:21:35+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -166,7 +166,7 @@
         "avg_cost": 4065.3316500000005,
         "opened_ts": "2026-11-07 00:00:00+00:00",
         "peak_price": 4125.29,
-        "bars_held": 13,
+        "bars_held": 14,
         "entry_agents": [
           "consult_risky"
         ]
@@ -177,7 +177,7 @@
         "avg_cost": 7.455013678925249,
         "opened_ts": "2026-11-12 00:00:00+00:00",
         "peak_price": 8.096,
-        "bars_held": 8,
+        "bars_held": 9,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -3444,6 +3444,10 @@
       [
         "2026-11-20 00:00:00+00:00",
         12602.836510496816
+      ],
+      [
+        "2026-11-21 00:00:00+00:00",
+        12600.293799631783
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -20433,6 +20437,102 @@
             "qty": 5.677324792667832,
             "price": 6.300848,
             "reason": "consult_risky: leadership lost: rsi 36, trend -7.2% | consult_moderate: trend broke: trend -7.2%, rsi 36"
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "sell",
+            "status": "rejected"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-22T00:21:35+00:00",
+      "bar": "2026-11-21 00:00:00+00:00",
+      "tick": 100,
+      "nav_before": 12600.29,
+      "nav_after": 12600.2,
+      "cash": 12531.08,
+      "cash_before": 12531.08,
+      "positions": {
+        "PAXGUSDT": 35.2,
+        "INJUSDT": 33.92
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-21 00:00:00+00:00",
+        "nav": 12600.293799631783,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.994506828647905,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 36, trend -8.9%"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 30, trend -6.4%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -8.9%, rsi 36"
+            },
+            {
+              "symbol": "PAXGUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -6.4%, rsi 30"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 36, trend -8.9%",
+              "consult_moderate: trend broke: trend -8.9%, rsi 36"
+            ]
+          },
+          {
+            "symbol": "PAXGUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 30, trend -6.4%",
+              "consult_moderate: trend broke: trend -6.4%, rsi 30"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "status": "rejected"
           },
           {
             "symbol": "PAXGUSDT",
