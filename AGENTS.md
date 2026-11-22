@@ -465,6 +465,49 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-22 (3-hourly check, ~18:46-19:09 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 130992 → 131196 (per
+  `researcher_memory.tested`), stagnation/boldness counter 9502 → 9517.**
+  No live trading this cycle (daily tick 100 already handled at the
+  dedicated 00:20 UTC daily slot and by five prior 3-hourly checks' own
+  evolve batches earlier today). `review-hard-calls` still 0 pending (6
+  reviewed, unchanged); `AGENTS.md` size 232,042 bytes at session start —
+  well under the archival-trigger range, not archived this cycle. Champion's
+  fold-aggregate fitness held flat at 1.306 across all 15 generations (895
+  trades, 35% win, 1% stops, 4 halts, unchanged — no daily-bar roll this
+  cycle). Best-of-generation fold-fitness ranged roughly 1.268-2.065, never
+  clearing the promotion-margin bar. **Hit item 9's own documented landmine
+  while launching the batch**: backgrounded `evolve` by pairing a trailing
+  shell `&` with the harness's own `run_in_background` option — exactly the
+  "New trigger shape (2026-09-09)" pattern item 9 already warns against —
+  so the wrapper reported "completed" almost instantly while the real
+  `evolve` process (PID 848) kept running detached. Caught immediately via
+  `ps aux` (the log held only the constitution-verified line, no generation
+  output yet), then polled the real PID directly with a single-mechanism
+  background wait until it actually exited, and only verified/committed
+  after that. No harm, but a fresh concrete recurrence of a mistake item 9
+  already names twice — see
+  `runs/2026-11-22-1909-evolve-batch-v3.md` for the full account; worth
+  flagging again that the inline `### Commands` warning and item 9's own
+  writeup aren't fully preventing this. See `runs/2026-11-22-1909-evolve-batch-v3.md`.
+  Verified before commit: `python3 -m pytest -q` 505/505 both before
+  (baseline) and after `evolve`; top-level key diff of `live_state.json`
+  (snapshotted before the batch) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py sync --check` clean; `holdout-pressure`
+  re-checked post-batch — margin rose slightly (7.878 → 7.881), draw count
+  2340 → 2355 (15 new sealed-holdout draws from this batch's
+  fold-aggregate-gate-clearing candidates, all correctly rejected), same
+  slow-rise pattern already tracked under item 13, nothing new; dashboard
+  rebuilt with `EVO_STATE` set (`index.html` shows 131196 challenger
+  idea(s) tried). Genome still v3 (1d) live, untouched. Container synced
+  cleanly from `main` via `git checkout main` + `python3 tools/git_sync.py`
+  fast-forward at session start, no divergence, no shallow-clone staleness
+  this cycle.
+
 - **Run 2026-11-22 (3-hourly check, ~15:46-16:20 UTC): archived the
   2026-11-21 AGENTS.md log slice, then 15 more real `evolve` generations
   against the live v3 (1d) champion, no promotion — cumulative candidates
