@@ -327,8 +327,19 @@ importantly, that the actual bottleneck is the sealed-holdout margin itself
 (7.076 at 523 cumulative draws) rather than the boldness mechanism -- a real
 4.199-fold-fitness / holdout-beating candidate still failed by a wide margin;
 a 20-generation run found the same pattern at a different length (3/20
-uncapped vs 4/20 capped, 0/20 vs 0/20 on the sealed holdout). See "Current
-state" for both results in full.
+uncapped vs 4/20 capped, 0/20 vs 0/20 on the sealed holdout). **Re-run
+2026-11-22 (weekend all-hands) at a 5x-higher stagnation level** (9443 vs
+1801, seeded from the real live `researcher_memory`): fold-gate clears rose
+for both arms (10/20 uncapped, 8/20 capped — the uncapped arm now leads,
+reversing which arm led in September) but **sealed-holdout clears stayed
+0/20 for both arms**, same as every prior run. The fold-gate-clear rise is
+most plausibly the different real 4-year-ending-today evaluation window
+(per `fold-date-sensitivity`'s own standing finding that fold-aggregate
+fitness is as-of-date-dependent), not a boldness effect — so the one
+number that's actually comparable across all three runs, and the one that
+matters, is sealed-holdout clears, which has now been 0/0/0 across 15-, 20-,
+and 20-generation runs at three very different stagnation levels (1801,
+1821, 9443). See "Current state" for all three results in full.
 
 `short-headroom` (added 2026-09-26, weekend all-hands) answers the question a
 real short-opening proposal would need first, per item 5's still-open
@@ -453,6 +464,66 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 ---
 
 ## Current state
+
+- **Run 2026-11-22 (weekend all-hands, ~06:00-07:xx UTC): re-ran `boldness-scan`
+  for the first time since 2026-09-20, at a stagnation level roughly 5x
+  higher than the last check — sealed-holdout clears are still 0/0 for both
+  arms, extending the standing "boldness isn't the bottleneck" finding to a
+  genuinely new, much-later point in the champion's undefeated streak.**
+  Context: item 13's open question (is the never-resetting cumulative
+  multiple-testing correction still well-calibrated?) and the boldness
+  mechanism's own saturation story were both last measured in September at
+  `stagnation≈1801`, `holdout_draws≈522-523`, `required_margin≈7.076`. Today
+  those numbers are `stagnation=9443`, `holdout_draws=2327`,
+  `required_margin=7.875` (per the prior cycle's `holdout-pressure` check) —
+  a materially different point in the search's lifetime that nobody had
+  gone back and re-measured. Ran `python3 evotrader_bundle.py boldness-scan
+  --generations 20 --cap 20` (defaults otherwise: seed 7, n-blind 14,
+  seeded from the real live `researcher_memory`), backgrounded via
+  `tools/background_runner.py start`/`wait` (took ~50 minutes — two full
+  20-generation shadow searches over the real 27-symbol 4-year universe,
+  the first `wait` call hit its own 30-minute background-task limit while
+  the underlying detached process kept running untouched, confirmed via
+  `ps`/CPU-time before relaunching `wait` with a longer budget — exactly
+  the detached-process behavior `tools/background_runner.py` was built for
+  under item 9, worked as designed).
+
+  Result: **UNCAPPED** (effective boldness climbed 9443→9462, tracking the
+  real stagnation counter) — best-of-generation fold-fitness 1.195–3.229
+  (one outlier generation at 3.229), fold-aggregate gate clears **10/20**,
+  sealed-holdout gate clears **0/20**. **CAPPED at boldness=20** (same
+  seeded stream, boldness held flat) — best-of-generation fold-fitness
+  0.938–2.406, fold-aggregate gate clears **8/20**, sealed-holdout gate
+  clears **0/20**. Both arms: final stagnation 9463, champion unchanged at
+  v3 (shadow only, confirmed `git status`/`live_state.json` md5 both clean
+  before and after — the read-only contract held).
+
+  Reading: the fold-gate-clear counts rose sharply for both arms versus
+  September (3/20→10/20 uncapped, 4/20→8/20 capped) and the *ranking*
+  flipped (capped led in September, uncapped leads now) — read as noise
+  from a different real evaluation window (per `fold-date-sensitivity`'s
+  own finding that fold-aggregate fitness is as-of-date-dependent, the
+  trailing-4y window anchored to "today" has moved ~2 months since the last
+  check), not a boldness effect, and not strong evidence either way about
+  which cap setting is "better" — same one-seed caveat the September run
+  note already flagged, now reinforced by the ranking itself proving
+  unstable across time. The number that **is** directly comparable across
+  all three runs to date (15-gen/Sept, 20-gen/Sept, 20-gen/Nov) is
+  sealed-holdout clears, and it has been **0/0, 0/0, 0/0** every single
+  time, at stagnation levels spanning nearly an order of magnitude
+  (1801→9443). This is new, direct evidence — not just the arithmetic
+  `Researcher.perturb`'s docstring already implied — that raising the
+  champion's undefeated streak by another ~7,600 candidates tried did not
+  change the diagnosis: no real candidate from either arm would have
+  promoted, boldness setting aside, and the bottleneck item 13's 2026-10-10
+  design pass already quantified (the cumulative holdout margin, not the
+  search's own exploration width) is still the operative one. Does not
+  reopen or re-decide item 13 itself — that remains the owner's call on
+  risk appetite, unchanged by this run. `python3 -m pytest -q` 505/505
+  before and after (no code touched, diagnostic only). No trading, no
+  genome, no constitution change, `AGENTS.md`'s own size (240,633 bytes at
+  session start) left well under the archival threshold, not archived this
+  cycle.
 
 - **Run 2026-11-22 (3-hourly check, ~03:47-04:12 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
@@ -3546,6 +3617,17 @@ every `evolve` call.
     recommended, explicitly warned against in the code it would change).
     `constitution/__init__.py` untouched throughout — this was read-only
     analysis against the live `holdout-pressure` output, no re-seal needed.
+
+    **Re-checked 2026-11-22 (weekend all-hands): the "search hasn't found a
+    genuinely much-better genome yet" reading above holds up at a 5x-higher
+    stagnation level.** See "Current state" above — a fresh `boldness-scan`
+    run at `stagnation=9443`/`holdout_draws=2327`/`required_margin=7.875`
+    (all roughly 4-5x the 2026-09-20/10-10 numbers) found sealed-holdout
+    clears of 0/20 for both the uncapped and boldness-capped arms, same as
+    every prior run at every prior stagnation level — the undefeated streak
+    growing by another ~7,600 tried candidates changed nothing about this
+    diagnosis. Still not this session's decision to make; still the
+    owner's call on risk appetite, unchanged.
 
 ---
 
