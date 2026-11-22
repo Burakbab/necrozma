@@ -454,6 +454,52 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-22 (3-hourly check, ~03:47-04:12 UTC): 15 more real `evolve`
+  generations against the live v3 (1d) champion, no promotion — cumulative
+  candidates tried against v3 rose 129969 → 130176 (per
+  `researcher_memory.tested`), stagnation/boldness counter 9428 → 9443.**
+  No live trading this cycle (daily tick 100 already handled at the
+  dedicated 00:20 UTC daily slot and by the prior 3-hourly check's own
+  evolve batch — confirmed via `live_state.json`'s `updated` timestamp at
+  session start, `2026-11-22T01:07:39+00:00`, matching
+  `runs/2026-11-22-0109-evolve-batch-v3.md`). Freshness checks:
+  `review-hard-calls` still 0 pending (6 reviewed, unchanged), items 6/13
+  still owner decisions, `AGENTS.md` size 237,538 bytes at session start —
+  well under the ~252KB+ range that has triggered archival in recent
+  cycles, not archived this cycle — so, with nothing else queued, used the
+  slot for one more real 15-generation batch (backgrounded via
+  `tools/background_runner.py start`/`wait`, no `nohup`/`&`, output
+  captured to a log file from the first byte), run after a baseline
+  `pytest` pass, exit code 0, no truncation. Champion's fold-aggregate
+  fitness held flat at 1.306 across all 15 generations (895 trades, 35%
+  win, 1% stops, 4 halts, unchanged throughout — no daily-bar roll this
+  cycle). Best-of-generation fold-fitness ranged roughly 1.102-1.905, never
+  clearing the promotion-margin bar. See
+  `runs/2026-11-22-0412-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 505/505 both before (baseline) and after `evolve`;
+  one run in between hit a single flaky failure
+  (`test_evolve_saves_and_matches_its_own_dry_run_decision`, a live-network
+  call to `data-api.binance.vision` returning an inconsistent HTTP 400
+  across two subprocess calls) that passed in isolation and on a clean
+  second full-suite run — same test-timing/network flakiness class already
+  logged by several prior sessions, not a regression; top-level key diff of
+  `live_state.json` (snapshotted before the batch, checked directly in
+  Python against the pre-batch copy) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py sync --check` clean; `holdout-pressure`
+  re-checked post-batch — margin held flat (7.875), draw count 2326 → 2327
+  (one new sealed-holdout draw from this batch's fold-aggregate-gate-
+  clearing candidates, correctly rejected), same slow-rise pattern already
+  tracked under item 13, nothing new; dashboard rebuilt with `EVO_STATE`
+  set (`index.html` shows 130176 challenger idea(s) tried). Genome still v3
+  (1d) live, untouched. Container started in detached HEAD (known
+  cloud-clone artifact) — `git checkout main` + `python3 tools/git_sync.py`
+  fast-forwarded cleanly through 49 other sessions' already-pushed commits
+  from earlier today/yesterday, no divergence, no shallow-clone staleness
+  this cycle.
+
 - **Run 2026-11-22 (3-hourly check, ~00:46-01:09 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 129765 → 129969 (per
