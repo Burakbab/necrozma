@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 100,
-  "updated": "2026-11-22T22:06:50+00:00",
+  "ticks": 101,
+  "updated": "2026-11-23T00:21:58+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,30 +154,19 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 12531.078226703665,
+    "cash": 12566.386482432055,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "borrow_bps_per_bar": 0.0,
     "positions": {
-      "PAXGUSDT": {
-        "symbol": "PAXGUSDT",
-        "qty": 0.009908867489863854,
-        "avg_cost": 4065.3316500000005,
-        "opened_ts": "2026-11-07 00:00:00+00:00",
-        "peak_price": 4125.29,
-        "bars_held": 14,
-        "entry_agents": [
-          "consult_risky"
-        ]
-      },
       "INJUSDT": {
         "symbol": "INJUSDT",
         "qty": 5.677324792667832,
         "avg_cost": 7.455013678925249,
         "opened_ts": "2026-11-12 00:00:00+00:00",
         "peak_price": 8.096,
-        "bars_held": 9,
+        "bars_held": 10,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -1713,6 +1702,16 @@
         "ref_price": 6.304,
         "fee": 0.03577196056523153,
         "reason": "consult_risky: leadership lost: rsi 36, trend -7.2% | consult_moderate: trend broke: trend -7.2%, rsi 36"
+      },
+      {
+        "ts": "2026-11-22 00:00:00+00:00",
+        "symbol": "PAXGUSDT",
+        "side": "sell",
+        "qty": 0.009908867489863854,
+        "price": 3566.8656750000005,
+        "ref_price": 3568.65,
+        "fee": 0.0353435993277188,
+        "reason": "guardian: time stop (15 bars, -12.0%)"
       }
     ],
     "closed": [
@@ -3046,6 +3045,21 @@
         "entry_agents": [
           "consult_moderate"
         ]
+      },
+      {
+        "symbol": "PAXGUSDT",
+        "qty": 0.009908867489863854,
+        "entry_price": 4065.3316500000005,
+        "exit_price": 3566.8656750000005,
+        "entry_ts": "2026-11-07 00:00:00+00:00",
+        "exit_ts": "2026-11-22 00:00:00+00:00",
+        "pnl": -4.974576893808509,
+        "pnl_pct": -0.1226138524270215,
+        "bars_held": 15,
+        "exit_reason": "guardian: time stop (15 bars, -12.0%)",
+        "entry_agents": [
+          "consult_risky"
+        ]
       }
     ],
     "nav_history": [
@@ -3448,6 +3462,10 @@
       [
         "2026-11-21 00:00:00+00:00",
         12600.293799631783
+      ],
+      [
+        "2026-11-22 00:00:00+00:00",
+        12601.939093556748
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -20541,6 +20559,78 @@
           }
         ],
         "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-23T00:21:58+00:00",
+      "bar": "2026-11-22 00:00:00+00:00",
+      "tick": 101,
+      "nav_before": 12601.94,
+      "nav_after": 12601.72,
+      "cash": 12566.39,
+      "cash_before": 12531.08,
+      "positions": {
+        "INJUSDT": 35.33
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-22 00:00:00+00:00",
+        "nav": 12601.939093556748,
+        "regime": "crisis",
+        "breadth": 0.0,
+        "cash_pct": 0.9971787983689852,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 41, trend -10.1%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -10.1%, rsi 41"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [
+          {
+            "symbol": "PAXGUSDT",
+            "why": "guardian: time stop (15 bars, -12.0%)"
+          }
+        ],
+        "orders": [
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 41, trend -10.1%",
+              "consult_moderate: trend broke: trend -10.1%, rsi 41"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "status": "rejected"
+          }
+        ],
+        "notes": "regime crisis (scale 0.00), breadth 0% | crisis lockdown",
         "hard_call": {
           "is_hard_call": false,
           "reasons": []
