@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 102,
-  "updated": "2026-11-24T22:10:11+00:00",
+  "ticks": 103,
+  "updated": "2026-11-25T00:21:59+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -166,7 +166,7 @@
         "avg_cost": 7.455013678925249,
         "opened_ts": "2026-11-12 00:00:00+00:00",
         "peak_price": 8.096,
-        "bars_held": 11,
+        "bars_held": 12,
         "entry_agents": [
           "consult_moderate"
         ]
@@ -3470,6 +3470,10 @@
       [
         "2026-11-23 00:00:00+00:00",
         12602.130919326692
+      ],
+      [
+        "2026-11-24 00:00:00+00:00",
+        12599.649928392297
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -20690,6 +20694,73 @@
             "why": [
               "consult_risky: leadership lost: rsi 42, trend -12.1%",
               "consult_moderate: trend broke: trend -12.1%, rsi 42"
+            ]
+          }
+        ],
+        "vetoes": [],
+        "fills": [
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "status": "rejected"
+          }
+        ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-25T00:21:59+00:00",
+      "bar": "2026-11-24 00:00:00+00:00",
+      "tick": 103,
+      "nav_before": 12599.65,
+      "nav_after": 12599.46,
+      "cash": 12566.39,
+      "cash_before": 12566.39,
+      "positions": {
+        "INJUSDT": 33.07
+      },
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-24 00:00:00+00:00",
+        "nav": 12599.649928392297,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.9973599706222563,
+        "proposals": {
+          "consult_risky": [
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.8,
+              "why": "leadership lost: rsi 40, trend -12.9%"
+            }
+          ],
+          "consult_moderate": [
+            {
+              "symbol": "INJUSDT",
+              "side": "sell",
+              "conviction": 0.65,
+              "why": "trend broke: trend -12.9%, rsi 40"
+            }
+          ],
+          "consult_conservative": []
+        },
+        "forced_exits": [],
+        "orders": [
+          {
+            "symbol": "INJUSDT",
+            "side": "sell",
+            "amount": 0.0,
+            "fraction": 0.5,
+            "agreement": 0.67,
+            "why": [
+              "consult_risky: leadership lost: rsi 40, trend -12.9%",
+              "consult_moderate: trend broke: trend -12.9%, rsi 40"
             ]
           }
         ],
