@@ -1,7 +1,7 @@
 {
   "started": "2026-08-15T00:47:09+00:00",
-  "ticks": 105,
-  "updated": "2026-11-27T22:14:13+00:00",
+  "ticks": 106,
+  "updated": "2026-11-28T00:22:05+00:00",
   "genome": {
     "version": 3,
     "parent": 2,
@@ -154,24 +154,12 @@
   },
   "broker": {
     "start_cash": 10000,
-    "cash": 12566.386482432055,
+    "cash": 12602.253053704537,
     "fee_bps": 10,
     "slippage_bps": 5,
     "min_order": 25,
     "borrow_bps_per_bar": 0.0,
-    "positions": {
-      "INJUSDT": {
-        "symbol": "INJUSDT",
-        "qty": 5.677324792667832,
-        "avg_cost": 7.455013678925249,
-        "opened_ts": "2026-11-12 00:00:00+00:00",
-        "peak_price": 8.096,
-        "bars_held": 14,
-        "entry_agents": [
-          "consult_moderate"
-        ]
-      }
-    },
+    "positions": {},
     "fills": [
       {
         "ts": "2026-08-14 00:00:00+00:00",
@@ -1712,6 +1700,16 @@
         "ref_price": 3568.65,
         "fee": 0.0353435993277188,
         "reason": "guardian: time stop (15 bars, -12.0%)"
+      },
+      {
+        "ts": "2026-11-27 00:00:00+00:00",
+        "symbol": "INJUSDT",
+        "side": "sell",
+        "qty": 5.677324792667832,
+        "price": 6.3238365000000005,
+        "ref_price": 6.327,
+        "fee": 0.03590247374622777,
+        "reason": "guardian: time stop (15 bars, -15.0%)"
       }
     ],
     "closed": [
@@ -3060,6 +3058,21 @@
         "entry_agents": [
           "consult_risky"
         ]
+      },
+      {
+        "symbol": "INJUSDT",
+        "qty": 5.677324792667832,
+        "entry_price": 7.455013678925249,
+        "exit_price": 6.3238365000000005,
+        "entry_ts": "2026-11-12 00:00:00+00:00",
+        "exit_ts": "2026-11-27 00:00:00+00:00",
+        "pnl": -6.457962716558596,
+        "pnl_pct": -0.1517337496137665,
+        "bars_held": 15,
+        "exit_reason": "guardian: time stop (15 bars, -15.0%)",
+        "entry_agents": [
+          "consult_moderate"
+        ]
       }
     ],
     "nav_history": [
@@ -3482,6 +3495,10 @@
       [
         "2026-11-26 00:00:00+00:00",
         12601.546154873047
+      ],
+      [
+        "2026-11-27 00:00:00+00:00",
+        12602.358012318398
       ]
     ],
     "peak_nav": 16016.225509725647,
@@ -20914,6 +20931,44 @@
             "status": "rejected"
           }
         ],
+        "notes": "regime bear (scale 0.25), breadth 0%",
+        "hard_call": {
+          "is_hard_call": false,
+          "reasons": []
+        }
+      }
+    },
+    {
+      "ts": "2026-11-28T00:22:05+00:00",
+      "bar": "2026-11-27 00:00:00+00:00",
+      "tick": 106,
+      "nav_before": 12602.36,
+      "nav_after": 12602.25,
+      "cash": 12602.25,
+      "cash_before": 12566.39,
+      "positions": {},
+      "genome_version": 3,
+      "halted": false,
+      "decision": {
+        "ts": "2026-11-27 00:00:00+00:00",
+        "nav": 12602.358012318398,
+        "regime": "bear",
+        "breadth": 0.0,
+        "cash_pct": 0.9999916715099064,
+        "proposals": {
+          "consult_risky": [],
+          "consult_moderate": [],
+          "consult_conservative": []
+        },
+        "forced_exits": [
+          {
+            "symbol": "INJUSDT",
+            "why": "guardian: time stop (15 bars, -15.0%)"
+          }
+        ],
+        "orders": [],
+        "vetoes": [],
+        "fills": [],
         "notes": "regime bear (scale 0.25), breadth 0%",
         "hard_call": {
           "is_hard_call": false,
