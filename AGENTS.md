@@ -465,6 +465,55 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-28 (weekend all-hands, ~06:00-07:03 UTC): `live-benchmark`
+  re-run (weekly routine), then 40 real `evolve` generations against the
+  live v3 (1d) champion — a deliberately larger batch than the 3-hourly
+  checks' usual 15, using the weekend's bigger time budget on the core
+  search — no promotion. Cumulative candidates tried against v3 rose
+  140072 → 140616 (per `researcher_memory.tested`), stagnation/boldness
+  counter 10165 → 10205.** Reviewed every open "Next steps" item first:
+  items 5 (short selling), 6 (equities/FX) and 13 (HOLDOUT_SIGMA
+  calibration) are all owner-gated (item 5's 2026-11-08 write-up explicitly
+  says further parameter sweeps inside the same signal family are not a
+  good use of a future session without a genuinely new kind of input, which
+  this repo has no way to source — no borrow-rate/on-chain data, no
+  credentials mechanism by design); item 2 is parked; items 3/8/9/10/11/12
+  are closed/resolved; item 4's `review-hard-calls` showed 0 pending (6
+  reviewed so far, unchanged). With nothing new to open on any structural
+  item, spent the session on the standing core task plus a routine check
+  that had fallen behind its own recommended cadence. `live-benchmark`
+  (last run 2026-11-21, exactly a week prior): 105 1d bars, live account
+  +26.02% (sharpe 1.96, maxDD -21.6%) vs. buy-and-hold +0.69% (sharpe 0.36,
+  maxDD -41.7%) — excess +25.33%, down slightly from last week's +28.20%
+  but still strongly positive; item 0's trigger 1 (persistent negative
+  excess) still does not fire, no decision point reached. `AGENTS.md` size
+  242,594 bytes at session start — comfortably under the archival-trigger
+  range recent cycles have used, not archived this cycle. Champion's
+  fold-aggregate fitness held flat at 1.390 across all 40 generations (966
+  trades, 38% win, 1% stops, 3 halts, unchanged — no daily-bar roll this
+  cycle, it's a weekend). Best-of-generation fold-fitness ranged roughly
+  1.221-2.698, never clearing the promotion-margin bar. Backgrounded via
+  the harness's own `run_in_background` option directly on the `evolve`
+  command, no `nohup`/`&`, per item 9's standing rule — ran cleanly for its
+  full ~57 minutes, no detachment issues. See
+  `runs/2026-11-28-0600-weekend-all-hands.md`. Verified before commit:
+  `python3 -m pytest -q` 505/505 both before (baseline) and after `evolve`;
+  top-level key diff of `live_state.json` (snapshotted before the batch, in
+  gitignored scratchpad, outside the repo) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py sync --check` clean; `holdout-pressure`
+  re-checked post-batch — margin rose slightly (7.903 → 7.908), draw count
+  2468 → 2482 (new sealed-holdout draws from this batch's
+  fold-aggregate-gate-clearing candidates, all correctly rejected), same
+  slow-rise pattern already tracked under item 13, nothing new; dashboard
+  rebuilt with `EVO_STATE` set (`index.html` 21.1 KB, shows 140616
+  challenger idea(s) tried). Genome still v3 (1d) live, untouched. Container
+  synced cleanly from `main` via `git checkout main` + `python3
+  tools/git_sync.py` fast-forward, no divergence, no shallow-clone
+  staleness this cycle.
+
 - **Run 2026-11-28 (3-hourly check, ~03:47-04:18 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 139866 → 140072 (per
