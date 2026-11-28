@@ -465,6 +465,54 @@ result, so a future session doesn't re-litigate them. Item 6 is still open.
 
 ## Current state
 
+- **Run 2026-11-28 (3-hourly check, ~00:47-01:18 UTC): archived the
+  2026-11-26 AGENTS.md log slice, then 15 more real `evolve` generations
+  against the live v3 (1d) champion, no promotion — cumulative candidates
+  tried against v3 rose 139663 → 139866 (per `researcher_memory.tested`),
+  stagnation/boldness counter 10136 → 10150.** No live trading this cycle
+  (daily tick already handled at the dedicated 00:20 UTC daily slot —
+  confirmed via `live_state.json`'s `updated` timestamp at session start,
+  `2026-11-28T00:22:05+00:00`, matching
+  `runs/2026-11-28-0020-daily-trading.md`; tick 106, `106 % 7 == 1` so that
+  run didn't evolve either). `AGENTS.md` size 255,913 bytes at session
+  start — within the margin range every prior rotation in this index has
+  used to trigger one — so archived the next oldest remaining slice (all
+  eight 2026-11-26 entries) verbatim to new `AGENTS_ARCHIVE_2026-11-26.md`
+  first (committed/pushed separately, `2a13fe4`, verified byte-for-byte
+  identical against the removed slice), cutting this file to 235,766
+  bytes. With that done, used the rest of the slot for one more real
+  15-generation batch (backgrounded via the harness's own
+  `run_in_background` option directly on the `evolve` command, no
+  `nohup`/`&`, per item 9's standing rule — worked cleanly). Champion's
+  fold-aggregate fitness held flat at 1.390 across all 15 generations (966
+  trades, 38% win, 1% stops, 3 halts, unchanged — no daily-bar roll this
+  cycle). Best-of-generation fold-fitness ranged roughly 1.086-2.968, never
+  clearing the promotion-margin bar. **A third recurrence of item 9's
+  double-backgrounding anti-pattern, this time on the follow-up
+  verification `pytest` run** (a trailing shell `&` combined with the
+  tool's own `run_in_background: true`) — caught immediately (the real
+  pytest PID was still running after the tool reported the wrapper
+  "completed"), worked around by polling the real PID until it exited; no
+  state touched by that step regardless, so no harm — see item 9 for the
+  updated wording this recurrence prompted. See
+  `runs/2026-11-28-0118-evolve-batch-v3.md`. Verified before commit:
+  `python3 -m pytest -q` 505/505 both before (baseline) and after `evolve`;
+  top-level key diff of `live_state.json` (snapshotted before the batch, in
+  gitignored scratchpad, outside the repo) showed only
+  `updated`/`researcher_memory`/`lineage` changed (genome, broker, journal,
+  hard_call_reviews byte-identical); `lineage` length unchanged at 202
+  (bounded ring buffer, no new promotion attempt recorded);
+  `tools/edit_bundle_module.py sync --check` clean; `holdout-pressure`
+  re-checked post-batch — margin held essentially flat (7.903 → 7.904),
+  draw count 2460 → 2463 (new sealed-holdout draws from this batch's
+  fold-aggregate-gate-clearing candidates, all correctly rejected), same
+  slow-rise pattern already tracked under item 13, nothing new; dashboard
+  rebuilt with `EVO_STATE` set (`index.html` 21.1 KB, shows 139866
+  challenger idea(s) tried). Genome still v3 (1d) live, untouched.
+  Container synced cleanly from `main` via `git checkout main` + `python3
+  tools/git_sync.py` fast-forward, no divergence, no shallow-clone
+  staleness this cycle.
+
 - **Run 2026-11-27 (3-hourly check, ~21:47-22:17 UTC): 15 more real `evolve`
   generations against the live v3 (1d) champion, no promotion — cumulative
   candidates tried against v3 rose 139456 → 139663 (per
@@ -3228,6 +3276,21 @@ every `evolve` call.
    Recommended as the default way to run `evolve N` from here on — no
    nohup/`&`, nothing to accidentally pair with a tool's own
    `run_in_background`.
+
+   **Third recurrence, 2026-11-28 (3-hourly check, ~01:18 UTC), this time on
+   a verification `pytest` run rather than `evolve` itself** (the second
+   was 2026-11-27 ~22:17 UTC): a trailing shell `&` was combined with the
+   calling tool's own `run_in_background: true` to launch the post-batch
+   pytest check, and the tool reported the wrapper "completed" in seconds
+   (it had only run the `echo` of the child PID) while the real `pytest`
+   process kept running detached for its full ~145s. Caught immediately by
+   noticing the captured log was truncated mid-run and confirming the real
+   PID was still alive via `ps`/`kill -0`, then waited correctly by polling
+   that PID. No state touched either way. Same root cause as both prior
+   recurrences (pairing the tool's own backgrounding with a shell-level
+   `&`), now on a third different command — the fix is the same each time:
+   never type a trailing `&` at all when also passing `run_in_background:
+   true`, regardless of what's being backgrounded.
 
 10. **Dashboard's "genome" stat tile can show a stale/wrong version when
     `state/genomes/champion.json` disagrees with `live_state.json`.**
